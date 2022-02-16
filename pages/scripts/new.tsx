@@ -1,24 +1,36 @@
+import type { NextPage } from 'next'
 import { useState, ChangeEvent } from 'react'
 import Layout from '../../components/layout'
+import { CardanoSerializationLib } from '../../cardano/serialization-lib'
+import type { Cardano } from '../../cardano/serialization-lib'
+import { Buffer } from 'buffer'
 
-export default function NewScript() {
-  const [keyHashes, setKeyHashes] = useState([] as string[])
+const NewScript: NextPage = () => {
+  const [keyHashes, setKeyHashes] = useState<string[]>([])
+  const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
+
+  CardanoSerializationLib.load().then((instance) => setCardano(instance))
+
   const onAddKeyHash = (input: string) => {
     let list = keyHashes
     let value = input.trim()
-    if (value.length > 0 && !list.includes(value)) {
-      list = list.concat(value)
+    if (value.length > 0 && cardano) {
+      let keyHash = toHex(cardano.getBech32AddressKeyHash(input).to_bytes())
+      if (!list.includes(keyHash))
+        list = list.concat(keyHash)
     }
     setKeyHashes(list)
   }
 
   return (
     <Layout>
-      <AddKeyHash onAdd={onAddKeyHash} />
+      {cardano && <AddKeyHash onAdd={onAddKeyHash} />}
       {keyHashes.length > 0 && <Tabs keyHashes={keyHashes} />}
     </Layout>
   )
 }
+
+const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
 type TabsProps = {
   keyHashes: string[]
@@ -75,11 +87,15 @@ function AddKeyHash({ onAdd }: AddKeyHashProps) {
   return (
     <div className='shadow mb-2'>
       <div className='px-4 py-5 bg-white space-y-6 sm:p-6'>
-        <textarea className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md' onChange={onChange} rows="5" value={value}></textarea>
+        <textarea className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md' onChange={onChange} rows={5} value={value}></textarea>
       </div>
       <div className='px-4 py-3 bg-gray-50 text-right sm:px-6'>
-        <button className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700' onClick={onClick}>Add Key Hash</button>
+        <button className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700' onClick={onClick}>
+          Add Key Hash
+        </button>
       </div>
     </div>
   )
 }
+
+export default NewScript
