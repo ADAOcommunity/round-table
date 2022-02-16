@@ -13,7 +13,7 @@ const NewScript: NextPage = () => {
 
   CardanoSerializationLib.load().then((instance) => setCardano(instance))
 
-  const onAddKeyHash = (input: string) => {
+  const onAddAddress = (input: string) => {
     const bech32 = input.trim()
     const newMap = new Map(addresses)
     if (cardano && bech32.length > 0) {
@@ -24,7 +24,7 @@ const NewScript: NextPage = () => {
 
   return (
     <Layout>
-      {cardano && <AddKeyHash onAdd={onAddKeyHash} />}
+      {cardano && <AddAddress onAdd={onAddAddress} />}
       {addresses.size > 0 && <Tabs addresses={addresses} />}
     </Layout>
   )
@@ -76,11 +76,11 @@ function Tabs({ addresses }: TabsProps) {
   )
 }
 
-type AddKeyHashProps = {
+type AddAddressProps = {
   onAdd: (value: string) => void
 }
 
-function AddKeyHash({ onAdd }: AddKeyHashProps) {
+function AddAddress({ onAdd }: AddAddressProps) {
   const [value, setValue] = useState('')
   const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setValue(event.target.value)
