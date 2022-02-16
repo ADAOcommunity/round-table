@@ -4,8 +4,9 @@ import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano } from '../../cardano/serialization-lib'
 import { Buffer } from 'buffer'
+import type { Ed25519KeyHash } from '@emurgo/cardano-serialization-lib-browser'
 
-type AddressMap = Map<string, string>
+type AddressMap = Map<string, Ed25519KeyHash>
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<AddressMap>(new Map())
@@ -17,7 +18,7 @@ const NewScript: NextPage = () => {
     const bech32 = input.trim()
     const newMap = new Map(addresses)
     if (cardano && bech32.length > 0) {
-      newMap.set(bech32, toHex(cardano.getBech32AddressKeyHash(bech32).to_bytes()))
+      newMap.set(bech32, cardano.getBech32AddressKeyHash(bech32))
     }
     setAddresses(newMap)
   }
@@ -56,7 +57,7 @@ function Tabs({ addresses }: TabsProps) {
         {Array.from(addresses.entries(), ([bech32, keyHash]) => (
           <tr key={bech32}>
             <td className='border-t border-r p-1'>{bech32}</td>
-            <td className='border-t border-r p-1 break-all text-gray-500'>{keyHash}</td>
+            <td className='border-t border-r p-1 break-all text-gray-500'>{toHex(keyHash.to_bytes())}</td>
           </tr>
         ))}
       </tbody>
