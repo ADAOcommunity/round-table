@@ -5,27 +5,27 @@ import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano } from '../../cardano/serialization-lib'
 import { Buffer } from 'buffer'
 
+type AddressMap = Map<string, string>
+
 const NewScript: NextPage = () => {
-  const [keyHashes, setKeyHashes] = useState<string[]>([])
+  const [addresses, setAddresses] = useState<AddressMap>(new Map())
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
 
   CardanoSerializationLib.load().then((instance) => setCardano(instance))
 
   const onAddKeyHash = (input: string) => {
-    let list = keyHashes
-    let value = input.trim()
-    if (value.length > 0 && cardano) {
-      let keyHash = toHex(cardano.getBech32AddressKeyHash(input).to_bytes())
-      if (!list.includes(keyHash))
-        list = list.concat(keyHash)
+    const bech32 = input.trim()
+    const newMap = new Map(addresses)
+    if (cardano && bech32.length > 0) {
+      newMap.set(bech32, toHex(cardano.getBech32AddressKeyHash(bech32).to_bytes()))
     }
-    setKeyHashes(list)
+    setAddresses(newMap)
   }
 
   return (
     <Layout>
       {cardano && <AddKeyHash onAdd={onAddKeyHash} />}
-      {keyHashes.length > 0 && <Tabs keyHashes={keyHashes} />}
+      {addresses.size > 0 && <Tabs addresses={addresses} />}
     </Layout>
   )
 }
@@ -33,26 +33,32 @@ const NewScript: NextPage = () => {
 const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
 type TabsProps = {
-  keyHashes: string[]
+  addresses: AddressMap
 }
 
-function Tabs({ keyHashes }: TabsProps) {
+function Tabs({ addresses }: TabsProps) {
   const [isInspect, setInspect] = useState(false)
   const JSONScript =
     JSON.stringify(
-      { scripts: keyHashes.map((value) => ({ keyHash: value, type: 'sig' })), type: 'all' },
+      { scripts: Array.from(addresses.values(), (keyHash) => ({ keyHash, type: 'sig' })), type: 'all' },
       null, 2
     )
   const code = <code>{JSONScript}</code>
   const table = (
-    <table className='table-auto border-collapse w-full text-sm'>
-      <thead>
+    <table className='table-auto border-collapse text-sm'>
+      <thead className='bg-gray-100'>
         <tr>
-          <th className='border-b'>Key Hash</th>
+          <th className='border-b border-r p-1'>Address</th>
+          <th className='border-b border-r'>Key Hash</th>
         </tr>
       </thead>
       <tbody>
-        {keyHashes.map((keyHash) => <tr key={keyHash}><td className='border-t'>{keyHash}</td></tr>)}
+        {Array.from(addresses.entries(), ([bech32, keyHash]) => (
+          <tr key={bech32}>
+            <td className='border-t border-r p-1'>{bech32}</td>
+            <td className='border-t border-r p-1 break-all text-gray-500'>{keyHash}</td>
+          </tr>
+        ))}
       </tbody>
     </table>
   )
@@ -91,7 +97,7 @@ function AddKeyHash({ onAdd }: AddKeyHashProps) {
       </div>
       <div className='px-4 py-3 bg-gray-50 text-right sm:px-6'>
         <button className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700' onClick={onClick}>
-          Add Key Hash
+          Add Address
         </button>
       </div>
     </div>
