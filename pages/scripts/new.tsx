@@ -21,8 +21,7 @@ const NewScript: NextPage = () => {
     }
   }, [])
 
-  const onAddAddress = (input: string) => {
-    const address = input.trim()
+  const onAddAddress = (address: string) => {
     const state = new Set(addresses)
     if (address.length > 0) {
       state.add(address)
@@ -32,7 +31,7 @@ const NewScript: NextPage = () => {
 
   return (
     <Layout>
-      {cardano && <AddAddress onAdd={onAddAddress} />}
+      {cardano && <AddAddress cardano={cardano} onAdd={onAddAddress} />}
       {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} />}
     </Layout>
   )
@@ -74,23 +73,39 @@ function Result({ addresses, cardano }: ResultProps) {
 }
 
 type AddAddressProps = {
+  cardano: Cardano
   onAdd: (value: string) => void
 }
 
-function AddAddress({ onAdd }: AddAddressProps) {
+function AddAddress({ cardano, onAdd }: AddAddressProps) {
   const [value, setValue] = useState('')
+  const [keyHash, setKeyHash] = useState('')
+  const [isError, setError] = useState(false)
+
   const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setValue(event.target.value)
+    const address = event.target.value.trim()
+    setError(false)
+    setValue(address)
+    try {
+      setKeyHash(getKeyHash(cardano, address))
+    } catch {
+      setError(true)
+    }
   }
   const onClick = () => {
-    onAdd(value)
+    if (!isError) {
+      onAdd(value)
+    }
     setValue('')
+    setKeyHash('')
   }
 
   return (
     <div className='shadow mb-2'>
-      <div className='px-4 py-5 bg-white space-y-6 sm:p-6'>
-        <textarea className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md' onChange={onChange} rows={5} value={value}></textarea>
+      <div className='px-4 py-5 bg-white sm:p-6'>
+        <textarea className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full border border-gray-300 rounded-md p-2' onChange={onChange} rows={5} value={value} placeholder="Address"></textarea>
+        {isError && <p className='text-sm py-1 text-red-400'>Invalid address</p>}
+        {!isError && <p className='text-sm py-1 text-gray-400'>{keyHash}</p>}
       </div>
       <div className='px-4 py-3 bg-gray-50 text-right sm:px-6'>
         <button className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700' onClick={onClick}>
