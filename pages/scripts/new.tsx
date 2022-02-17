@@ -1,96 +1,73 @@
 import type { NextPage } from 'next'
-import Link from 'next/link'
-import { useState, ChangeEvent } from 'react'
+import { useEffect, useState, ChangeEvent } from 'react'
 import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano } from '../../cardano/serialization-lib'
 import { Buffer } from 'buffer'
-import type { Ed25519KeyHash } from '@emurgo/cardano-serialization-lib-browser'
-
-type AddressMap = Map<string, Ed25519KeyHash>
 
 const NewScript: NextPage = () => {
-  const [addresses, setAddresses] = useState<AddressMap>(new Map())
+  const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
 
-  CardanoSerializationLib.load().then((instance) => setCardano(instance))
+  useEffect(() => {
+    let mounted = true
+
+    CardanoSerializationLib.load().then((instance) => {
+      mounted && setCardano(instance)
+    })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const onAddAddress = (input: string) => {
-    const bech32 = input.trim()
-    const newMap = new Map(addresses)
-    if (cardano && bech32.length > 0) {
-      newMap.set(bech32, cardano.getBech32AddressKeyHash(bech32))
+    const address = input.trim()
+    const state = new Set(addresses)
+    if (address.length > 0) {
+      state.add(address)
     }
-    setAddresses(newMap)
+    setAddresses(state)
   }
-
-  const script = cardano && addresses.size > 1 && allScriptAddress(cardano, addresses)
 
   return (
     <Layout>
       {cardano && <AddAddress onAdd={onAddAddress} />}
-      {script && (
-        <div className='shadow rounded-md my-2 p-2'>
-          <Link href={`/scripts/${script}`}>
-            <a>{script}</a>
-          </Link>
-        </div>
-      )}
-      {addresses.size > 0 && <Results addresses={addresses} />}
+      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} />}
     </Layout>
   )
 }
 
-function allScriptAddress(cardano: Cardano, addresses: AddressMap) {
-  const scripts = Array.from(addresses.values(), (keyHash) => cardano.buildPublicKeyScript(keyHash))
-  return cardano.getScriptBech32Address(cardano.buildAllScript(scripts), false)
-}
-
 const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
-
-type ResultsProps = {
-  addresses: AddressMap
+const getKeyHash = (cardano: Cardano, address: string): string => {
+  const bytes = cardano.getBech32AddressKeyHash(address).to_bytes()
+  return toHex(bytes)
 }
 
-function Results({ addresses }: ResultsProps) {
-  const [isInspect, setInspect] = useState(false)
-  const JSONScript =
-    JSON.stringify(
-      { scripts: Array.from(addresses.values(), (keyHash) => ({ keyHash: toHex(keyHash.to_bytes()), type: 'sig' })), type: 'all' },
-      null, 2
-    )
-  const code = (
-    <>
-      <code>{JSONScript}</code>
-    </>
-  )
-  const table = (
-    <table className='table-auto border-collapse text-sm'>
-      <thead className='bg-gray-100'>
-        <tr>
-          <th className='border-b border-r p-1'>Address</th>
-          <th className='border-b border-r'>Key Hash</th>
-        </tr>
-      </thead>
-      <tbody>
-        {Array.from(addresses.entries(), ([bech32, keyHash]) => (
-          <tr key={bech32}>
-            <td className='border-t border-r p-1'>{bech32}</td>
-            <td className='border-t border-r p-1 break-all text-gray-500'>{toHex(keyHash.to_bytes())}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )
+type ResultProps = {
+  addresses: Set<string>
+  cardano: Cardano
+}
 
+function Result({ addresses, cardano }: ResultProps) {
   return (
     <div>
-      <label>
-        <input className='form' type="checkbox" defaultChecked={isInspect} onChange={() => setInspect(!isInspect)} />
-        Show JSON
-      </label>
       <div className='shadow rounded-md mb-2'>
-        {isInspect ? code : table}
+        <div className='px-3 py-1 border-b'>
+          <div className='rounded-sm'>
+            <select className='px-2 py-1 text-sm rounded-sm w-20'>
+              <option value="all">All</option>
+            </select>
+          </div>
+        </div>
+        <ul className='divide-y'>
+          {Array.from(addresses, (address) => (
+            <li className='px-2 py-1' key={address}>
+              <p>{address}</p>
+              <p className='text-sm text-gray-400'>{getKeyHash(cardano, address)}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </div >
   )
