@@ -23,7 +23,7 @@ class Cardano {
 
   public buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
     const { ScriptPubkey, NativeScript } = this._wasm
-    return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash));
+    return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
   }
 
   public buildAllScript(scripts: NativeScript[]): NativeScript {

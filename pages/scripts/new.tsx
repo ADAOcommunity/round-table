@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import Link from 'next/link'
 import { useState, ChangeEvent } from 'react'
 import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
@@ -23,28 +24,46 @@ const NewScript: NextPage = () => {
     setAddresses(newMap)
   }
 
+  const script = cardano && addresses.size > 1 && allScriptAddress(cardano, addresses)
+
   return (
     <Layout>
       {cardano && <AddAddress onAdd={onAddAddress} />}
-      {addresses.size > 0 && <Tabs addresses={addresses} />}
+      {script && (
+        <div className='shadow rounded-md my-2 p-2'>
+          <Link href={`/scripts/${script}`}>
+            <a>{script}</a>
+          </Link>
+        </div>
+      )}
+      {addresses.size > 0 && <Results addresses={addresses} />}
     </Layout>
   )
 }
 
+function allScriptAddress(cardano: Cardano, addresses: AddressMap) {
+  const scripts = Array.from(addresses.values(), (keyHash) => cardano.buildPublicKeyScript(keyHash))
+  return cardano.getScriptBech32Address(cardano.buildAllScript(scripts), false)
+}
+
 const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
-type TabsProps = {
+type ResultsProps = {
   addresses: AddressMap
 }
 
-function Tabs({ addresses }: TabsProps) {
+function Results({ addresses }: ResultsProps) {
   const [isInspect, setInspect] = useState(false)
   const JSONScript =
     JSON.stringify(
-      { scripts: Array.from(addresses.values(), (keyHash) => ({ keyHash, type: 'sig' })), type: 'all' },
+      { scripts: Array.from(addresses.values(), (keyHash) => ({ keyHash: toHex(keyHash.to_bytes()), type: 'sig' })), type: 'all' },
       null, 2
     )
-  const code = <code>{JSONScript}</code>
+  const code = (
+    <>
+      <code>{JSONScript}</code>
+    </>
+  )
   const table = (
     <table className='table-auto border-collapse text-sm'>
       <thead className='bg-gray-100'>
@@ -70,7 +89,7 @@ function Tabs({ addresses }: TabsProps) {
         <input className='form' type="checkbox" defaultChecked={isInspect} onChange={() => setInspect(!isInspect)} />
         Show JSON
       </label>
-      <div className='shadow sm:rounded-md sm:overflow-hidden mb-2'>
+      <div className='shadow rounded-md mb-2'>
         {isInspect ? code : table}
       </div>
     </div >
