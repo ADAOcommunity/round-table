@@ -1,6 +1,7 @@
 import Link from 'next/link'
+import type { NextPage } from 'next'
 
-export default function Layout({ children }) {
+const Layout: NextPage = ({ children }) => {
   return (
     <>
       <Header />
@@ -31,3 +32,5 @@ function Header() {
     </header>
   )
 }
+
+export default Layout
