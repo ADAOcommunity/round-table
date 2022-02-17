@@ -61,7 +61,7 @@ function Result({ addresses, cardano }: ResultProps) {
   const script = addresses.size > 1 && getAllScriptAddress(cardano, addresses)
   return (
     <div className='shadow border rounded-md mb-2'>
-      <div className='flex p-3 border-b bg-gray-100'>
+      <header className='flex p-3 border-b bg-gray-100'>
         {!script && <p className='grow text-gray-400'>Need more than 1 addresses</p>}
         {script && (
           <p className='grow'>
@@ -74,7 +74,7 @@ function Result({ addresses, cardano }: ResultProps) {
           </select>
           <div className='px-2'>of {addresses.size}</div>
         </div>
-      </div>
+      </header>
       <ul className='divide-y text-sm'>
         {Array.from(addresses, (address) => (
           <li className='p-3' key={address}>
