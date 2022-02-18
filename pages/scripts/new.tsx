@@ -47,21 +47,9 @@ function Result({ addresses, cardano }: ResultProps) {
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
 
-  const buildScript = () => {
-    const publicKeyScripts = Array.from(addresses, (address) => {
-      const keyHash = cardano.getBech32AddressKeyHash(address)
-      return cardano.buildPublicKeyScript(keyHash)
-    })
-
-    switch (type) {
-      case 'all': return cardano.buildAllScript(publicKeyScripts);
-      case 'any': return cardano.buildAnyScript(publicKeyScripts)
-      case 'atLeast': return cardano.buildAtLeastScript(publicKeyScripts, required)
-    }
-  }
-
   const getScriptAddress = (): string => {
-    return cardano.getScriptBech32Address(buildScript(), false)
+    const script = cardano.buildMultiSigScript(addresses, type, required)
+    return cardano.getScriptBech32Address(script, false)
   }
 
   const scriptAddress = addresses.size > 1 && getScriptAddress()

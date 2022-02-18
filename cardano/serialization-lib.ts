@@ -18,6 +18,19 @@ class Cardano {
     return toHex(bytes)
   }
 
+  public buildMultiSigScript(addresses: Set<string>, type: MultiSigType, required: number): NativeScript {
+    const publicKeyScripts = Array.from(addresses, (address) => {
+      const keyHash = this.getBech32AddressKeyHash(address)
+      return this.buildPublicKeyScript(keyHash)
+    })
+
+    switch (type) {
+      case 'all': return this.buildAllScript(publicKeyScripts);
+      case 'any': return this.buildAnyScript(publicKeyScripts)
+      case 'atLeast': return this.buildAtLeastScript(publicKeyScripts, required)
+    }
+  }
+
   public getBech32AddressKeyHash(bech32Address: string): Ed25519KeyHash {
     const { Address, BaseAddress } = this._wasm
     const address = Address.from_bech32(bech32Address)
