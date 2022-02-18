@@ -8,18 +8,20 @@ type LayoutProps = {
 export default function Layout({ children, onNetworkSwitch }: LayoutProps) {
   const [isMainnet, setMainnet] = useState(true)
   const networkSwitch = (
-    <label className='flex h-full space-x-2 text-sm text-gray-500'>
+    <div className='flex space-x-2 text-sm text-gray-500 p-4'>
       <span>Mainnet</span>
-      <input
-        type="checkbox"
-        className='hidden appearance-none peer'
-        checked={isMainnet}
-        onChange={() => { setMainnet(!isMainnet); onNetworkSwitch && onNetworkSwitch(!isMainnet) }} />
-      <div className='flex flex-row-reverse rounded-full bg-gray-500 w-10 p-0.5 h-full peer-checked:flex-row peer-checked:bg-green-500'>
-        <div className='bg-white w-5 rounded-full'></div>
-      </div>
+      <label className='cursor-pointer'>
+        <input
+          type="checkbox"
+          className='hidden appearance-none peer'
+          checked={isMainnet}
+          onChange={() => { setMainnet(!isMainnet); onNetworkSwitch && onNetworkSwitch(!isMainnet) }} />
+        <div className='flex flex-row-reverse rounded-full bg-gray-500 w-10 p-0.5 h-full peer-checked:flex-row peer-checked:bg-green-500'>
+          <div className='bg-white w-5 rounded-full'></div>
+        </div>
+      </label>
       <span>Testnet</span>
-    </label>
+    </div>
   )
 
   return (
@@ -32,9 +34,7 @@ export default function Layout({ children, onNetworkSwitch }: LayoutProps) {
                 <a className='text-base font-medium text-gray-500 hover:text-gray-900'>New Script</a>
               </Link>
             </div>
-            <div className='p-4'>
-              {networkSwitch}
-            </div>
+            {networkSwitch}
           </nav>
         </div>
       </header>
