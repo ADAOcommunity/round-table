@@ -68,11 +68,13 @@ function Result({ addresses, cardano }: ResultProps) {
             <Link href={`/scripts/${script}`}><a>{script}</a></Link>
           </p>
         )}
-        <div className='flex border border-blue-600 rounded-sm bg-blue-600 text-white'>
+        <div className='flex border border-blue-600 rounded-sm bg-blue-600 text-white text-sm'>
           <select className='px-2 py-1 bg-transparent'>
             <option value="all">All</option>
+            <option value="any">Any</option>
+            <option value="atLeast">At least</option>
           </select>
-          <div className='px-2'>of {addresses.size}</div>
+          <div className='px-2 py-1'>of {addresses.size}</div>
         </div>
       </header>
       <ul className='divide-y text-sm'>
@@ -95,38 +97,39 @@ type AddAddressProps = {
 function AddAddress({ cardano, onAdd }: AddAddressProps) {
   const [value, setValue] = useState('')
   const [keyHash, setKeyHash] = useState('')
-  const [isError, setError] = useState(false)
+  const [error, setError] = useState('')
 
   const onChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const address = event.target.value.trim()
-    setError(false)
+    setError('')
     setValue(address)
     try {
       setKeyHash(getKeyHash(cardano, address))
     } catch {
-      setError(true)
+      setError('Invalid address')
     }
   }
   const onClick = () => {
-    if (!isError) {
+    if (!error) {
       onAdd(value)
     }
     setValue('')
     setKeyHash('')
+    setError('')
   }
 
   return (
     <div className='shadow border rounded-md mb-2'>
-      <div className='px-4 py-5 sm:p-6'>
-        <textarea className='shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full border border-gray-300 rounded-md p-2' onChange={onChange} rows={5} value={value} placeholder="Address"></textarea>
-        {isError && <p className='text-sm py-1 text-red-400'>Invalid address</p>}
-        {!isError && <p className='text-sm py-1 text-gray-400'>{keyHash}</p>}
+      <div className='px-4 py-5'>
+        <textarea className='block w-full border border-gray-400 rounded-md p-2' onChange={onChange} rows={5} value={value} placeholder="Address"></textarea>
+        {error && <p className='text-sm py-1 text-red-400'>{error}</p>}
+        {!error && <p className='text-sm py-1 text-gray-400'>{keyHash}</p>}
       </div>
-      <div className='px-4 py-3 bg-gray-50 text-right sm:px-6'>
-        <button className='inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700' onClick={onClick}>
+      <footer className='flex flex-row-reverse px-4 py-3 bg-gray-100'>
+        <button className='py-2 px-4 border bg-blue-600 rounded-md text-white bg-blue-600 disabled:bg-gray-400' onClick={onClick} disabled={!keyHash}>
           Add Address
         </button>
-      </div>
+      </footer>
     </div>
   )
 }
