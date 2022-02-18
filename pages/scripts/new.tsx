@@ -43,14 +43,6 @@ const getKeyHash = (cardano: Cardano, address: string): string => {
   const bytes = cardano.getBech32AddressKeyHash(address).to_bytes()
   return toHex(bytes)
 }
-const getAllScriptAddress = (cardano: Cardano, addresses: Set<string>): string => {
-  const publicKeyScripts = Array.from(addresses, (address) => {
-    const keyHash = cardano.getBech32AddressKeyHash(address)
-    return cardano.buildPublicKeyScript(keyHash)
-  })
-  const allScript = cardano.buildAllScript(publicKeyScripts)
-  return cardano.getScriptBech32Address(allScript, false)
-}
 
 type ResultProps = {
   addresses: Set<string>
@@ -58,14 +50,25 @@ type ResultProps = {
 }
 
 function Result({ addresses, cardano }: ResultProps) {
-  const script = addresses.size > 1 && getAllScriptAddress(cardano, addresses)
+  const [isJSON, setJSON] = useState(false)
+
+  const getScriptAddress = (): string => {
+    const publicKeyScripts = Array.from(addresses, (address) => {
+      const keyHash = cardano.getBech32AddressKeyHash(address)
+      return cardano.buildPublicKeyScript(keyHash)
+    })
+    const allScript = cardano.buildAllScript(publicKeyScripts)
+    return cardano.getScriptBech32Address(allScript, false)
+  }
+  const scriptAddress = addresses.size > 1 && getScriptAddress()
+
   return (
     <div className='shadow border rounded-md mb-2'>
-      <header className='flex p-3 border-b bg-gray-100'>
-        {!script && <p className='grow text-gray-400'>Need more than 1 addresses</p>}
-        {script && (
+      <header className='flex space-x-1 p-3 border-b bg-gray-100'>
+        {!scriptAddress && <p className='grow text-gray-400'>Need more than 1 addresses</p>}
+        {scriptAddress && (
           <p className='grow'>
-            <Link href={`/scripts/${script}`}><a>{script}</a></Link>
+            <Link href={`/scripts/${scriptAddress}`}><a>{scriptAddress}</a></Link>
           </p>
         )}
         <div className='flex border border-blue-600 rounded-sm bg-blue-600 text-white text-sm'>
@@ -76,15 +79,26 @@ function Result({ addresses, cardano }: ResultProps) {
           </select>
           <div className='px-2 py-1'>of {addresses.size}</div>
         </div>
+        <label className='px-2 py-1 text-sm'>
+          <span>JSON</span>
+          <input className='mx-1' type='checkbox' checked={isJSON} onChange={() => setJSON(!isJSON)} />
+        </label>
       </header>
-      <ul className='divide-y text-sm'>
-        {Array.from(addresses, (address) => (
-          <li className='p-3' key={address}>
-            <p>{address}</p>
-            <p className='text-gray-400'>{getKeyHash(cardano, address)}</p>
-          </li>
-        ))}
-      </ul>
+      {!isJSON && (
+        <ul className='divide-y text-sm'>
+          {Array.from(addresses, (address) => (
+            <li className='p-3' key={address}>
+              <p>{address}</p>
+              <p className='text-gray-400'>{getKeyHash(cardano, address)}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+      {isJSON && (
+        <div className='p-2'>
+          <code className='block p-1 text-sm bg-gray-100 rounded-sm'>a</code>
+        </div>
+      )}
     </div>
   )
 }
