@@ -14,13 +14,13 @@ class Cardano {
   }
 
   public getKeyHashHex(address: string): string {
-    const bytes = this.getBech32AddressKeyHash(address).to_bytes()
+    const bytes = this.getAddressKeyHash(address).to_bytes()
     return toHex(bytes)
   }
 
   public getMultiSigScriptAddress(addresses: Set<string>, type: MultiSigType, required: number): string {
     const publicKeyScripts = Array.from(addresses, (address) => {
-      const keyHash = this.getBech32AddressKeyHash(address)
+      const keyHash = this.getAddressKeyHash(address)
       return this.buildPublicKeyScript(keyHash)
     })
 
@@ -32,10 +32,10 @@ class Cardano {
       }
     }
 
-    return this.getScriptBech32Address(buildScript(), false)
+    return this.getScriptAddress(buildScript(), false)
   }
 
-  private getBech32AddressKeyHash(bech32Address: string): Ed25519KeyHash {
+  private getAddressKeyHash(bech32Address: string): Ed25519KeyHash {
     const { Address, BaseAddress } = this._wasm
     const address = Address.from_bech32(bech32Address)
     const keyHash = BaseAddress.from_address(address)?.payment_cred().to_keyhash()
@@ -88,7 +88,7 @@ class Cardano {
     return BaseAddress.new(networkId, credential, credential)
   }
 
-  private getScriptBech32Address(script: NativeScript, isMainnet: boolean): string {
+  private getScriptAddress(script: NativeScript, isMainnet: boolean): string {
     const { NetworkInfo } = this._wasm
     const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
     const scriptHash = this.getScriptHash(script)
