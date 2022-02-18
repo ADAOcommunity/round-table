@@ -47,12 +47,7 @@ function Result({ addresses, cardano }: ResultProps) {
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
 
-  const getScriptAddress = (): string => {
-    const script = cardano.buildMultiSigScript(addresses, type, required)
-    return cardano.getScriptBech32Address(script, false)
-  }
-
-  const scriptAddress = addresses.size > 1 && getScriptAddress()
+  const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required)
 
   type SigScript = { type: 'sig', keyHash: string }
   type MultiSigScript =
