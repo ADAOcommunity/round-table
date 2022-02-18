@@ -32,7 +32,9 @@ class Cardano {
       }
     }
 
-    return this.getScriptAddress(buildScript(), false)
+    const { NetworkInfo } = this._wasm
+
+    return this.getScriptAddress(buildScript(), NetworkInfo.testnet())
   }
 
   private getAddressKeyHash(bech32Address: string): Ed25519KeyHash {
@@ -88,9 +90,7 @@ class Cardano {
     return BaseAddress.new(networkId, credential, credential)
   }
 
-  private getScriptAddress(script: NativeScript, isMainnet: boolean): string {
-    const { NetworkInfo } = this._wasm
-    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+  private getScriptAddress(script: NativeScript, networkInfo: NetworkInfo): string {
     const scriptHash = this.getScriptHash(script)
     return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address().to_bech32()
   }
