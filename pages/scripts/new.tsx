@@ -73,7 +73,7 @@ function Result({ addresses, cardano }: ResultProps) {
     | { type: 'atLeast', scripts: SigScript[], required: number }
   const toJSONScript = (): MultiSigScript => {
     const scripts: SigScript[] = Array.from(addresses, (address) => {
-      const keyHash = cardano.getKeyHash(address)
+      const keyHash = cardano.getKeyHashHex(address)
       return { type: 'sig', keyHash }
     })
     switch (type) {
@@ -119,7 +119,7 @@ function Result({ addresses, cardano }: ResultProps) {
           {Array.from(addresses, (address) => (
             <li className='p-3' key={address}>
               <p>{address}</p>
-              <p className='text-gray-400'>{cardano.getKeyHash(address)}</p>
+              <p className='text-gray-400'>{cardano.getKeyHashHex(address)}</p>
             </li>
           ))}
         </ul>
@@ -150,7 +150,7 @@ function AddAddress({ cardano, onAdd }: AddAddressProps) {
     setError('')
     setValue(address)
     try {
-      setKeyHash(cardano.getKeyHash(address))
+      setKeyHash(cardano.getKeyHashHex(address))
     } catch {
       setError('Invalid address')
     }

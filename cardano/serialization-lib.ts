@@ -13,7 +13,7 @@ class Cardano {
     this._wasm = wasm
   }
 
-  public getKeyHash(address: string): string {
+  public getKeyHashHex(address: string): string {
     const bytes = this.getBech32AddressKeyHash(address).to_bytes()
     return toHex(bytes)
   }
