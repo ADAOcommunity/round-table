@@ -2,6 +2,8 @@ import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkI
 import { Buffer } from 'buffer'
 
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
+type MultiSigType = 'all' | 'any' | 'atLeast'
+
 const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
 class Cardano {
@@ -93,5 +95,5 @@ class Factory {
 
 const CardanoSerializationLib = new Factory()
 
-export type { Cardano }
+export type { Cardano, MultiSigType }
 export { CardanoSerializationLib }

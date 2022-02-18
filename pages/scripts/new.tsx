@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { useEffect, useState, ChangeEvent } from 'react'
 import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
-import type { Cardano } from '../../cardano/serialization-lib'
+import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
 
 const NewScript: NextPage = () => {
@@ -43,8 +43,6 @@ type ResultProps = {
 }
 
 function Result({ addresses, cardano }: ResultProps) {
-  type MultiSigType = 'all' | 'any' | 'atLeast'
-
   const [isJSON, setJSON] = useState(false)
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
