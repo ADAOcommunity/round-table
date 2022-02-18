@@ -8,6 +8,7 @@ import Link from 'next/link'
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
+  const [isMainnet, setMainnet] = useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -30,8 +31,8 @@ const NewScript: NextPage = () => {
   }
 
   return (
-    <Layout>
-      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} />}
+    <Layout onNetworkSwitch={setMainnet}>
+      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} isMainnet={isMainnet} />}
       {cardano && <AddAddress cardano={cardano} onAdd={onAddAddress} />}
     </Layout>
   )
@@ -40,14 +41,15 @@ const NewScript: NextPage = () => {
 type ResultProps = {
   addresses: Set<string>
   cardano: Cardano
+  isMainnet: boolean
 }
 
-function Result({ addresses, cardano }: ResultProps) {
+function Result({ addresses, cardano, isMainnet }: ResultProps) {
   const [isJSON, setJSON] = useState(false)
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
 
-  const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required)
+  const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required, isMainnet)
 
   type SigScript = { type: 'sig', keyHash: string }
   type MultiSigScript =

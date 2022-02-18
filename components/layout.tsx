@@ -1,8 +1,11 @@
 import Link from 'next/link'
-import type { NextPage } from 'next'
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
 
-const Layout: NextPage = ({ children }) => {
+type LayoutProps = {
+  children?: ReactNode
+  onNetworkSwitch?: (isMainnet: boolean) => void
+}
+export default function Layout({ children, onNetworkSwitch }: LayoutProps) {
   const [isMainnet, setMainnet] = useState(true)
   const networkSwitch = (
     <label className='flex h-full space-x-2 text-sm text-gray-500'>
@@ -11,7 +14,7 @@ const Layout: NextPage = ({ children }) => {
         type="checkbox"
         className='hidden appearance-none peer'
         checked={isMainnet}
-        onChange={() => setMainnet(!isMainnet)} />
+        onChange={() => { setMainnet(!isMainnet); onNetworkSwitch && onNetworkSwitch(!isMainnet) }} />
       <div className='flex flex-row-reverse rounded-full bg-gray-500 w-10 p-0.5 h-full peer-checked:flex-row peer-checked:bg-green-500'>
         <div className='bg-white w-5 rounded-full'></div>
       </div>
@@ -43,5 +46,3 @@ const Layout: NextPage = ({ children }) => {
     </div>
   )
 }
-
-export default Layout
