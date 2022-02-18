@@ -31,8 +31,8 @@ const NewScript: NextPage = () => {
 
   return (
     <Layout>
-      {cardano && <AddAddress cardano={cardano} onAdd={onAddAddress} />}
       {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} />}
+      {cardano && <AddAddress cardano={cardano} onAdd={onAddAddress} />}
     </Layout>
   )
 }
@@ -67,14 +67,8 @@ function Result({ addresses, cardano }: ResultProps) {
   }
 
   return (
-    <div className='shadow border rounded-md mb-2'>
-      <header className='flex flex-wrap p-3 border-b bg-gray-100'>
-        {!scriptAddress && <p className='grow text-gray-400'>Need more than 1 addresses</p>}
-        {scriptAddress && (
-          <p className='grow'>
-            <Link href={`/scripts/${scriptAddress}`}><a>{scriptAddress}</a></Link>
-          </p>
-        )}
+    <div className='shadow bg-white border rounded-md mb-2'>
+      <header className='flex p-3 border-b border-gray-100 bg-gray-100'>
         <div className='flex border border-blue-600 rounded-sm bg-blue-600 text-white text-sm'>
           <select className='block px-2 py-1 bg-transparent' onChange={(e) => setType(e.target.value as MultiSigType)}>
             <option value="all">All</option>
@@ -97,10 +91,16 @@ function Result({ addresses, cardano }: ResultProps) {
           <input className='mx-1' type='checkbox' checked={isJSON} onChange={() => setJSON(!isJSON)} />
         </label>
       </header>
+      {!scriptAddress && <h2 className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</h2>}
+      {scriptAddress && (
+        <h2 className='border-b border-gray-100 font-bold text-center p-4'>
+          <Link href={`/scripts/${scriptAddress}`}><a>{scriptAddress}</a></Link>
+        </h2>
+      )}
       {!isJSON && (
         <ul className='divide-y text-sm'>
           {Array.from(addresses, (address) => (
-            <li className='p-3' key={address}>
+            <li className='p-3 border-gray-100' key={address}>
               <p>{address}</p>
               <p className='text-gray-400'>{cardano.getKeyHashHex(address)}</p>
             </li>
@@ -148,7 +148,7 @@ function AddAddress({ cardano, onAdd }: AddAddressProps) {
   }
 
   return (
-    <div className='shadow border rounded-md mb-2'>
+    <div className='shadow bg-white border rounded-md mb-2'>
       <div className='px-4 py-5'>
         <textarea className='block w-full border border-gray-400 rounded-md p-2' onChange={onChange} rows={5} value={value} placeholder="Address"></textarea>
         {error && <p className='text-sm py-1 text-red-400'>{error}</p>}
