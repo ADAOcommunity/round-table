@@ -31,6 +31,16 @@ class Cardano {
     return NativeScript.new_script_all(ScriptAll.new(this.buildNativeScripts(scripts)))
   }
 
+  public buildAnyScript(scripts: NativeScript[]): NativeScript {
+    const { ScriptAny, NativeScript } = this._wasm
+    return NativeScript.new_script_any(ScriptAny.new(this.buildNativeScripts(scripts)))
+  }
+
+  public buildAtLeastScript(scripts: NativeScript[], required: number): NativeScript {
+    const { ScriptNOfK, NativeScript } = this._wasm
+    return NativeScript.new_script_n_of_k(ScriptNOfK.new(required, this.buildNativeScripts(scripts)))
+  }
+
   public buildNativeScripts(scripts: NativeScript[]): NativeScripts {
     const { NativeScripts } = this._wasm
     const nativeScripts = NativeScripts.new()
