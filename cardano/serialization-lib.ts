@@ -76,7 +76,7 @@ class Cardano {
       nativeScripts.add(script)
     })
     return nativeScripts
-	}
+  }
 
   private getScriptHash(script: NativeScript): ScriptHash {
     const { ScriptHashNamespace } = this._wasm
