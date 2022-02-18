@@ -5,6 +5,7 @@ import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano } from '../../cardano/serialization-lib'
 import { Buffer } from 'buffer'
 import Link from 'next/link'
+import { stringify } from 'querystring'
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
@@ -50,7 +51,11 @@ type ResultProps = {
 }
 
 function Result({ addresses, cardano }: ResultProps) {
+  type MultiSigType = 'all' | 'any' | 'atLeast'
+
   const [isJSON, setJSON] = useState(false)
+  const [type, setType] = useState<MultiSigType>('all')
+  const [required, setRequired] = useState(1)
 
   const getScriptAddress = (): string => {
     const publicKeyScripts = Array.from(addresses, (address) => {
@@ -60,7 +65,25 @@ function Result({ addresses, cardano }: ResultProps) {
     const allScript = cardano.buildAllScript(publicKeyScripts)
     return cardano.getScriptBech32Address(allScript, false)
   }
+
   const scriptAddress = addresses.size > 1 && getScriptAddress()
+
+  type SigScript = { type: 'sig', keyHash: string }
+  type MultiSigScript =
+    | { type: 'all', scripts: SigScript[] }
+    | { type: 'any', scripts: SigScript[] }
+    | { type: 'atLeast', scripts: SigScript[], required: number }
+  const toJSONScript = (): MultiSigScript => {
+    const scripts: SigScript[] = Array.from(addresses, (address) => {
+      const keyHash = getKeyHash(cardano, address)
+      return { type: 'sig', keyHash }
+    })
+    switch (type) {
+      case 'all': return { type, scripts }
+      case 'any': return { type, scripts }
+      case 'atLeast': return { type, scripts, required }
+    }
+  }
 
   return (
     <div className='shadow border rounded-md mb-2'>
@@ -72,7 +95,7 @@ function Result({ addresses, cardano }: ResultProps) {
           </p>
         )}
         <div className='flex border border-blue-600 rounded-sm bg-blue-600 text-white text-sm'>
-          <select className='px-2 py-1 bg-transparent'>
+          <select className='px-2 py-1 bg-transparent' onChange={(e) => setType(e.target.value as MultiSigType)}>
             <option value="all">All</option>
             <option value="any">Any</option>
             <option value="atLeast">At least</option>
@@ -96,7 +119,9 @@ function Result({ addresses, cardano }: ResultProps) {
       )}
       {isJSON && (
         <div className='p-2'>
-          <code className='block p-1 text-sm bg-gray-100 rounded-sm'>a</code>
+          <code className='block p-1 text-sm bg-gray-100 rounded-sm'>
+            {JSON.stringify(toJSONScript(), null, 2)}
+          </code>
         </div>
       )}
     </div>
