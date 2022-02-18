@@ -5,7 +5,6 @@ import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano } from '../../cardano/serialization-lib'
 import { Buffer } from 'buffer'
 import Link from 'next/link'
-import { stringify } from 'querystring'
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
