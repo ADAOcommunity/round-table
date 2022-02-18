@@ -1,12 +1,19 @@
 import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash } from '@emurgo/cardano-serialization-lib-browser'
+import { Buffer } from 'buffer'
 
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
+const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
 class Cardano {
   private _wasm: CardanoWASM
 
   public constructor(wasm: CardanoWASM) {
     this._wasm = wasm
+  }
+
+  public getKeyHash(address: string): string {
+    const bytes = this.getBech32AddressKeyHash(address).to_bytes()
+    return toHex(bytes)
   }
 
   public getBech32AddressKeyHash(bech32Address: string): Ed25519KeyHash {
