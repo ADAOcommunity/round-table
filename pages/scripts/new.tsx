@@ -2,8 +2,7 @@ import type { NextPage } from 'next'
 import { useEffect, useState, ChangeEvent } from 'react'
 import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
-import type { Cardano } from '../../cardano/serialization-lib'
-import { Buffer } from 'buffer'
+import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
 
 const NewScript: NextPage = () => {
@@ -38,42 +37,17 @@ const NewScript: NextPage = () => {
   )
 }
 
-const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
-const getKeyHash = (cardano: Cardano, address: string): string => {
-  const bytes = cardano.getBech32AddressKeyHash(address).to_bytes()
-  return toHex(bytes)
-}
-
 type ResultProps = {
   addresses: Set<string>
   cardano: Cardano
 }
 
 function Result({ addresses, cardano }: ResultProps) {
-  type MultiSigType = 'all' | 'any' | 'atLeast'
-
   const [isJSON, setJSON] = useState(false)
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
 
-  const buildScript = () => {
-    const publicKeyScripts = Array.from(addresses, (address) => {
-      const keyHash = cardano.getBech32AddressKeyHash(address)
-      return cardano.buildPublicKeyScript(keyHash)
-    })
-
-    switch (type) {
-      case 'all': return cardano.buildAllScript(publicKeyScripts);
-      case 'any': return cardano.buildAnyScript(publicKeyScripts)
-      case 'atLeast': return cardano.buildAtLeastScript(publicKeyScripts, required)
-    }
-  }
-
-  const getScriptAddress = (): string => {
-    return cardano.getScriptBech32Address(buildScript(), false)
-  }
-
-  const scriptAddress = addresses.size > 1 && getScriptAddress()
+  const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required)
 
   type SigScript = { type: 'sig', keyHash: string }
   type MultiSigScript =
@@ -82,7 +56,7 @@ function Result({ addresses, cardano }: ResultProps) {
     | { type: 'atLeast', scripts: SigScript[], required: number }
   const toJSONScript = (): MultiSigScript => {
     const scripts: SigScript[] = Array.from(addresses, (address) => {
-      const keyHash = getKeyHash(cardano, address)
+      const keyHash = cardano.getKeyHashHex(address)
       return { type: 'sig', keyHash }
     })
     switch (type) {
@@ -128,7 +102,7 @@ function Result({ addresses, cardano }: ResultProps) {
           {Array.from(addresses, (address) => (
             <li className='p-3' key={address}>
               <p>{address}</p>
-              <p className='text-gray-400'>{getKeyHash(cardano, address)}</p>
+              <p className='text-gray-400'>{cardano.getKeyHashHex(address)}</p>
             </li>
           ))}
         </ul>
@@ -159,7 +133,7 @@ function AddAddress({ cardano, onAdd }: AddAddressProps) {
     setError('')
     setValue(address)
     try {
-      setKeyHash(getKeyHash(cardano, address))
+      setKeyHash(cardano.getKeyHashHex(address))
     } catch {
       setError('Invalid address')
     }

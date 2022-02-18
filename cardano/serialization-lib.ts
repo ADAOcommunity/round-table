@@ -1,6 +1,10 @@
 import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash } from '@emurgo/cardano-serialization-lib-browser'
+import { Buffer } from 'buffer'
 
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
+type MultiSigType = 'all' | 'any' | 'atLeast'
+
+const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
 class Cardano {
   private _wasm: CardanoWASM
@@ -9,7 +13,31 @@ class Cardano {
     this._wasm = wasm
   }
 
-  public getBech32AddressKeyHash(bech32Address: string): Ed25519KeyHash {
+  public getKeyHashHex(address: string): string {
+    const bytes = this.getAddressKeyHash(address).to_bytes()
+    return toHex(bytes)
+  }
+
+  public getMultiSigScriptAddress(addresses: Set<string>, type: MultiSigType, required: number): string {
+    const publicKeyScripts = Array.from(addresses, (address) => {
+      const keyHash = this.getAddressKeyHash(address)
+      return this.buildPublicKeyScript(keyHash)
+    })
+
+    const buildScript = (): NativeScript => {
+      switch (type) {
+        case 'all': return this.buildAllScript(publicKeyScripts)
+        case 'any': return this.buildAnyScript(publicKeyScripts)
+        case 'atLeast': return this.buildAtLeastScript(publicKeyScripts, required)
+      }
+    }
+
+    const { NetworkInfo } = this._wasm
+
+    return this.getScriptAddress(buildScript(), NetworkInfo.testnet())
+  }
+
+  private getAddressKeyHash(bech32Address: string): Ed25519KeyHash {
     const { Address, BaseAddress } = this._wasm
     const address = Address.from_bech32(bech32Address)
     const keyHash = BaseAddress.from_address(address)?.payment_cred().to_keyhash()
@@ -21,50 +49,48 @@ class Cardano {
     return keyHash
   }
 
-  public buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
+  private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
     const { ScriptPubkey, NativeScript } = this._wasm
     return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
   }
 
-  public buildAllScript(scripts: NativeScript[]): NativeScript {
+  private buildAllScript(scripts: NativeScript[]): NativeScript {
     const { ScriptAll, NativeScript } = this._wasm
     return NativeScript.new_script_all(ScriptAll.new(this.buildNativeScripts(scripts)))
   }
 
-  public buildAnyScript(scripts: NativeScript[]): NativeScript {
+  private buildAnyScript(scripts: NativeScript[]): NativeScript {
     const { ScriptAny, NativeScript } = this._wasm
     return NativeScript.new_script_any(ScriptAny.new(this.buildNativeScripts(scripts)))
   }
 
-  public buildAtLeastScript(scripts: NativeScript[], required: number): NativeScript {
+  private buildAtLeastScript(scripts: NativeScript[], required: number): NativeScript {
     const { ScriptNOfK, NativeScript } = this._wasm
     return NativeScript.new_script_n_of_k(ScriptNOfK.new(required, this.buildNativeScripts(scripts)))
   }
 
-  public buildNativeScripts(scripts: NativeScript[]): NativeScripts {
+  private buildNativeScripts(scripts: NativeScript[]): NativeScripts {
     const { NativeScripts } = this._wasm
     const nativeScripts = NativeScripts.new()
     scripts.forEach((script) => {
       nativeScripts.add(script)
     })
     return nativeScripts
-	}
+  }
 
-  public getScriptHash(script: NativeScript): ScriptHash {
+  private getScriptHash(script: NativeScript): ScriptHash {
     const { ScriptHashNamespace } = this._wasm
     return script.hash(ScriptHashNamespace.NativeScript)
   }
 
-  public getScriptHashBaseAddress(scriptHash: ScriptHash, networkInfo: NetworkInfo): BaseAddress {
+  private getScriptHashBaseAddress(scriptHash: ScriptHash, networkInfo: NetworkInfo): BaseAddress {
     const { BaseAddress, StakeCredential } = this._wasm
     const networkId = networkInfo.network_id()
     const credential = StakeCredential.from_scripthash(scriptHash)
     return BaseAddress.new(networkId, credential, credential)
   }
 
-  public getScriptBech32Address(script: NativeScript, isMainnet: boolean): string {
-    const { NetworkInfo } = this._wasm
-    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+  private getScriptAddress(script: NativeScript, networkInfo: NetworkInfo): string {
     const scriptHash = this.getScriptHash(script)
     return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address().to_bech32()
   }
@@ -86,5 +112,5 @@ class Factory {
 
 const CardanoSerializationLib = new Factory()
 
-export type { Cardano }
+export type { Cardano, MultiSigType }
 export { CardanoSerializationLib }
