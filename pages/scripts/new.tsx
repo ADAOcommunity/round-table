@@ -1,14 +1,14 @@
 import type { NextPage } from 'next'
-import { useEffect, useState, ChangeEvent } from 'react'
+import { useEffect, useState, ChangeEvent, useContext } from 'react'
 import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
+import { NetworkContext } from '../../components/network-switch'
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
-  const [isMainnet, setMainnet] = useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -31,8 +31,8 @@ const NewScript: NextPage = () => {
   }
 
   return (
-    <Layout onNetworkSwitch={setMainnet}>
-      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} isMainnet={isMainnet} />}
+    <Layout>
+      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} />}
       {cardano && <AddAddress cardano={cardano} onAdd={onAddAddress} />}
     </Layout>
   )
@@ -41,13 +41,13 @@ const NewScript: NextPage = () => {
 type ResultProps = {
   addresses: Set<string>
   cardano: Cardano
-  isMainnet: boolean
 }
 
-function Result({ addresses, cardano, isMainnet }: ResultProps) {
+function Result({ addresses, cardano }: ResultProps) {
   const [isJSON, setJSON] = useState(false)
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
+  const [isMainnet, _] = useContext(NetworkContext)
 
   const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required, isMainnet)
 
