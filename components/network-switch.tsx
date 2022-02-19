@@ -5,7 +5,7 @@ const NetworkContext = createContext<[boolean, (x: boolean) => void]>([true, (_:
 const NetworkSwitch = () => {
   const [isMainnet, setMainnet] = useContext(NetworkContext)
   return (
-    <div className='flex space-x-2 font-medium text-gray-500'>
+    <div className='flex space-x-2 text-gray-500'>
       <span>Mainnet</span>
       <label className='cursor-pointer'>
         <input
