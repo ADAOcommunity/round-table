@@ -11,14 +11,14 @@ const NewScript: NextPage = () => {
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
 
   useEffect(() => {
-    let mounted = true
+    let isMounted = true
 
     CardanoSerializationLib.load().then((instance) => {
-      mounted && setCardano(instance)
+      isMounted && setCardano(instance)
     })
 
     return () => {
-      mounted = false
+      isMounted = false
     }
   }, [])
 
