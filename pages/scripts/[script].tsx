@@ -58,7 +58,7 @@ type QueryVars = {
 }
 
 const lovelaceValueOf = (utxos: UTxO[]): number => {
-  return utxos.map(({ value }) => parseInt(value)).reduce((p, c) => p + c)
+  return utxos.map(({ value }) => parseInt(value)).reduce((p, c) => p + c, 0)
 }
 
 const Script: NextPage = () => {
@@ -68,11 +68,19 @@ const Script: NextPage = () => {
     variables: { address: script as string }
   })
 
+  if (loading) return (
+    <div className='text-center'>
+      Loading...
+    </div>
+  )
+
+  if (error) return <div>{error}</div>
+
   return (
     <Layout>
       <div className='p-4 rounded-md bg-white'>
         <h1 className='font-medium text-center'>{script}</h1>
-        <h2 className='font-medium text-center'>{data && lovelaceValueOf(data.utxos) / 1e6}&nbsp;₳</h2>
+        <h2 className='font-medium text-center text-lg'>{data && lovelaceValueOf(data.utxos) / 1e6}&nbsp;₳</h2>
       </div>
     </Layout>
   )
