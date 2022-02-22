@@ -1,6 +1,5 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
-import { NetworkSwitch } from './network-switch'
 
 const Layout: NextPage = ({ children }) => {
   return (
@@ -14,7 +13,9 @@ const Layout: NextPage = ({ children }) => {
               </Link>
             </div>
             <div className='p-4'>
-              <NetworkSwitch />
+              <Link href='/config'>
+                <a className='text-base text-gray-500 hover:text-gray-900'>Config</a>
+              </Link>
             </div>
           </nav>
         </div>

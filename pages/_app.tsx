@@ -1,25 +1,31 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
 import { useState } from 'react'
-import { NetworkContext } from '../components/network-switch'
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
+import { Config, ConfigContext, defaultConfig } from '../components/config'
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const [isMainnet, setMainnet] = useState(true)
+  const [config, setConfig] = useState<Config>(defaultConfig)
 
-  const network = isMainnet ? 'mainnet' : 'testnet'
-  const graphQLURI = `https://graphql-api.${network}.dandelion.link/`
-  const apolloClient = new ApolloClient({
-    uri: graphQLURI,
-    cache: new InMemoryCache()
-  })
+  let apolloClient;
+  if (config.queryAPI.type === 'graphql') {
+    apolloClient = new ApolloClient({
+      uri: config.queryAPI.URI,
+      cache: new InMemoryCache()
+    })
+  }
 
   return (
-    <NetworkContext.Provider value={[isMainnet, setMainnet]}>
-      <ApolloProvider client={apolloClient}>
+    <ConfigContext.Provider value={[config, setConfig]}>
+      {apolloClient && (
+        <ApolloProvider client={apolloClient}>
+          <Component {...pageProps} />
+        </ApolloProvider>
+      )}
+      {!apolloClient && (
         <Component {...pageProps} />
-      </ApolloProvider>
-    </NetworkContext.Provider>
+      )}
+    </ConfigContext.Provider>
   )
 }
 
