@@ -28,16 +28,16 @@ const Configure: NextPage = () => {
   const onQueryAPITypeChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const queryAPIType = event.target.value
     switch (queryAPIType) {
+      case 'koios': return setQueryAPI({ type: 'koios' })
       case 'graphql': return setQueryAPI({type: 'graphql', URI: ''})
-      case 'blockfrost': return setQueryAPI({ type: 'blockfrost', projectId: '' })
     }
   }
 
   const queryAPIConfig = (
     <div className='flex border rounded-sm overflow-hidden'>
-      <select className='p-2' value={queryAPI.type} onChange={onQueryAPITypeChange}>
+      <select className='grow p-2' value={queryAPI.type} onChange={onQueryAPITypeChange}>
+        <option value='koios'>Koios</option>
         <option value='graphql'>GraphQL</option>
-        <option value='blockfrost'>Blockfrost</option>
       </select>
       {queryAPI.type == 'graphql' && (
         <input
@@ -46,15 +46,6 @@ const Configure: NextPage = () => {
           className='w-full p-1 outline-none'
           value={queryAPI.URI}
           onChange={(e) => setQueryAPI({ type: 'graphql', URI: e.target.value})}
-        />
-      )}
-      {queryAPI.type == 'blockfrost' && (
-        <input
-          type='url'
-          placeholder='Project ID'
-          className='w-full p-1 outline-none'
-          value={queryAPI.projectId}
-          onChange={(e) => setQueryAPI({ type: 'blockfrost', projectId: e.target.value })}
         />
       )}
     </div>

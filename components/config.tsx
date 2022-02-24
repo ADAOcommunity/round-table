@@ -5,12 +5,11 @@ type GraphQL = {
   URI: string
 }
 
-type Blockfrost = {
-  type: 'blockfrost'
-  projectId: string
+type Koios = {
+  type: 'koios'
 }
 
-type QueryAPI = GraphQL | Blockfrost
+type QueryAPI = GraphQL | Koios
 
 type Config = {
   isMainnet: boolean
@@ -19,10 +18,10 @@ type Config = {
 
 const defaultConfig: Config = {
   isMainnet: true,
-  queryAPI: { type: 'graphql', URI: 'https://graphql-api.mainnet.dandelion.link' }
+  queryAPI: { type: 'koios' }
 }
 
 const ConfigContext = createContext<[Config, (x: Config) => void]>([defaultConfig, (_) => { }])
 
-export type { Config }
+export type { Config, QueryAPI }
 export { ConfigContext, defaultConfig }

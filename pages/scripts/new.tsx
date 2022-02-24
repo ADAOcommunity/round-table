@@ -96,7 +96,7 @@ function Result({ addresses, cardano }: ResultProps) {
       {!scriptAddress && <h2 className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</h2>}
       {scriptAddress && (
         <h2 className='border-b border-gray-100 font-bold text-center p-4'>
-          <Link href={`/scripts/${scriptAddress}`}><a>{scriptAddress}</a></Link>
+          <Link href={`/addresses/${scriptAddress}`}><a>{scriptAddress}</a></Link>
         </h2>
       )}
       {!isJSON && (
