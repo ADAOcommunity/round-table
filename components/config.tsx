@@ -23,5 +23,5 @@ const defaultConfig: Config = {
 
 const ConfigContext = createContext<[Config, (x: Config) => void]>([defaultConfig, (_) => { }])
 
-export type { Config, QueryAPI }
+export type { Config }
 export { ConfigContext, defaultConfig }

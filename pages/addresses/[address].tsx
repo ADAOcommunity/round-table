@@ -1,7 +1,7 @@
 import { gql, useQuery } from '@apollo/client'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { ConfigContext, QueryAPI } from '../../components/config'
+import { Config, ConfigContext } from '../../components/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
 
@@ -12,8 +12,7 @@ query UTxOsByAddress($address: String!) {
       address: {
         _eq: $address
       }
-    }
-  ) {
+    }) {
     txHash
     index
     value
@@ -66,8 +65,8 @@ type BalanceQuery = {
   balance?: Balance
 }
 
-const useBalanceQuery = (address: string, queryAPI: QueryAPI): BalanceQuery => {
-  switch (queryAPI.type) {
+const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
+  switch (config.queryAPI.type) {
     case 'graphql': {
       const { loading, error, data } = useQuery<QueryData, QueryVars>(UTxOsQuery, {
         variables: { address }
@@ -106,7 +105,8 @@ const useBalanceQuery = (address: string, queryAPI: QueryAPI): BalanceQuery => {
         let isMounted = true
 
         const xhr = new XMLHttpRequest()
-        const URL = `https://api.koios.rest/api/v0/address_info?_address=${address}`
+        const host = config.isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
+        const URL = `https://${host}/api/v0/address_info?_address=${address}`
         xhr.open('GET', URL)
         xhr.onload = () => {
           type Info = {
@@ -164,7 +164,7 @@ const Script: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [config, _] = useContext(ConfigContext)
-  const { loading, error, balance } = useBalanceQuery(address as string, config.queryAPI)
+  const { loading, error, balance } = useBalanceQuery(address as string, config)
 
   if (loading) return (
     <div className='text-center'>
