@@ -79,7 +79,8 @@ const useBalanceQuery = (address: string, queryAPI: QueryAPI): BalanceQuery => {
 
       utxos && utxos.forEach(({ tokens }) => {
         tokens.forEach(({ asset, quantity }) => {
-          const key = asset.policyId + asset.assetName
+          const { policyId, assetName } = asset
+          const key = policyId + assetName
           const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
           assets.set(key, value)
         })
@@ -128,7 +129,7 @@ const useBalanceQuery = (address: string, queryAPI: QueryAPI): BalanceQuery => {
 
           info && info.utxo_set.forEach(({ asset_list }) => {
             asset_list.forEach(({ policy_id, asset_name, quantity }) => {
-              const key = policy_id + asset_name
+              const key: string = policy_id + asset_name
               const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
               assets.set(key, value)
             })
@@ -180,12 +181,46 @@ const Script: NextPage = () => {
     return [x, y].join('.')
   }
 
+  const getAssetName = (assetName: string): string => {
+    const buffer = Buffer.from(assetName, 'hex')
+    const decoder = new TextDecoder('ascii')
+    return decoder.decode(buffer)
+  }
+
   if (balance) {
     return (
       <Layout>
         <div className='p-4 rounded-md bg-white'>
           <h1 className='font-medium text-center'>{address}</h1>
           <h2 className='font-medium text-center text-lg'>{toPrecision(balance.lovelace, 6)}&nbsp;₳</h2>
+          <div className='space-y-2'>
+            <label className='flex block border rounded-md overflow-hidden'>
+              <span className='p-2 bg-gray-200'>TO</span>
+              <input className='p-2 block w-full outline-none' placeholder='Address' />
+            </label>
+            <label className='flex block border rounded-md overflow-hidden'>
+              <input className='p-2 block w-full outline-none' placeholder='0.000000' />
+              <span className='p-2 bg-gray-200'>₳</span>
+            </label>
+            <div className='relative'>
+              <button className='block rounded-md bg-gray-200 p-2'>Add Asset</button>
+              <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll'>
+                {Array.from(balance.assets, ([id, quantity]) => (
+                  <li key={id}>
+                    <button className='block w-full h-full px-1 py-2 hover:bg-slate-100'>
+                      <div className='flex space-x-2'>
+                        <span>{getAssetName(id.slice(56))}</span>
+                        <span className='grow text-right'>{quantity.toString()}</span>
+                      </div>
+                      <div className='flex space-x-1'>
+                        <span className='font-mono text-gray-500 text-xs'>{id.slice(0, 56)}</span>
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </Layout>
     )
