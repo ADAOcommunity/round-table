@@ -1,24 +1,24 @@
 import type { NextPage } from 'next'
-import { useEffect, useState, ChangeEvent } from 'react'
+import { useEffect, useState, ChangeEvent, useContext } from 'react'
 import Layout from '../../components/layout'
 import { CardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
+import { ConfigContext } from '../../components/config'
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
-  const [isMainnet, setMainnet] = useState(true)
 
   useEffect(() => {
-    let mounted = true
+    let isMounted = true
 
     CardanoSerializationLib.load().then((instance) => {
-      mounted && setCardano(instance)
+      isMounted && setCardano(instance)
     })
 
     return () => {
-      mounted = false
+      isMounted = false
     }
   }, [])
 
@@ -31,8 +31,8 @@ const NewScript: NextPage = () => {
   }
 
   return (
-    <Layout onNetworkSwitch={setMainnet}>
-      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} isMainnet={isMainnet} />}
+    <Layout>
+      {cardano && addresses.size > 0 && <Result addresses={addresses} cardano={cardano} />}
       {cardano && <AddAddress cardano={cardano} onAdd={onAddAddress} />}
     </Layout>
   )
@@ -41,15 +41,15 @@ const NewScript: NextPage = () => {
 type ResultProps = {
   addresses: Set<string>
   cardano: Cardano
-  isMainnet: boolean
 }
 
-function Result({ addresses, cardano, isMainnet }: ResultProps) {
+function Result({ addresses, cardano }: ResultProps) {
   const [isJSON, setJSON] = useState(false)
   const [type, setType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
+  const [config, _] = useContext(ConfigContext)
 
-  const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required, isMainnet)
+  const scriptAddress = addresses.size > 1 && cardano.getMultiSigScriptAddress(addresses, type, required, config.isMainnet)
 
   type SigScript = { type: 'sig', keyHash: string }
   type MultiSigScript =
@@ -96,7 +96,7 @@ function Result({ addresses, cardano, isMainnet }: ResultProps) {
       {!scriptAddress && <h2 className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</h2>}
       {scriptAddress && (
         <h2 className='border-b border-gray-100 font-bold text-center p-4'>
-          <Link href={`/scripts/${scriptAddress}`}><a>{scriptAddress}</a></Link>
+          <Link href={`/addresses/${scriptAddress}`}><a>{scriptAddress}</a></Link>
         </h2>
       )}
       {!isJSON && (
