@@ -169,6 +169,7 @@ const GetAddress: NextPage = () => {
     quantity: bigint
     max: bigint
   }
+  const [lovelaceInput, setLovelaceInput] = useState(BigInt(0))
   const [assetInputs, setAssetInputs] = useState<AssetInput[]>([])
 
   if (loading) return (
@@ -180,10 +181,12 @@ const GetAddress: NextPage = () => {
   if (error) return <div>An error happened.</div>
 
   const toPrecision = (value: bigint, decimals: number): string => {
-    const mask = BigInt(10 ** decimals)
-    const x = value / mask
-    const y = value - x * mask
-    return [x, y].join('.')
+    const text = value.toString()
+    if (text.length > decimals) {
+      return [text.slice(0, -decimals), text.slice(-decimals)].join('.')
+    } else {
+      return ['0', text.padStart(decimals, '0')].join('.')
+    }
   }
 
   const getAssetName = (assetName: string): string => {
@@ -210,11 +213,20 @@ const GetAddress: NextPage = () => {
               <input className='p-2 block w-full outline-none' placeholder='Address' />
             </label>
             <label className='flex block border rounded-md overflow-hidden'>
-              <input className='p-2 block w-full outline-none' placeholder='0.000000' />
-              <span className='p-2 bg-gray-200'>₳</span>
+              <span className='p-2 bg-gray-200'>Lovelace</span>
+              <input
+                className='p-2 block w-full outline-none'
+                type='number'
+                value={lovelaceInput.toString()}
+                min={1}
+                max={balance.lovelace.toString()}
+                onChange={(e) => setLovelaceInput(BigInt(e.target.value))}
+                placeholder='0.000000' />
+              <button className='p-2 bg-gray-200'>Max:&nbsp;{balance.lovelace.toString()}</button>
             </label>
             {assetInputs.map(({ id, quantity, max }) => (
               <label key={id} className='flex block border rounded-md overflow-hidden'>
+                <span className='p-2 bg-gray-200'>{getAssetName(id.slice(56))}</span>
                 <input
                   onChange={(e) => setAssetInput({ id, max, quantity: BigInt(e.target.value) })}
                   className='p-2 block w-full outline-none'
@@ -224,7 +236,7 @@ const GetAddress: NextPage = () => {
                   max={max.toString()}
                   value={quantity.toString()}
                 />
-                <span className='p-2 bg-gray-200'>{getAssetName(id.slice(56))}</span>
+                <button className='p-2 bg-gray-200'>Max:&nbsp;{max.toString()}</button>
               </label>
             ))}
             <div className='relative'>
