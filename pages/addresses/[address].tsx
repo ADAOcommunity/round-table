@@ -202,8 +202,8 @@ const Script: NextPage = () => {
               <span className='p-2 bg-gray-200'>₳</span>
             </label>
             <div className='relative'>
-              <button className='block rounded-md bg-gray-200 p-2'>Add Asset</button>
-              <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll'>
+              <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
+              <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible peer-focus:visible hover:visible'>
                 {Array.from(balance.assets, ([id, quantity]) => (
                   <li key={id}>
                     <button className='block w-full h-full px-1 py-2 hover:bg-slate-100'>
