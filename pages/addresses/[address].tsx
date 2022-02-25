@@ -106,6 +106,7 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
           })
 
           isMounted && setLoading(false)
+          isMounted && setError(false)
         }).catch(() => {
           isMounted && setError(true)
         })
@@ -151,6 +152,7 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
             })
 
             isMounted && setLoading(false)
+            isMounted && setError(false)
           }).catch(() => {
             isMounted && setError(true)
           })
