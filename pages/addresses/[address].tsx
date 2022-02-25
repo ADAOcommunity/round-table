@@ -4,6 +4,7 @@ import { useRouter } from 'next/router'
 import { Config, ConfigContext } from '../../components/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
+import axios from 'axios'
 
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
@@ -100,60 +101,58 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
       const [loading, setLoading] = useState(true)
       const [error, setError] = useState(false)
       const [balance, setBalance] = useState<Balance | undefined>(undefined)
+      const host = config.isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
+      const koios = axios.create({ baseURL: `https://${host}` })
 
       useEffect(() => {
         let isMounted = true
 
-        const xhr = new XMLHttpRequest()
-        const host = config.isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
-        const URL = `https://${host}/api/v0/address_info?_address=${address}`
-        xhr.open('GET', URL)
-        xhr.onload = () => {
-          type Info = {
-            balance: string
-            stake_address: string
-            utxo_set: {
-              tx_hash: string
-              tx_index: number
-              value: string
-              asset_list: {
-                policy_id: string
-                asset_name: string
-                quantity: string
+        address && koios.get('/api/v0/address_info', { params: { _address: address } })
+          .then(({ data }) => {
+            type Info = {
+              balance: string
+              stake_address: string
+              utxo_set: {
+                tx_hash: string
+                tx_index: number
+                value: string
+                asset_list: {
+                  policy_id: string
+                  asset_name: string
+                  quantity: string
+                }[]
               }[]
-            }[]
-          }
-          const json: Info[] | undefined = JSON.parse(xhr.response)
-          const info: Info | undefined = json && json[0]
-          const assets: AssetBalance = new Map()
+            }
+            const json: Info[] = data
+            const info = json[0]
 
-          info && info.utxo_set.forEach(({ asset_list }) => {
-            asset_list.forEach(({ policy_id, asset_name, quantity }) => {
-              const key: string = policy_id + asset_name
-              const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
-              assets.set(key, value)
+            const assets: AssetBalance = new Map()
+
+            info && info.utxo_set.forEach(({ asset_list }) => {
+              asset_list.forEach(({ policy_id, asset_name, quantity }) => {
+                const key: string = policy_id + asset_name
+                const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
+                assets.set(key, value)
+              })
             })
-          })
 
-          isMounted && info && setBalance({
-            txOutputs: info.utxo_set.map(({ tx_hash, tx_index }) => {
-              return { txHash: tx_hash, index: tx_index }
-            }),
-            lovelace: BigInt(info.balance),
-            assets: assets
-          })
+            isMounted && info && setBalance({
+              txOutputs: info.utxo_set.map(({ tx_hash, tx_index }) => {
+                return { txHash: tx_hash, index: tx_index }
+              }),
+              lovelace: BigInt(info.balance),
+              assets: assets
+            })
 
-          isMounted && info && setLoading(false)
-        }
-        xhr.onerror = () => {
-          isMounted && setError(true)
-        }
-        xhr.send()
+            isMounted && info && setLoading(false)
+          }).catch(() => {
+            isMounted && setError(true)
+          })
 
         return () => {
           isMounted = false
         }
-      }, [])
+      }, [address])
 
       return { loading, error, balance }
     }
