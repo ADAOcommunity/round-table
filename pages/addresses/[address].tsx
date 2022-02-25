@@ -159,7 +159,7 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
   }
 }
 
-const Script: NextPage = () => {
+const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [config, _] = useContext(ConfigContext)
@@ -228,4 +228,4 @@ const Script: NextPage = () => {
   }
 }
 
-export default Script
+export default GetAddress
