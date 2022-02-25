@@ -1,4 +1,4 @@
-import { gql, useQuery } from '@apollo/client'
+import { gql, ApolloClient, InMemoryCache } from '@apollo/client'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Config, ConfigContext } from '../../components/config'
@@ -67,45 +67,53 @@ type BalanceQuery = {
 }
 
 const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
-  switch (config.queryAPI.type) {
-    case 'graphql': {
-      const { loading, error, data } = useQuery<QueryData, QueryVars>(UTxOsQuery, {
-        variables: { address }
-      })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [balance, setBalance] = useState<Balance | undefined>(undefined)
 
-      const assets: AssetBalance = new Map()
+  useEffect(() => {
+    let isMounted = true
 
-      const utxos = data && data.utxos
+    const assets: AssetBalance = new Map()
 
-      utxos && utxos.forEach(({ tokens }) => {
-        tokens.forEach(({ asset, quantity }) => {
-          const { policyId, assetName } = asset
-          const key = policyId + assetName
-          const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
-          assets.set(key, value)
+    switch (config.queryAPI.type) {
+      case 'graphql': {
+        const apollo = new ApolloClient({
+          uri: config.queryAPI.URI,
+          cache: new InMemoryCache()
         })
-      })
 
-      return {
-        loading,
-        error: !!error,
-        balance: utxos && {
-          txOutputs: utxos.map(({ txHash, index }) => { return { txHash, index } }),
-          lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
-          assets
-        }
+        address && apollo.query<QueryData, QueryVars>({
+          query: UTxOsQuery,
+          variables: { address: address }
+        }).then((result) => {
+          const data = result.data
+          const utxos = data && data.utxos
+
+          utxos && utxos.forEach(({ tokens }) => {
+            tokens.forEach(({ asset, quantity }) => {
+              const { policyId, assetName } = asset
+              const key = policyId + assetName
+              const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
+              assets.set(key, value)
+            })
+          })
+
+          isMounted && utxos && setBalance({
+            txOutputs: utxos.map(({ txHash, index }) => { return { txHash, index } }),
+            lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
+            assets
+          })
+
+          isMounted && setLoading(false)
+        }).catch(() => {
+          isMounted && setError(true)
+        })
       }
-    }
 
-    case 'koios': {
-      const [loading, setLoading] = useState(true)
-      const [error, setError] = useState(false)
-      const [balance, setBalance] = useState<Balance | undefined>(undefined)
-      const host = config.isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
-      const koios = axios.create({ baseURL: `https://${host}` })
-
-      useEffect(() => {
-        let isMounted = true
+      case 'koios': {
+        const host = config.isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
+        const koios = axios.create({ baseURL: `https://${host}` })
 
         address && koios.get('/api/v0/address_info', { params: { _address: address } })
           .then(({ data }) => {
@@ -126,8 +134,6 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
             const json: Info[] = data
             const info = json[0]
 
-            const assets: AssetBalance = new Map()
-
             info && info.utxo_set.forEach(({ asset_list }) => {
               asset_list.forEach(({ policy_id, asset_name, quantity }) => {
                 const key: string = policy_id + asset_name
@@ -144,19 +150,19 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
               assets: assets
             })
 
-            isMounted && info && setLoading(false)
+            isMounted && setLoading(false)
           }).catch(() => {
             isMounted && setError(true)
           })
-
-        return () => {
-          isMounted = false
-        }
-      }, [address])
-
-      return { loading, error, balance }
+      }
     }
-  }
+
+    return () => {
+      isMounted = false
+    }
+  }, [address, config])
+
+  return { loading, error, balance }
 }
 
 const GetAddress: NextPage = () => {
