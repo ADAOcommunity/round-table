@@ -5,6 +5,7 @@ import { Config, ConfigContext } from '../../components/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
 import axios from 'axios'
+import { toPrecision, CurrencyInput } from '../../components/currency-input'
 
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
@@ -177,7 +178,7 @@ const GetAddress: NextPage = () => {
     quantity: bigint
     max: bigint
   }
-  const [lovelaceInput, setLovelaceInput] = useState(BigInt(0))
+  const [lovelaceInput, setLovelaceInput] = useState(BigInt(1e6))
   const [assetInputs, setAssetInputs] = useState<AssetInput[]>([])
 
   if (loading) return (
@@ -187,15 +188,6 @@ const GetAddress: NextPage = () => {
   )
 
   if (error) return <div>An error happened.</div>
-
-  const toPrecision = (value: bigint, decimals: number): string => {
-    const text = value.toString()
-    if (text.length > decimals) {
-      return [text.slice(0, -decimals), text.slice(-decimals)].join('.')
-    } else {
-      return ['0', text.padStart(decimals, '0')].join('.')
-    }
-  }
 
   const getAssetName = (assetName: string): string => {
     const buffer = Buffer.from(assetName, 'hex')
@@ -221,30 +213,25 @@ const GetAddress: NextPage = () => {
               <input className='p-2 block w-full outline-none' placeholder='Address' />
             </label>
             <label className='flex block border rounded-md overflow-hidden'>
-              <span className='p-2 bg-gray-200'>Lovelace</span>
-              <input
+              <CurrencyInput
                 className='p-2 block w-full outline-none'
-                type='number'
-                value={lovelaceInput.toString()}
-                min={1}
-                max={balance.lovelace.toString()}
-                onChange={(e) => setLovelaceInput(BigInt(e.target.value))}
+                decimals={6}
+                value={lovelaceInput}
+                onChange={setLovelaceInput}
                 placeholder='0.000000' />
-              <button className='p-2 bg-gray-200'>Max:&nbsp;{balance.lovelace.toString()}</button>
+              <span className='p-2'>₳</span>
+              <button className='p-2 bg-gray-200'>Max</button>
             </label>
             {assetInputs.map(({ id, quantity, max }) => (
               <label key={id} className='flex block border rounded-md overflow-hidden'>
-                <span className='p-2 bg-gray-200'>{getAssetName(id.slice(56))}</span>
-                <input
-                  onChange={(e) => setAssetInput({ id, max, quantity: BigInt(e.target.value) })}
+                <CurrencyInput
+                  decimals={0}
+                  onChange={(value) => setAssetInput({ id, max, quantity: value })}
                   className='p-2 block w-full outline-none'
-                  type="number"
-                  step={1}
-                  min={1}
-                  max={max.toString()}
-                  value={quantity.toString()}
+                  value={quantity}
                 />
-                <button className='p-2 bg-gray-200'>Max:&nbsp;{max.toString()}</button>
+                <span className='p-2'>{getAssetName(id.slice(56))}</span>
+                <button className='p-2 bg-gray-200'>Max</button>
               </label>
             ))}
             <div className='relative'>
