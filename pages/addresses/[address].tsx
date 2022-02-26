@@ -5,7 +5,7 @@ import { Config, ConfigContext } from '../../components/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
 import axios from 'axios'
-import { toPrecision, CurrencyInput } from '../../components/currency-input'
+import { toDecimal, CurrencyInput } from '../../components/currency-input'
 
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
@@ -206,7 +206,7 @@ const GetAddress: NextPage = () => {
       <Layout>
         <div className='p-4 rounded-md bg-white'>
           <h1 className='font-medium text-center'>{address}</h1>
-          <h2 className='font-medium text-center text-lg'>{toPrecision(balance.lovelace, 6)}&nbsp;₳</h2>
+          <h2 className='font-medium text-center text-lg'>{toDecimal(balance.lovelace, 6)}&nbsp;₳</h2>
           <div className='space-y-2'>
             <label className='flex block border rounded-md overflow-hidden'>
               <span className='p-2 bg-gray-200'>TO</span>

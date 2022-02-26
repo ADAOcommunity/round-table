@@ -9,7 +9,7 @@ type Props = {
   placeholder?: string
 }
 
-const toPrecision = (value: bigint, decimals: number): string => {
+const toDecimal = (value: bigint, decimals: number): string => {
   const text = value.toString()
   if (decimals === 0) return text
   if (text.length > decimals) {
@@ -20,7 +20,7 @@ const toPrecision = (value: bigint, decimals: number): string => {
 }
 
 const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
-  const inputValue = toPrecision(value, decimals)
+  const inputValue = toDecimal(value, decimals)
 
   const changeHandle = (event: ChangeEvent<HTMLInputElement>) => {
     const [i, f] = event.target.value.split('.', 2)
@@ -43,4 +43,4 @@ const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
   )
 }
 
-export { toPrecision, CurrencyInput }
+export { toDecimal, CurrencyInput }
