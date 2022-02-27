@@ -48,35 +48,35 @@ type QueryVars = {
   address: string
 }
 
-type AssetBalance = Map<string, bigint>
+type Assets = Map<string, bigint>
 
 type TxOutput = {
   txHash: string
   index: number
 }
 
-type Balance = {
+type Value = {
   lovelace: bigint
-  assets: AssetBalance
+  assets: Assets
 }
 
-type AddressBalance = { txOutputs: TxOutput[] } & Balance
+type Balance = { txOutputs: TxOutput[] } & Value
 
 type BalanceQuery = {
   loading: boolean
   error: boolean
-  addressBalance?: AddressBalance
+  balance?: Balance
 }
 
 const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [addressBalance, setAddressBalance] = useState<AddressBalance | undefined>(undefined)
+  const [balance, setBalance] = useState<Balance | undefined>(undefined)
 
   useEffect(() => {
     let isMounted = true
 
-    const assets: AssetBalance = new Map()
+    const assets: Assets = new Map()
 
     switch (config.queryAPI.type) {
       case 'graphql': {
@@ -101,7 +101,7 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
             })
           })
 
-          isMounted && utxos && setAddressBalance({
+          isMounted && utxos && setBalance({
             txOutputs: utxos.map(({ txHash, index }) => { return { txHash, index } }),
             lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
             assets
@@ -145,7 +145,7 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
               })
             })
 
-            isMounted && info && setAddressBalance({
+            isMounted && info && setBalance({
               txOutputs: info.utxo_set.map(({ tx_hash, tx_index }) => {
                 return { txHash: tx_hash, index: tx_index }
               }),
@@ -166,16 +166,16 @@ const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
     }
   }, [address, config])
 
-  return { loading, error, addressBalance }
+  return { loading, error, balance }
 }
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [config, _] = useContext(ConfigContext)
-  const { loading, error, addressBalance } = useBalanceQuery(address as string, config)
+  const { loading, error, balance } = useBalanceQuery(address as string, config)
 
-  type Recipient = { address: string } & Balance
+  type Recipient = { address: string } & Value
 
   const defaultRecipient = {
     address: '',
@@ -214,7 +214,7 @@ const GetAddress: NextPage = () => {
       symbol: string,
       decimal: number,
       value: bigint,
-      max: string,
+      max: bigint,
       onChange: (_: bigint) => void,
       placeholder?: string
     ) => {
@@ -226,7 +226,7 @@ const GetAddress: NextPage = () => {
             value={value}
             onChange={onChange}
             placeholder={placeholder} />
-          <button>of&nbsp;{max}</button>
+          <button>of&nbsp;{toDecimal(max, decimal)}</button>
           <span className='p-2'>{symbol}</span>
         </label>
       )
@@ -242,12 +242,12 @@ const GetAddress: NextPage = () => {
             onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
             placeholder='Address' />
         </label>
-        {LabeledCurrencyInput('₳', 6, lovelace, toADA(balance.lovelace), setLovelace, '0.000000')}
+        {LabeledCurrencyInput('₳', 6, lovelace, balance.lovelace, setLovelace, '0.000000')}
         {Array.from(assets).map(([id, quantity]) => {
           const symbol = getAssetName(id.slice(56))
           const max = balance.assets.get(id)
           const onChange = (value: bigint) => setAsset(id, value)
-          return max && LabeledCurrencyInput(symbol, 0, quantity, toDecimal(max, 0), onChange)
+          return max && LabeledCurrencyInput(symbol, 0, quantity, max, onChange)
         })}
         <div className='relative'>
           <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
@@ -284,14 +284,12 @@ const GetAddress: NextPage = () => {
     </div>
   )
 
-  if (addressBalance) {
-    const balance = addressBalance
-
+  if (balance) {
     return (
       <Layout>
         <div className='p-4 rounded-md bg-white my-2'>
           <h1 className='font-medium text-center'>{address}</h1>
-          <h2 className='font-medium text-center text-lg'>{toADA(addressBalance.lovelace)}&nbsp;₳</h2>
+          <h2 className='font-medium text-center text-lg'>{toADA(balance.lovelace)}&nbsp;₳</h2>
         </div>
         {recipients.map((recipient, index) => Recipient(recipient, index, balance))}
         <div className='p-4 rounded-md bg-white my-2'>
