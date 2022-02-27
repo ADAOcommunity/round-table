@@ -218,13 +218,18 @@ const GetAddress: NextPage = () => {
       onChange: (_: bigint) => void,
       placeholder?: string
     ) => {
+      const changeHandle = (value: bigint) => {
+        const min = value > max ? max : value
+        onChange(min)
+      }
+
       return (
         <label className='flex block border rounded-md overflow-hidden'>
           <CurrencyInput
             className='p-2 block w-full outline-none'
             decimals={decimal}
             value={value}
-            onChange={onChange}
+            onChange={changeHandle}
             placeholder={placeholder} />
           <button>of&nbsp;{toDecimal(max, decimal)}</button>
           <span className='p-2'>{symbol}</span>
