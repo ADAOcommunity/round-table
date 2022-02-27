@@ -83,7 +83,7 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
     }
 
     return (
-      <div key={index} className='p-4 space-y-2'>
+      <div className='p-4 space-y-2'>
         <label className='flex block border rounded-md overflow-hidden'>
           <span className='p-2 bg-gray-200'>TO</span>
           <input
@@ -142,8 +142,14 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
   }
 
   return (
-    <div className='my-2 rounded-md border bg-white divide-y overflow-hidden shadow'>
-      {recipients.map((recipient, index) => Recipient(recipient, index, balance))}
+    <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
+      <ul className='divide-y'>
+        {recipients.map((recipient, index) => (
+          <li key={index}>
+            {Recipient(recipient, index, balance)}
+          </li>
+        ))}
+      </ul>
       <footer className='p-4 bg-gray-100'>
         <button
           className='p-2 rounded-md bg-blue-200'
