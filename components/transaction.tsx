@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { toDecimal, CurrencyInput } from './currency-input'
+import { toDecimal, CurrencyInput } from './currency'
 
 type Assets = Map<string, bigint>
 

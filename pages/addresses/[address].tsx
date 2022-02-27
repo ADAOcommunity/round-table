@@ -5,9 +5,9 @@ import { Config, ConfigContext } from '../../components/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
 import axios from 'axios'
-import type { Assets, Balance } from '../../components/new-transaction'
-import { NewTransaction } from '../../components/new-transaction'
-import { toADA } from '../../components/currency-input'
+import type { Assets, Balance } from '../../components/transaction'
+import { NewTransaction } from '../../components/transaction'
+import { toADA } from '../../components/currency'
 
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
