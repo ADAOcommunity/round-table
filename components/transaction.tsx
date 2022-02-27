@@ -26,14 +26,41 @@ type NewTransactionProps = {
   balance: Balance
 }
 
+const getAssetName = (assetName: string): string => {
+  const buffer = Buffer.from(assetName, 'hex')
+  const decoder = new TextDecoder('ascii')
+  return decoder.decode(buffer)
+}
+
+const LabeledCurrencyInput = (
+  symbol: string,
+  decimal: number,
+  value: bigint,
+  max: bigint,
+  onChange: (_: bigint) => void,
+  placeholder?: string
+) => {
+  const changeHandle = (value: bigint) => {
+    const min = value > max ? max : value
+    onChange(min)
+  }
+
+  return (
+    <label className='flex block border rounded-md overflow-hidden'>
+      <CurrencyInput
+        className='p-2 block w-full outline-none'
+        decimals={decimal}
+        value={value}
+        onChange={changeHandle}
+        placeholder={placeholder} />
+      <button>of&nbsp;{toDecimal(max, decimal)}</button>
+      <span className='p-2'>{symbol}</span>
+    </label>
+  )
+}
+
 const NewTransaction = ({ balance }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
-
-  const getAssetName = (assetName: string): string => {
-    const buffer = Buffer.from(assetName, 'hex')
-    const decoder = new TextDecoder('ascii')
-    return decoder.decode(buffer)
-  }
 
   const Recipient = (recipient: Recipient, index: number, balance: Balance) => {
     const { address, lovelace, assets } = recipient
@@ -51,32 +78,6 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
         lovelace,
         assets: new Map(assets).set(id, quantity)
       })
-    }
-    const LabeledCurrencyInput = (
-      symbol: string,
-      decimal: number,
-      value: bigint,
-      max: bigint,
-      onChange: (_: bigint) => void,
-      placeholder?: string
-    ) => {
-      const changeHandle = (value: bigint) => {
-        const min = value > max ? max : value
-        onChange(min)
-      }
-
-      return (
-        <label className='flex block border rounded-md overflow-hidden'>
-          <CurrencyInput
-            className='p-2 block w-full outline-none'
-            decimals={decimal}
-            value={value}
-            onChange={changeHandle}
-            placeholder={placeholder} />
-          <button>of&nbsp;{toDecimal(max, decimal)}</button>
-          <span className='p-2'>{symbol}</span>
-        </label>
-      )
     }
 
     return (
