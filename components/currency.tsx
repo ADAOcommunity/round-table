@@ -24,7 +24,7 @@ const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
 
   const changeHandle = (event: ChangeEvent<HTMLInputElement>) => {
     const [i, f] = event.target.value.split('.', 2)
-    const number = BigInt(i + '0'.repeat(decimals)) + BigInt((f || '0').slice(0, decimals).padEnd(decimals, '0'))
+    const number = BigInt(i + (f || '0').slice(0, decimals).padEnd(decimals, '0'))
     onChange(number)
   }
 
