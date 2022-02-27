@@ -43,4 +43,6 @@ const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
   )
 }
 
-export { toDecimal, CurrencyInput }
+const toADA = (lovelace: bigint) => toDecimal(lovelace, 6)
+
+export { toADA, toDecimal, CurrencyInput }

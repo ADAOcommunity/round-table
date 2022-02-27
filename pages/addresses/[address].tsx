@@ -5,7 +5,9 @@ import { Config, ConfigContext } from '../../components/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
 import axios from 'axios'
-import { toDecimal, CurrencyInput } from '../../components/currency-input'
+import type { Assets, Balance } from '../../components/new-transaction'
+import { NewTransaction } from '../../components/new-transaction'
+import { toADA } from '../../components/currency-input'
 
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
@@ -48,27 +50,13 @@ type QueryVars = {
   address: string
 }
 
-type Assets = Map<string, bigint>
-
-type TxOutput = {
-  txHash: string
-  index: number
-}
-
-type Value = {
-  lovelace: bigint
-  assets: Assets
-}
-
-type Balance = { txOutputs: TxOutput[] } & Value
-
 type BalanceQuery = {
   loading: boolean
   error: boolean
   balance?: Balance
 }
 
-const useBalanceQuery = (address: string, config: Config): BalanceQuery => {
+const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [balance, setBalance] = useState<Balance | undefined>(undefined)
@@ -173,113 +161,7 @@ const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [config, _] = useContext(ConfigContext)
-  const { loading, error, balance } = useBalanceQuery(address as string, config)
-
-  type Recipient = { address: string } & Value
-
-  const defaultRecipient = {
-    address: '',
-    lovelace: BigInt(1e6),
-    assets: new Map()
-  }
-
-  const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
-
-  const getAssetName = (assetName: string): string => {
-    const buffer = Buffer.from(assetName, 'hex')
-    const decoder = new TextDecoder('ascii')
-    return decoder.decode(buffer)
-  }
-
-  const toADA = (lovelace: bigint) => toDecimal(lovelace, 6)
-
-  const Recipient = (recipient: Recipient, index: number, balance: Balance) => {
-    const { address, lovelace, assets } = recipient
-    const setRecipient = (newRecipient: Recipient) => {
-      setRecipients(recipients.map((oldRecipient, _index) => {
-        return _index === index ? newRecipient : oldRecipient
-      }))
-    }
-    const setLovelace = (lovelace: bigint) => {
-      setRecipient({ ...recipient, lovelace })
-    }
-    const setAsset = (id: string, quantity: bigint) => {
-      setRecipient({
-        address,
-        lovelace,
-        assets: new Map(assets).set(id, quantity)
-      })
-    }
-    const LabeledCurrencyInput = (
-      symbol: string,
-      decimal: number,
-      value: bigint,
-      max: bigint,
-      onChange: (_: bigint) => void,
-      placeholder?: string
-    ) => {
-      const changeHandle = (value: bigint) => {
-        const min = value > max ? max : value
-        onChange(min)
-      }
-
-      return (
-        <label className='flex block border rounded-md overflow-hidden'>
-          <CurrencyInput
-            className='p-2 block w-full outline-none'
-            decimals={decimal}
-            value={value}
-            onChange={changeHandle}
-            placeholder={placeholder} />
-          <button>of&nbsp;{toDecimal(max, decimal)}</button>
-          <span className='p-2'>{symbol}</span>
-        </label>
-      )
-    }
-
-    return (
-      <div key={index} className='p-4 my-2 rounded-md bg-white space-y-2'>
-        <label className='flex block border rounded-md overflow-hidden'>
-          <span className='p-2 bg-gray-200'>TO</span>
-          <input
-            className='p-2 block w-full outline-none'
-            value={address}
-            onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
-            placeholder='Address' />
-        </label>
-        {LabeledCurrencyInput('₳', 6, lovelace, balance.lovelace, setLovelace, '0.000000')}
-        {Array.from(assets).map(([id, quantity]) => {
-          const symbol = getAssetName(id.slice(56))
-          const max = balance.assets.get(id)
-          const onChange = (value: bigint) => setAsset(id, value)
-          return max && LabeledCurrencyInput(symbol, 0, quantity, max, onChange)
-        })}
-        <div className='relative'>
-          <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
-          <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible peer-focus:visible hover:visible'>
-            {Array.from(balance.assets)
-              .filter(([id, _]) => !assets.has(id))
-              .map(([id, quantity]) => (
-                <li key={id}>
-                  <button
-                    onClick={() => setAsset(id, BigInt(0))}
-                    className='block w-full h-full px-1 py-2 hover:bg-slate-100'
-                  >
-                    <div className='flex space-x-2'>
-                      <span>{getAssetName(id.slice(56))}</span>
-                      <span className='grow text-right'>{quantity.toString()}</span>
-                    </div>
-                    <div className='flex space-x-1'>
-                      <span className='font-mono text-gray-500 text-xs'>{id.slice(0, 56)}</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </div>
-      </div>
-    )
-  }
+  const { loading, error, balance } = useAddressBalanceQuery(address as string, config)
 
   if (error) return <div>An error happened.</div>
 
@@ -296,15 +178,7 @@ const GetAddress: NextPage = () => {
           <h1 className='font-medium text-center'>{address}</h1>
           <h2 className='font-medium text-center text-lg'>{toADA(balance.lovelace)}&nbsp;₳</h2>
         </div>
-        {recipients.map((recipient, index) => Recipient(recipient, index, balance))}
-        <div className='p-4 rounded-md bg-white my-2'>
-          <button
-            className='p-2 rounded-md bg-gray-200'
-            onClick={() => setRecipients(recipients.concat(defaultRecipient))}
-          >
-            Add Recipient
-          </button>
-        </div>
+        <NewTransaction balance={balance} />
       </Layout>
     )
   } else {
