@@ -210,6 +210,27 @@ const GetAddress: NextPage = () => {
         assets: new Map(assets).set(id, quantity)
       })
     }
+    const LabeledCurrencyInput = (
+      symbol: string,
+      decimal: number,
+      value: bigint,
+      max: string,
+      onChange: (_: bigint) => void,
+      placeholder?: string
+    ) => {
+      return (
+        <label className='flex block border rounded-md overflow-hidden'>
+          <CurrencyInput
+            className='p-2 block w-full outline-none'
+            decimals={decimal}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder} />
+          <button>of&nbsp;{max}</button>
+          <span className='p-2'>{symbol}</span>
+        </label>
+      )
+    }
 
     return (
       <div key={index} className='p-4 my-2 rounded-md bg-white space-y-2'>
@@ -221,30 +242,12 @@ const GetAddress: NextPage = () => {
             onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
             placeholder='Address' />
         </label>
-        <label className='flex block border rounded-md overflow-hidden'>
-          <CurrencyInput
-            className='p-2 block w-full outline-none'
-            decimals={6}
-            value={lovelace}
-            onChange={setLovelace}
-            placeholder='0.000000' />
-          <button>of&nbsp;{toADA(balance.lovelace)}</button>
-          <span className='p-2'>₳</span>
-        </label>
+        {LabeledCurrencyInput('₳', 6, lovelace, toADA(balance.lovelace), setLovelace, '0.000000')}
         {Array.from(assets).map(([id, quantity]) => {
+          const symbol = getAssetName(id.slice(56))
           const max = balance.assets.get(id)
-          return (
-            <label key={id} className='flex block border rounded-md overflow-hidden'>
-              <CurrencyInput
-                decimals={0}
-                onChange={(value) => setAsset(id, value)}
-                className='p-2 block w-full outline-none'
-                value={quantity}
-              />
-              {max && <button>of&nbsp;{toDecimal(max, 0)}</button>}
-              <span className='p-2'>{getAssetName(id.slice(56))}</span>
-            </label>
-          )
+          const onChange = (value: bigint) => setAsset(id, value)
+          return max && LabeledCurrencyInput(symbol, 0, quantity, toDecimal(max, 0), onChange)
         })}
         <div className='relative'>
           <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
