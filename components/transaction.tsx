@@ -40,6 +40,7 @@ type LabeledCurrencyInputProps = {
   onChange: (_: bigint) => void
   placeholder?: string
 }
+
 const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   const { decimal, value, onChange, max, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
@@ -55,7 +56,8 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
         value={value}
         onChange={changeHandle}
         placeholder={placeholder} />
-      <button>of&nbsp;{toDecimal(max, decimal)}</button>
+      <span className='py-2 px-1'>of</span>
+      <button onClick={() => onChange(max)} className='underline'>{toDecimal(max, decimal)}</button>
       <span className='p-2'>{symbol}</span>
     </label>
   )
