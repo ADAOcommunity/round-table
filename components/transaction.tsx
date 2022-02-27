@@ -32,14 +32,16 @@ const getAssetName = (assetName: string): string => {
   return decoder.decode(buffer)
 }
 
-const LabeledCurrencyInput = (
-  symbol: string,
-  decimal: number,
-  value: bigint,
-  max: bigint,
-  onChange: (_: bigint) => void,
+type LabeledCurrencyInputProps = {
+  symbol: string
+  decimal: number
+  value: bigint
+  max: bigint
+  onChange: (_: bigint) => void
   placeholder?: string
-) => {
+}
+const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
+  const { decimal, value, onChange, max, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
@@ -81,7 +83,7 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
     }
 
     return (
-      <div key={index} className='p-4 my-2 rounded-md bg-white space-y-2'>
+      <div key={index} className='p-4 space-y-2'>
         <label className='flex block border rounded-md overflow-hidden'>
           <span className='p-2 bg-gray-200'>TO</span>
           <input
@@ -90,16 +92,31 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
             onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
             placeholder='Address' />
         </label>
-        {LabeledCurrencyInput('₳', 6, lovelace, balance.lovelace, setLovelace, '0.000000')}
-        {Array.from(assets).map(([id, quantity]) => {
-          const symbol = getAssetName(id.slice(56))
-          const max = balance.assets.get(id)
-          const onChange = (value: bigint) => setAsset(id, value)
-          return max && LabeledCurrencyInput(symbol, 0, quantity, max, onChange)
-        })}
+        <LabeledCurrencyInput symbol='₳' decimal={6} value={lovelace} max={balance.lovelace} onChange={setLovelace} placeholder='0.000000' />
+        <ul className='space-y-2'>
+          {Array.from(assets).map(([id, quantity]) => {
+            const symbol = getAssetName(id.slice(56))
+            const max = balance.assets.get(id)
+            const onChange = (value: bigint) => setAsset(id, value)
+            if (max) {
+              return (
+                <li key={id}>
+                  <LabeledCurrencyInput
+                    symbol={symbol}
+                    decimal={0}
+                    value={quantity}
+                    max={max}
+                    onChange={onChange} />
+                </li>
+              )
+            } else {
+              return <li></li>
+            }
+          })}
+        </ul>
         <div className='relative'>
           <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
-          <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible peer-focus:visible hover:visible'>
+          <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
             {Array.from(balance.assets)
               .filter(([id, _]) => !assets.has(id))
               .map(([id, quantity]) => (
@@ -125,16 +142,16 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
   }
 
   return (
-    <div>
+    <div className='my-2 rounded-md border bg-white divide-y overflow-hidden shadow'>
       {recipients.map((recipient, index) => Recipient(recipient, index, balance))}
-      <div className='p-4 rounded-md bg-white my-2'>
+      <footer className='p-4 bg-gray-100'>
         <button
-          className='p-2 rounded-md bg-gray-200'
+          className='p-2 rounded-md bg-blue-200'
           onClick={() => setRecipients(recipients.concat(defaultRecipient))}
         >
           Add Recipient
         </button>
-      </div>
+      </footer>
     </div>
   )
 }
