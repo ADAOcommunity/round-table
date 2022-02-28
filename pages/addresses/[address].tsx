@@ -1,7 +1,7 @@
 import { gql, ApolloClient, InMemoryCache } from '@apollo/client'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Config, ConfigContext } from '../../components/config'
+import { Config, ConfigContext } from '../../cardano/config'
 import Layout from '../../components/layout'
 import { useContext, useEffect, useState } from 'react'
 import axios from 'axios'

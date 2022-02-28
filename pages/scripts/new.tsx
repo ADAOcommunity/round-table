@@ -4,7 +4,7 @@ import Layout from '../../components/layout'
 import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
-import { ConfigContext } from '../../components/config'
+import { ConfigContext } from '../../cardano/config'
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())

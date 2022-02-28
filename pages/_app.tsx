@@ -1,7 +1,7 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
 import { useState } from 'react'
-import { Config, ConfigContext, defaultConfig } from '../components/config'
+import { Config, ConfigContext, defaultConfig } from '../cardano/config'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [config, setConfig] = useState<Config>(defaultConfig)
