@@ -22,10 +22,6 @@ const defaultRecipient = {
   assets: new Map()
 }
 
-type NewTransactionProps = {
-  balance: Balance
-}
-
 const getAssetName = (assetName: string): string => {
   const buffer = Buffer.from(assetName, 'hex')
   const decoder = new TextDecoder('ascii')
@@ -63,10 +59,14 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   )
 }
 
+type NewTransactionProps = {
+  balance: Balance
+}
+
 const NewTransaction = ({ balance }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
 
-  const Recipient = (recipient: Recipient, index: number, balance: Balance) => {
+  const Recipient = (recipient: Recipient, index: number, balance: Value) => {
     const { address, lovelace, assets } = recipient
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
