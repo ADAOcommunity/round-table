@@ -66,7 +66,12 @@ type NewTransactionProps = {
 const NewTransaction = ({ balance }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
 
-  const Recipient = (recipient: Recipient, index: number, balance: Value) => {
+  type RecipientProps = {
+    recipient: Recipient
+    index: number
+    balance: Value
+  }
+  const Recipient = ({ recipient, index, balance }: RecipientProps) => {
     const { address, lovelace, assets } = recipient
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
@@ -148,7 +153,7 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
       <ul className='divide-y'>
         {recipients.map((recipient, index) => (
           <li key={index}>
-            {Recipient(recipient, index, balance)}
+            <Recipient recipient={recipient} index={index} balance={balance} />
           </li>
         ))}
       </ul>
