@@ -19,7 +19,7 @@ type Recipient = { address: string, value: Value }
 const defaultRecipient: Recipient = {
   address: '',
   value: {
-    lovelace: BigInt(1e6),
+    lovelace: BigInt(0),
     assets: new Map()
   }
 }
@@ -54,9 +54,11 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
         value={value}
         onChange={changeHandle}
         placeholder={placeholder} />
-      <span className='py-2 px-1'>of</span>
-      <button onClick={() => onChange(max)} className='underline'>{toDecimal(max, decimal)}</button>
       <span className='p-2'>{symbol}</span>
+      <button onClick={() => onChange(max)} className='bg-gray-100 px-1 group hover:space-x-1'>
+        <span>Max</span>
+        <span className='hidden group-hover:inline'>{toDecimal(max, decimal)}</span>
+      </button>
     </label>
   )
 }
@@ -71,9 +73,9 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
   type RecipientProps = {
     recipient: Recipient
     index: number
-    balance: Value
+    budget: Value
   }
-  const Recipient = ({ recipient, index, balance }: RecipientProps) => {
+  const Recipient = ({ recipient, index, budget }: RecipientProps) => {
     const { address, value } = recipient
     const { lovelace, assets } = value
     const setRecipient = (newRecipient: Recipient) => {
@@ -104,33 +106,35 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
             onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
             placeholder='Address' />
         </label>
-        <LabeledCurrencyInput symbol='₳' decimal={6} value={lovelace} max={balance.lovelace} onChange={setLovelace} placeholder='0.000000' />
+        <LabeledCurrencyInput
+          symbol='₳'
+          decimal={6}
+          value={lovelace}
+          max={lovelace + budget.lovelace}
+          onChange={setLovelace}
+          placeholder='0.000000' />
         <ul className='space-y-2'>
           {Array.from(assets).map(([id, quantity]) => {
             const symbol = getAssetName(id.slice(56))
-            const max = balance.assets.get(id)
+            const assetBudget = (budget.assets.get(id) || BigInt(0))
             const onChange = (value: bigint) => setAsset(id, value)
-            if (max) {
-              return (
-                <li key={id}>
-                  <LabeledCurrencyInput
-                    symbol={symbol}
-                    decimal={0}
-                    value={quantity}
-                    max={max}
-                    onChange={onChange} />
-                </li>
-              )
-            } else {
-              return <li></li>
-            }
+            return (
+              <li key={id}>
+                <LabeledCurrencyInput
+                  symbol={symbol}
+                  decimal={0}
+                  value={quantity}
+                  max={quantity + assetBudget}
+                  onChange={onChange} />
+              </li>
+            )
           })}
         </ul>
         <div className='relative'>
           <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
           <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
-            {Array.from(balance.assets)
-              .filter(([id, _]) => !assets.has(id))
+            {Array.from(budget.assets)
+              .filter(([id, quantity]) => !assets.has(id) && quantity > BigInt(0))
               .map(([id, quantity]) => (
                 <li key={id}>
                   <button
@@ -153,12 +157,24 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
     )
   }
 
+  const budget: Value = recipients
+    .map(({ value }) => value)
+    .reduce((result, value) => {
+      const lovelace = result.lovelace - value.lovelace
+      const assets = new Map(result.assets)
+      Array.from(value.assets).forEach(([id, quantity]) => {
+        const _quantity = assets.get(id)
+        _quantity && assets.set(id, _quantity - quantity)
+      })
+      return { lovelace, assets }
+    }, balance.value)
+
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
       <ul className='divide-y'>
         {recipients.map((recipient, index) => (
           <li key={index}>
-            <Recipient recipient={recipient} index={index} balance={balance.value} />
+            <Recipient recipient={recipient} index={index} budget={budget} />
           </li>
         ))}
       </ul>
