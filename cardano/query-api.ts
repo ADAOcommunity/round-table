@@ -266,5 +266,5 @@ const useProtocolParametersQuery = (config: Config) => {
   return protocolParameters
 }
 
-export type { Balance, Value }
+export type { Balance, Value, ProtocolParameters }
 export { useAddressBalanceQuery, useProtocolParametersQuery }

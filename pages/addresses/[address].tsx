@@ -24,16 +24,14 @@ const GetAddress: NextPage = () => {
   if (balance === 'error') return <div>An error happened when query balance.</div>
   if (protocolParameters === 'error') return <div>An error happened when query protocol parameters.</div>
 
-  console.log(protocolParameters)
-
-  if (balance) {
+  if (balance && protocolParameters) {
     return (
       <Layout>
         <div className='p-4 rounded-md bg-white my-2'>
           <h1 className='font-medium text-center'>{address}</h1>
           <h2 className='font-medium text-center text-lg'>{toADA(balance.value.lovelace)}&nbsp;₳</h2>
         </div>
-        <NewTransaction balance={balance} />
+        <NewTransaction balance={balance} protocolParameters={protocolParameters} />
       </Layout>
     )
   } else {
