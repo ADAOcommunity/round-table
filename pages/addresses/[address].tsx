@@ -11,8 +11,8 @@ const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [config, _] = useContext(ConfigContext)
-  const { loading, error, balance } = useAddressBalanceQuery(address as string, config)
   const protocolParameters = useProtocolParametersQuery(config)
+  const balance = useAddressBalanceQuery(address as string, config)
 
   const Loading = () => (
     <div className='text-center'>
@@ -20,18 +20,11 @@ const GetAddress: NextPage = () => {
     </div>
   )
 
-  if (!protocolParameters) return <Loading />
+  if (!(protocolParameters && balance)) return <Loading />
+  if (balance === 'error') return <div>An error happened when query balance.</div>
   if (protocolParameters === 'error') return <div>An error happened when query protocol parameters.</div>
 
   console.log(protocolParameters)
-
-  if (error) return <div>An error happened.</div>
-
-  if (loading) return (
-    <div className='text-center'>
-      Loading...
-    </div>
-  )
 
   if (balance) {
     return (

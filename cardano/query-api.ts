@@ -42,16 +42,8 @@ query UTxOsByAddress($address: String!) {
 }
 `
 
-type BalanceQuery = {
-  loading: boolean
-  error: boolean
-  balance?: Balance
-}
-
-const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery => {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const [balance, setBalance] = useState<Balance | undefined>(undefined)
+const useAddressBalanceQuery = (address: string, config: Config) => {
+  const [balance, setBalance] = useState<Balance | undefined | 'error'>(undefined)
 
   useEffect(() => {
     let isMounted = true
@@ -88,8 +80,7 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
           query: UTxOsQuery,
           variables: { address: address }
         }).then((result) => {
-          const data = result.data
-          const utxos = data && data.utxos
+          const utxos = result.data?.utxos
 
           utxos && utxos.forEach(({ tokens }) => {
             tokens.forEach(({ asset, quantity }) => {
@@ -107,11 +98,8 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
               assets
             }
           })
-
-          isMounted && setLoading(false)
-          isMounted && setError(false)
         }).catch(() => {
-          isMounted && setError(true)
+          isMounted && setBalance('error')
         })
       }
 
@@ -134,8 +122,7 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
                 }[]
               }[]
             }
-            const json: Info[] = data
-            const info = json[0]
+            const info: Info = data?.[0]
 
             info && info.utxo_set.forEach(({ asset_list }) => {
               asset_list.forEach(({ policy_id, asset_name, quantity }) => {
@@ -154,11 +141,8 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
                 assets: assets
               }
             })
-
-            isMounted && setLoading(false)
-            isMounted && setError(false)
           }).catch(() => {
-            isMounted && setError(true)
+            isMounted && setBalance('error')
           })
       }
     }
@@ -168,7 +152,7 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
     }
   }, [address, config])
 
-  return { loading, error, balance }
+  return balance
 }
 
 type ProtocolParameters = {
@@ -223,7 +207,7 @@ const useProtocolParametersQuery = (config: Config) => {
         }
 
         apollo.query<QueryData>({ query: ProtocolParametersQuery }).then((result) => {
-          const params = result?.data?.genesis.shelley.protocolParams
+          const params = result.data?.genesis.shelley.protocolParams
 
           params && isMounted && setProtocolParameters({
             minFeeA: params.minFeeA,
