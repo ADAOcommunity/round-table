@@ -1,19 +1,7 @@
 import { useState } from 'react'
 import { toDecimal, CurrencyInput } from './currency'
+import type { Balance, Value } from '../cardano/query-api'
 
-type Assets = Map<string, bigint>
-
-type TxOutput = {
-  txHash: string
-  index: number
-}
-
-type Value = {
-  lovelace: bigint
-  assets: Assets
-}
-
-type Balance = { txOutputs: TxOutput[], value: Value }
 type Recipient = { address: string, value: Value }
 
 const defaultRecipient: Recipient = {
@@ -199,5 +187,4 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
   )
 }
 
-export type { Assets, Balance }
 export { NewTransaction }
