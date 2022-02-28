@@ -47,7 +47,7 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   }
 
   return (
-    <label className='flex block border rounded-md overflow-hidden'>
+    <label className='flex grow border rounded-md overflow-hidden'>
       <CurrencyInput
         className='p-2 block w-full outline-none'
         decimals={decimal}
@@ -95,6 +95,14 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
         }
       })
     }
+    const deleteAsset = (id: string) => {
+      const newAssets = new Map(assets)
+      newAssets.delete(id)
+      setRecipient({
+        address,
+        value: { ...value, assets: newAssets }
+      })
+    }
 
     return (
       <div className='p-4 space-y-2'>
@@ -119,13 +127,14 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
             const assetBudget = (budget.assets.get(id) || BigInt(0))
             const onChange = (value: bigint) => setAsset(id, value)
             return (
-              <li key={id}>
+              <li key={id} className='flex space-x-2'>
                 <LabeledCurrencyInput
                   symbol={symbol}
                   decimal={0}
                   value={quantity}
                   max={quantity + assetBudget}
                   onChange={onChange} />
+                <button className='px-2 bg-gray-100 rounded-md' onClick={() => deleteAsset(id)}>Del</button>
               </li>
             )
           })}
