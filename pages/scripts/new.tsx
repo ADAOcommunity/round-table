@@ -1,26 +1,14 @@
 import type { NextPage } from 'next'
-import { useEffect, useState, ChangeEvent, useContext } from 'react'
+import { useState, ChangeEvent, useContext } from 'react'
 import Layout from '../../components/layout'
-import { CardanoSerializationLib } from '../../cardano/serialization-lib'
+import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
 import { ConfigContext } from '../../components/config'
 
 const NewScript: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
-  const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
-
-  useEffect(() => {
-    let isMounted = true
-
-    CardanoSerializationLib.load().then((instance) => {
-      isMounted && setCardano(instance)
-    })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
+  const cardano = useCardanoSerializationLib()
 
   const onAddAddress = (address: string) => {
     const state = new Set(addresses)

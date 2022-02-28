@@ -1,5 +1,6 @@
 import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash } from '@emurgo/cardano-serialization-lib-browser'
 import { Buffer } from 'buffer'
+import { useEffect, useState } from 'react'
 
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
@@ -113,5 +114,23 @@ class Factory {
 
 const CardanoSerializationLib = new Factory()
 
+const useCardanoSerializationLib = () => {
+  const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
+
+  useEffect(() => {
+    let isMounted = true
+
+    CardanoSerializationLib.load().then((instance) => {
+      isMounted && setCardano(instance)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return cardano
+}
+
 export type { Cardano, MultiSigType }
-export { CardanoSerializationLib }
+export { useCardanoSerializationLib }
