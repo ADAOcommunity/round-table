@@ -31,25 +31,6 @@ query UTxOsByAddress($address: String!) {
 }
 `
 
-type QueryData = {
-  utxos: {
-    txHash: string
-    index: number
-    value: string
-    tokens: {
-      asset: {
-        policyId: string
-        assetName: string
-      }
-      quantity: string
-    }[]
-  }[]
-}
-
-type QueryVars = {
-  address: string
-}
-
 type BalanceQuery = {
   loading: boolean
   error: boolean
@@ -72,6 +53,25 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
           uri: config.queryAPI.URI,
           cache: new InMemoryCache()
         })
+
+        type QueryData = {
+          utxos: {
+            txHash: string
+            index: number
+            value: string
+            tokens: {
+              asset: {
+                policyId: string
+                assetName: string
+              }
+              quantity: string
+            }[]
+          }[]
+        }
+
+        type QueryVars = {
+          address: string
+        }
 
         address && apollo.query<QueryData, QueryVars>({
           query: UTxOsQuery,
