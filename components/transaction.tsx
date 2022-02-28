@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { toDecimal, CurrencyInput } from './currency'
 import type { Balance, ProtocolParameters, Value } from '../cardano/query-api'
+import { Cardano } from '../cardano/serialization-lib'
 
 type Recipient = { address: string, value: Value }
 
@@ -53,10 +54,11 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
 
 type NewTransactionProps = {
   balance: Balance
+  cardano: Cardano
   protocolParameters: ProtocolParameters
 }
 
-const NewTransaction = ({ balance, protocolParameters }: NewTransactionProps) => {
+const NewTransaction = ({ balance, cardano, protocolParameters }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
 
   console.log(protocolParameters)

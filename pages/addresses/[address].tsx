@@ -6,13 +6,15 @@ import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
 import { toADA } from '../../components/currency'
 import { useAddressBalanceQuery, useProtocolParametersQuery } from '../../cardano/query-api'
+import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
-  const [config, _] = useContext(ConfigContext)
-  const protocolParameters = useProtocolParametersQuery(config)
+  const [ config, _ ] = useContext(ConfigContext)
   const balance = useAddressBalanceQuery(address as string, config)
+  const cardano = useCardanoSerializationLib()
+  const protocolParameters = useProtocolParametersQuery(config)
 
   const Loading = () => (
     <div className='text-center'>
@@ -20,7 +22,7 @@ const GetAddress: NextPage = () => {
     </div>
   )
 
-  if (!(protocolParameters && balance)) return <Loading />
+  if (!(balance && cardano && protocolParameters)) return <Loading />
   if (balance === 'error') return <div>An error happened when query balance.</div>
   if (protocolParameters === 'error') return <div>An error happened when query protocol parameters.</div>
 
@@ -31,7 +33,7 @@ const GetAddress: NextPage = () => {
           <h1 className='font-medium text-center'>{address}</h1>
           <h2 className='font-medium text-center text-lg'>{toADA(balance.value.lovelace)}&nbsp;₳</h2>
         </div>
-        <NewTransaction balance={balance} protocolParameters={protocolParameters} />
+        <NewTransaction balance={balance} cardano={cardano} protocolParameters={protocolParameters} />
       </Layout>
     )
   } else {
