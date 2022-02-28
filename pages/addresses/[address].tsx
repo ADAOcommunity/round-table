@@ -5,13 +5,25 @@ import Layout from '../../components/layout'
 import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
 import { toADA } from '../../components/currency'
-import { useAddressBalanceQuery } from '../../cardano/query-api'
+import { useAddressBalanceQuery, useProtocolParametersQuery } from '../../cardano/query-api'
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [config, _] = useContext(ConfigContext)
   const { loading, error, balance } = useAddressBalanceQuery(address as string, config)
+  const protocolParameters = useProtocolParametersQuery(config)
+
+  const Loading = () => (
+    <div className='text-center'>
+      Loading...
+    </div>
+  )
+
+  if (!protocolParameters) return <Loading />
+  if (protocolParameters === 'error') return <div>An error happened when query protocol parameters.</div>
+
+  console.log(protocolParameters)
 
   if (error) return <div>An error happened.</div>
 
