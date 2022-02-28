@@ -91,8 +91,10 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
 
           isMounted && utxos && setBalance({
             txOutputs: utxos.map(({ txHash, index }) => { return { txHash, index } }),
-            lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
-            assets
+            value: {
+              lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
+              assets
+            }
           })
 
           isMounted && setLoading(false)
@@ -137,8 +139,10 @@ const useAddressBalanceQuery = (address: string, config: Config): BalanceQuery =
               txOutputs: info.utxo_set.map(({ tx_hash, tx_index }) => {
                 return { txHash: tx_hash, index: tx_index }
               }),
-              lovelace: BigInt(info.balance),
-              assets: assets
+              value: {
+                lovelace: BigInt(info.balance),
+                assets: assets
+              }
             })
 
             isMounted && setLoading(false)
@@ -176,7 +180,7 @@ const GetAddress: NextPage = () => {
       <Layout>
         <div className='p-4 rounded-md bg-white my-2'>
           <h1 className='font-medium text-center'>{address}</h1>
-          <h2 className='font-medium text-center text-lg'>{toADA(balance.lovelace)}&nbsp;₳</h2>
+          <h2 className='font-medium text-center text-lg'>{toADA(balance.value.lovelace)}&nbsp;₳</h2>
         </div>
         <NewTransaction balance={balance} />
       </Layout>

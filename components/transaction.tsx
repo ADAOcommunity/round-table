@@ -13,13 +13,15 @@ type Value = {
   assets: Assets
 }
 
-type Balance = { txOutputs: TxOutput[] } & Value
-type Recipient = { address: string } & Value
+type Balance = { txOutputs: TxOutput[], value: Value }
+type Recipient = { address: string, value: Value }
 
-const defaultRecipient = {
+const defaultRecipient: Recipient = {
   address: '',
-  lovelace: BigInt(1e6),
-  assets: new Map()
+  value: {
+    lovelace: BigInt(1e6),
+    assets: new Map()
+  }
 }
 
 const getAssetName = (assetName: string): string => {
@@ -72,20 +74,23 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
     balance: Value
   }
   const Recipient = ({ recipient, index, balance }: RecipientProps) => {
-    const { address, lovelace, assets } = recipient
+    const { address, value } = recipient
+    const { lovelace, assets } = value
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
         return _index === index ? newRecipient : oldRecipient
       }))
     }
     const setLovelace = (lovelace: bigint) => {
-      setRecipient({ ...recipient, lovelace })
+      setRecipient({ ...recipient, value: { ...value, lovelace} })
     }
     const setAsset = (id: string, quantity: bigint) => {
       setRecipient({
         address,
-        lovelace,
-        assets: new Map(assets).set(id, quantity)
+        value: {
+          ...value,
+          assets: new Map(assets).set(id, quantity)
+        }
       })
     }
 
@@ -153,7 +158,7 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
       <ul className='divide-y'>
         {recipients.map((recipient, index) => (
           <li key={index}>
-            <Recipient recipient={recipient} index={index} balance={balance} />
+            <Recipient recipient={recipient} index={index} balance={balance.value} />
           </li>
         ))}
       </ul>
