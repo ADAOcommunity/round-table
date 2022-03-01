@@ -80,7 +80,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       }))
     }
     const setLovelace = (lovelace: bigint) => {
-      setRecipient({ ...recipient, value: { ...value, lovelace} })
+      setRecipient({ ...recipient, value: { ...value, lovelace } })
     }
     const setAsset = (id: string, quantity: bigint) => {
       setRecipient({
@@ -230,12 +230,32 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       const txBody = txBuilder.build()
       submitTx(txBody)
       return { type: 'ok', transaction: txBody }
-    } catch(error) {
+    } catch (error) {
       return {
         type: 'error',
         message: error instanceof Error ? error.message : String(error)
       }
     }
+  }
+  type AppVersion = { major: number; minor: number; patch: number }
+
+  type Experimental = { appVersion: () => AppVersion | undefined; getCollateral: () => Promise<string[] | undefined> }
+
+  type Paginate = { page: number; limit: number; }
+
+  type WalletApi = {
+    experimental: Experimental;
+    getBalance: () => Promise<string>;
+    getChangeAddress: () => Promise<string>;
+    getCollateral?: () => Promise<string[] | undefined>;
+    getNetworkId: () => Promise<number>;
+    getRewardAddresses: () => Promise<string[]>;
+    getUnusedAddresses: () => Promise<string[]>;
+    getUsedAddresses: (paginate?: Paginate) => Promise<string[]>;
+    getUtxos: (amount?: number, paginate?: Paginate | undefined) => Promise<string[]>;
+    signData: (addr: string, sigStructure: any) => Promise<any>;
+    signTx: (tx: string, partialSign: boolean, createDebugTx?: boolean) => Promise<any>;
+    submitTx: (tx: string) => Promise<string>;
   }
 
   const submitTx = async (txBody: TransactionBody, policyScript?: NativeScript) => {
@@ -244,10 +264,10 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       cardano.lib.TransactionWitnessSet.new(),
     );
     const win = window as any
-    const api = await win.cardano.nami.enable()
+    const walletApi: WalletApi = await win.cardano.nami.enable()
     const encodedTx = Buffer.from(transaction.to_bytes()).toString("hex");
 
-    const userSig = await api.signTx(encodedTx, true)
+    const userSig = await walletApi.signTx(encodedTx, true)
 
     const txWitnesses = transaction.witness_set();
     const txVkeys = txWitnesses.vkeys();
@@ -278,29 +298,26 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     const totalWitnesses = cardano.lib.TransactionWitnessSet.new();
     totalWitnesses.set_vkeys(totalVkeys);
 
-    if(policyScript) {
+    if (policyScript) {
       totalScripts.add(policyScript);
       totalWitnesses.set_native_scripts(totalScripts);
     }
 
     const newSignedTx = cardano.lib.Transaction.new(
       txBody,
-      totalWitnesses,
-      // witnesses
-      // cardano.lib.TransactionWitnessSet.new(),
+      totalWitnesses
     );
     console.log("userSig")
     console.log(userSig)
 
     console.log("newSignedTx")
     console.log(newSignedTx)
-    
-    const submitRes = await api.submitTx(
-      Buffer.from(newSignedTx.to_bytes()).toString("hex"),
-      true
-    );
+
+    const submitRes = await walletApi.submitTx(
+      Buffer.from(newSignedTx.to_bytes()).toString("hex")
+    )
     console.log('api')
-    console.log(api)
+    console.log(walletApi)
     console.log('submitRes')
     console.log(submitRes)
   }
@@ -321,14 +338,14 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
         >
           Add Recipient
         </button>
-        
+
         <button
           className='p-2 rounded-md bg-blue-200'
           onClick={() => console.log(buildTransaction())}
         >
           Build tx
         </button>
-        
+
       </footer>
     </div>
   )
