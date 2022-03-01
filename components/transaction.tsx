@@ -4,7 +4,14 @@ import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-ap
 import { Cardano } from '../cardano/serialization-lib'
 import type { TransactionBody } from '@emurgo/cardano-serialization-lib-browser'
 
-type Recipient = { address: string, value: Value }
+type Result<T> =
+  | { type: 'ok', data: T }
+  | { type: 'error', message: string }
+
+type Recipient = {
+  address: string
+  value: Value
+}
 
 const defaultRecipient: Recipient = {
   address: '',
@@ -176,7 +183,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     }, getBalance(utxos))
 
 
-  const buildTransaction = (): { type: 'ok', transaction: TransactionBody } | { type: 'error', message: string } => {
+  const buildTransaction = (): Result<TransactionBody> => {
     try {
       const txBuilder = cardano.createTxBuilder(protocolParameters)
       const { Address, AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
@@ -227,7 +234,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       txBuilder.add_inputs_from(utxosSet, cardano.lib.CoinSelectionStrategyCIP2.LargestFirstMultiAsset)
       txBuilder.add_change_if_needed(utxosAddress)
 
-      return { type: 'ok', transaction: txBuilder.build() }
+      return { type: 'ok', data: txBuilder.build() }
     } catch(error) {
       return {
         type: 'error',
