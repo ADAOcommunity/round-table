@@ -12,6 +12,8 @@ const GetAddress: NextPage = () => {
   const { address } = router.query
   const [ config, _ ] = useContext(ConfigContext)
   const utxos = useAddressUTxOsQuery(address as string, config)
+  console.log("utxos")
+  console.log(utxos)
   const cardano = useCardanoSerializationLib()
   const protocolParameters = useProtocolParametersQuery(config)
 

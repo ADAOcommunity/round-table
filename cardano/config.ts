@@ -17,7 +17,7 @@ type Config = {
 }
 
 const defaultConfig: Config = {
-  isMainnet: true,
+  isMainnet: false,
   queryAPI: { type: 'koios' }
 }
 

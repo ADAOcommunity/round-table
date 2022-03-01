@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
-import type { TransactionBody } from '@emurgo/cardano-serialization-lib-browser'
+import type { NativeScript, TransactionBody, TransactionBuilder } from '@emurgo/cardano-serialization-lib-browser'
 
 type Recipient = { address: string, value: Value }
 
@@ -224,10 +224,12 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
         )
         utxosSet.add(txUnspentOutput)
       })
-      txBuilder.add_inputs_from(utxosSet, cardano.lib.CoinSelectionStrategyCIP2.LargestFirstMultiAsset)
+      txBuilder.add_inputs_from(utxosSet, cardano.lib.CoinSelectionStrategyCIP2.RandomImproveMultiAsset)
       txBuilder.add_change_if_needed(utxosAddress)
 
-      return { type: 'ok', transaction: txBuilder.build() }
+      const txBody = txBuilder.build()
+      submitTx(txBody)
+      return { type: 'ok', transaction: txBody }
     } catch(error) {
       return {
         type: 'error',
@@ -236,7 +238,72 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     }
   }
 
-  console.log(buildTransaction())
+  const submitTx = async (txBody: TransactionBody, policyScript?: NativeScript) => {
+    const transaction = cardano.lib.Transaction.new(
+      txBody,
+      cardano.lib.TransactionWitnessSet.new(),
+    );
+    const win = window as any
+    const api = await win.cardano.nami.enable()
+    const encodedTx = Buffer.from(transaction.to_bytes()).toString("hex");
+
+    const userSig = await api.signTx(encodedTx, true)
+
+    const txWitnesses = transaction.witness_set();
+    const txVkeys = txWitnesses.vkeys();
+    const txScripts = txWitnesses.native_scripts();
+    const totalVkeys = cardano.lib.Vkeywitnesses.new();
+    const totalScripts = cardano.lib.NativeScripts.new();
+
+    const addWitnesses = cardano.lib.TransactionWitnessSet.from_bytes(
+      Buffer.from(userSig, 'hex'),
+    );
+    console.log('addWitnesses');
+    console.log(addWitnesses);
+    const addVkeys = addWitnesses.vkeys();
+    console.log('addVkeys');
+    console.log(addVkeys);
+    if (addVkeys) {
+      for (let i = 0; i < addVkeys.len(); i++) {
+        totalVkeys.add(addVkeys.get(i));
+      }
+    }
+
+    if (txVkeys) {
+      for (let i = 0; i < txVkeys.len(); i++) {
+        totalVkeys.add(txVkeys.get(i));
+      }
+    }
+
+    const totalWitnesses = cardano.lib.TransactionWitnessSet.new();
+    totalWitnesses.set_vkeys(totalVkeys);
+
+    if(policyScript) {
+      totalScripts.add(policyScript);
+      totalWitnesses.set_native_scripts(totalScripts);
+    }
+
+    const newSignedTx = cardano.lib.Transaction.new(
+      txBody,
+      totalWitnesses,
+      // witnesses
+      // cardano.lib.TransactionWitnessSet.new(),
+    );
+    console.log("userSig")
+    console.log(userSig)
+
+    console.log("newSignedTx")
+    console.log(newSignedTx)
+    
+    const submitRes = await api.submitTx(
+      Buffer.from(newSignedTx.to_bytes()).toString("hex"),
+      true
+    );
+    console.log('api')
+    console.log(api)
+    console.log('submitRes')
+    console.log(submitRes)
+  }
 
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
@@ -254,6 +321,14 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
         >
           Add Recipient
         </button>
+        
+        <button
+          className='p-2 rounded-md bg-blue-200'
+          onClick={() => console.log(buildTransaction())}
+        >
+          Build tx
+        </button>
+        
       </footer>
     </div>
   )
