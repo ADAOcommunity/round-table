@@ -4,15 +4,14 @@ import { ConfigContext } from '../../cardano/config'
 import Layout from '../../components/layout'
 import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
-import { toADA } from '../../components/currency'
-import { useAddressBalanceQuery, useProtocolParametersQuery } from '../../cardano/query-api'
+import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
 import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
   const [ config, _ ] = useContext(ConfigContext)
-  const balance = useAddressBalanceQuery(address as string, config)
+  const utxos = useAddressUTxOsQuery(address as string, config)
   const cardano = useCardanoSerializationLib()
   const protocolParameters = useProtocolParametersQuery(config)
 
@@ -22,23 +21,20 @@ const GetAddress: NextPage = () => {
     </div>
   )
 
-  if (!(balance && cardano && protocolParameters)) return <Loading />
-  if (balance === 'error') return <div>An error happened when query balance.</div>
-  if (protocolParameters === 'error') return <div>An error happened when query protocol parameters.</div>
+  if (!cardano) return <div className='text-center'>Loading Cardano Serialization Lib</div>
+  if (utxos.type === 'loading') return <Loading />
+  if (protocolParameters.type === 'loading') return <Loading />
+  if (utxos.type === 'error') return <div>An error happened when query balance.</div>
+  if (protocolParameters.type === 'error') return <div>An error happened when query protocol parameters.</div>
 
-  if (balance && protocolParameters) {
-    return (
-      <Layout>
-        <div className='p-4 rounded-md bg-white my-2'>
-          <h1 className='font-medium text-center'>{address}</h1>
-          <h2 className='font-medium text-center text-lg'>{toADA(balance.value.lovelace)}&nbsp;₳</h2>
-        </div>
-        <NewTransaction balance={balance} cardano={cardano} protocolParameters={protocolParameters} />
-      </Layout>
-    )
-  } else {
-    return <div>No content</div>
-  }
+  return (
+    <Layout>
+      <div className='p-4 rounded-md bg-white my-2'>
+        <h1 className='font-medium text-center'>{address}</h1>
+      </div>
+      <NewTransaction cardano={cardano} protocolParameters={protocolParameters.data} utxos={utxos.data} />
+    </Layout>
+  )
 }
 
 export default GetAddress

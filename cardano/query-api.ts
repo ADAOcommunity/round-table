@@ -8,26 +8,47 @@ const createKoios = (config: Config) => axios.create({ baseURL: `https://${getKo
 
 type Assets = Map<string, bigint>
 
-type TxOutput = {
-  txHash: string
-  index: number
-}
-
 type Value = {
   lovelace: bigint
   assets: Assets
 }
 
-type Balance = { txOutputs: TxOutput[], value: Value }
+type UTxO = {
+  txHash: string
+  index: number
+  lovelace: bigint
+  assets: {
+    policyId: string
+    assetName: string
+    quantity: bigint
+  }[]
+}
+
+const getBalance = (utxos: UTxO[]): Value => {
+  const assets: Assets = new Map()
+
+  utxos && utxos.forEach((utxo) => {
+    utxo.assets.forEach(({ policyId, assetName, quantity }) => {
+      const id = policyId + assetName
+      const value = (assets.get(id) || BigInt(0)) + BigInt(quantity)
+      assets.set(id, value)
+    })
+  })
+
+  return {
+    lovelace: utxos.map(({ lovelace }) => BigInt(lovelace)).reduce((acc, v) => acc + v, BigInt(0)),
+    assets
+  }
+}
+
+type QueryResult<T> =
+  | { type: 'ok', data: T }
+  | { type: 'loading' }
+  | { type: 'error' }
 
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
-  utxos(
-    where: {
-      address: {
-        _eq: $address
-      }
-    }) {
+  utxos(where: { address: { _eq: $address } }) {
     txHash
     index
     value
@@ -41,13 +62,11 @@ query UTxOsByAddress($address: String!) {
   }
 }`
 
-const useAddressBalanceQuery = (address: string, config: Config) => {
-  const [balance, setBalance] = useState<Balance | undefined | 'error'>(undefined)
+const useAddressUTxOsQuery = (address: string, config: Config) => {
+  const [result, setResult] = useState<QueryResult<UTxO[]>>({ type: 'loading' })
 
   useEffect(() => {
     let isMounted = true
-
-    const assets: Assets = new Map()
 
     switch (config.queryAPI.type) {
       case 'graphql': {
@@ -81,24 +100,25 @@ const useAddressBalanceQuery = (address: string, config: Config) => {
         }).then(({ data }) => {
           const utxos = data?.utxos
 
-          utxos && utxos.forEach(({ tokens }) => {
-            tokens.forEach(({ asset, quantity }) => {
-              const { policyId, assetName } = asset
-              const key = policyId + assetName
-              const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
-              assets.set(key, value)
+          isMounted && utxos && setResult({
+            type: 'ok',
+            data: utxos.map((utxo) => {
+              return {
+                txHash: utxo.txHash,
+                index: utxo.index,
+                lovelace: BigInt(utxo.value),
+                assets: utxo.tokens.map(({ asset, quantity }) => {
+                  return {
+                    policyId: asset.policyId,
+                    assetName: asset.assetName,
+                    quantity: BigInt(quantity)
+                  }
+                })
+              }
             })
           })
-
-          isMounted && utxos && setBalance({
-            txOutputs: utxos.map(({ txHash, index }) => { return { txHash, index } }),
-            value: {
-              lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
-              assets
-            }
-          })
         }).catch(() => {
-          isMounted && setBalance('error')
+          isMounted && setResult({ type: 'error' })
         })
       }
 
@@ -123,25 +143,25 @@ const useAddressBalanceQuery = (address: string, config: Config) => {
             }
             const info: Info = data?.[0]
 
-            info && info.utxo_set.forEach(({ asset_list }) => {
-              asset_list.forEach(({ policy_id, asset_name, quantity }) => {
-                const key: string = policy_id + asset_name
-                const value = (assets.get(key) || BigInt(0)) + BigInt(quantity)
-                assets.set(key, value)
+            isMounted && info && setResult({
+              type: 'ok',
+              data: info.utxo_set.map((utxo) => {
+                return {
+                  txHash: utxo.tx_hash,
+                  index: utxo.tx_index,
+                  lovelace: BigInt(utxo.value),
+                  assets: utxo.asset_list.map((asset) => {
+                    return {
+                      policyId: asset.policy_id,
+                      assetName: asset.asset_name,
+                      quantity: BigInt(asset.quantity)
+                    }
+                  })
+                }
               })
             })
-
-            isMounted && info && setBalance({
-              txOutputs: info.utxo_set.map(({ tx_hash, tx_index }) => {
-                return { txHash: tx_hash, index: tx_index }
-              }),
-              value: {
-                lovelace: BigInt(info.balance),
-                assets: assets
-              }
-            })
           }).catch(() => {
-            isMounted && setBalance('error')
+            isMounted && setResult({ type: 'error' })
           })
       }
     }
@@ -151,7 +171,7 @@ const useAddressBalanceQuery = (address: string, config: Config) => {
     }
   }, [address, config])
 
-  return balance
+  return result
 }
 
 type ProtocolParameters = {
@@ -182,7 +202,7 @@ query getProtocolParameters {
 }`
 
 const useProtocolParametersQuery = (config: Config) => {
-  const [protocolParameters, setProtocolParameters] = useState<ProtocolParameters | undefined | 'error'>(undefined)
+  const [result, setResult] = useState<QueryResult<ProtocolParameters>>({ type: 'loading' })
 
   useEffect(() => {
     let isMounted = true
@@ -213,17 +233,20 @@ const useProtocolParametersQuery = (config: Config) => {
         apollo.query<QueryData>({ query: ProtocolParametersQuery }).then(({ data }) => {
           const params = data?.genesis.shelley.protocolParams
 
-          params && isMounted && setProtocolParameters({
-            minFeeA: params.minFeeA,
-            minFeeB: params.minFeeB,
-            poolDeposit: params.poolDeposit,
-            keyDeposit: params.keyDeposit,
-            coinsPerUtxoWord: params.coinsPerUtxoWord,
-            maxValSize: parseFloat(params.maxValSize),
-            maxTxSize: params.maxTxSize
+          params && isMounted && setResult({
+            type: 'ok',
+            data: {
+              minFeeA: params.minFeeA,
+              minFeeB: params.minFeeB,
+              poolDeposit: params.poolDeposit,
+              keyDeposit: params.keyDeposit,
+              coinsPerUtxoWord: params.coinsPerUtxoWord,
+              maxValSize: parseFloat(params.maxValSize),
+              maxTxSize: params.maxTxSize
+            }
           })
         }).catch(() => {
-          isMounted && setProtocolParameters('error')
+          isMounted && setResult({ type: 'error' })
         })
       }
 
@@ -250,20 +273,23 @@ const useProtocolParametersQuery = (config: Config) => {
               max_tx_size: number
             }
             const params: KoiosProtocolParameters = data?.[0]
-            params && isMounted && setProtocolParameters({
-              minFeeA: params.min_fee_a,
-              minFeeB: params.min_fee_b,
-              poolDeposit: params.pool_deposit,
-              keyDeposit: params.key_deposit,
-              coinsPerUtxoWord: params.coins_per_utxo_word,
-              maxValSize: params.max_val_size,
-              maxTxSize: params.max_tx_size
+            params && isMounted && setResult({
+              type: 'ok',
+              data: {
+                minFeeA: params.min_fee_a,
+                minFeeB: params.min_fee_b,
+                poolDeposit: params.pool_deposit,
+                keyDeposit: params.key_deposit,
+                coinsPerUtxoWord: params.coins_per_utxo_word,
+                maxValSize: params.max_val_size,
+                maxTxSize: params.max_tx_size
+              }
             })
           }).catch(() => {
-            isMounted && setProtocolParameters('error')
+            isMounted && setResult({ type: 'error' })
           })
         }).catch(() => {
-          isMounted && setProtocolParameters('error')
+          isMounted && setResult({ type: 'error' })
         })
       }
     }
@@ -273,8 +299,8 @@ const useProtocolParametersQuery = (config: Config) => {
     }
   }, [config])
 
-  return protocolParameters
+  return result
 }
 
-export type { Balance, Value, ProtocolParameters }
-export { useAddressBalanceQuery, useProtocolParametersQuery }
+export type { Value, ProtocolParameters, UTxO }
+export { getBalance, useAddressUTxOsQuery, useProtocolParametersQuery }
