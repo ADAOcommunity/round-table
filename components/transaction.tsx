@@ -2,11 +2,8 @@ import { useState } from 'react'
 import { toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
+import type { Result } from '../cardano/serialization-lib'
 import type { TransactionBody } from '@emurgo/cardano-serialization-lib-browser'
-
-type Result<T> =
-  | { type: 'ok', data: T }
-  | { type: 'error', message: string }
 
 type Recipient = {
   address: string

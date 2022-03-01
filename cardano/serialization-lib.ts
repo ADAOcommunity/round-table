@@ -1,4 +1,4 @@
-import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder } from '@emurgo/cardano-serialization-lib-browser'
 import { Buffer } from 'buffer'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
@@ -7,6 +7,10 @@ type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
 
 const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
+
+type Result<T> =
+  | { type: 'ok', data: T }
+  | { type: 'error', message: string }
 
 class Cardano {
   private _wasm: CardanoWASM
@@ -17,6 +21,20 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public buildAddress(bech32Address: string): Result<Address> {
+    try {
+      return {
+        type: 'ok',
+        data: this.lib.Address.from_bech32(bech32Address)
+      }
+    } catch(error) {
+      return {
+        type: 'error',
+        message: error instanceof Error ? error.message : String(error)
+      }
+    }
   }
 
   public getKeyHashHex(address: string): string {
@@ -47,7 +65,7 @@ class Cardano {
   public createTxBuilder(protocolParameters: ProtocolParameters): TransactionBuilder {
     const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
-            coinsPerUtxoWord, maxTxSize, maxValSize } = protocolParameters
+      coinsPerUtxoWord, maxTxSize, maxValSize } = protocolParameters
     const toBigNum = (value: number) => BigNum.from_str(value.toString())
     const config = TransactionBuilderConfigBuilder.new()
       .fee_algo(LinearFee.new(toBigNum(minFeeA), toBigNum(minFeeB)))
@@ -153,5 +171,5 @@ const useCardanoSerializationLib = () => {
   return cardano
 }
 
-export type { Cardano, MultiSigType }
+export type { Cardano, Result, MultiSigType }
 export { useCardanoSerializationLib }
