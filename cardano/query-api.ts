@@ -39,8 +39,7 @@ query UTxOsByAddress($address: String!) {
       quantity
     }
   }
-}
-`
+}`
 
 const useAddressBalanceQuery = (address: string, config: Config) => {
   const [balance, setBalance] = useState<Balance | undefined | 'error'>(undefined)
@@ -79,8 +78,8 @@ const useAddressBalanceQuery = (address: string, config: Config) => {
         address && apollo.query<QueryData, QueryVars>({
           query: UTxOsQuery,
           variables: { address: address }
-        }).then((result) => {
-          const utxos = result.data?.utxos
+        }).then(({ data }) => {
+          const utxos = data?.utxos
 
           utxos && utxos.forEach(({ tokens }) => {
             tokens.forEach(({ asset, quantity }) => {
@@ -158,26 +157,29 @@ const useAddressBalanceQuery = (address: string, config: Config) => {
 type ProtocolParameters = {
   minFeeA: number
   minFeeB: number
-  minUTxOValue: number
   poolDeposit: number
   keyDeposit: number
+  coinsPerUtxoWord: number
+  maxValSize: string
+  maxTxSize: number
 }
 
 const ProtocolParametersQuery = gql`
 query getProtocolParameters {
-  genesis {
-    shelley {
+  cardano {
+    currentEpoch {
       protocolParams {
         minFeeA
         minFeeB
-        minUTxOValue
         poolDeposit
         keyDeposit
+        coinsPerUtxoWord
+        maxValSize
+        maxTxSize
       }
     }
   }
-}
-`
+}`
 
 const useProtocolParametersQuery = (config: Config) => {
   const [protocolParameters, setProtocolParameters] = useState<ProtocolParameters | undefined | 'error'>(undefined)
@@ -198,23 +200,27 @@ const useProtocolParametersQuery = (config: Config) => {
               protocolParams: {
                 minFeeA: number
                 minFeeB: number
-                minUTxOValue: number
                 poolDeposit: number
                 keyDeposit: number
+                coinsPerUtxoWord: number
+                maxValSize: string
+                maxTxSize: number
               }
             }
           }
         }
 
-        apollo.query<QueryData>({ query: ProtocolParametersQuery }).then((result) => {
-          const params = result.data?.genesis.shelley.protocolParams
+        apollo.query<QueryData>({ query: ProtocolParametersQuery }).then(({ data }) => {
+          const params = data?.genesis.shelley.protocolParams
 
           params && isMounted && setProtocolParameters({
             minFeeA: params.minFeeA,
             minFeeB: params.minFeeB,
-            minUTxOValue: params.minUTxOValue,
             poolDeposit: params.poolDeposit,
-            keyDeposit: params.keyDeposit
+            keyDeposit: params.keyDeposit,
+            coinsPerUtxoWord: params.coinsPerUtxoWord,
+            maxValSize: params.maxValSize,
+            maxTxSize: params.maxTxSize
           })
         }).catch(() => {
           isMounted && setProtocolParameters('error')
@@ -239,15 +245,19 @@ const useProtocolParametersQuery = (config: Config) => {
               min_fee_b: number
               key_deposit: number
               pool_deposit: number
-              min_utxo_value: number
+              coins_per_utxo_word: number
+              max_val_size: number
+              max_tx_size: number
             }
             const params: KoiosProtocolParameters = data?.[0]
             params && isMounted && setProtocolParameters({
               minFeeA: params.min_fee_a,
               minFeeB: params.min_fee_b,
-              minUTxOValue: params.min_utxo_value,
               poolDeposit: params.pool_deposit,
-              keyDeposit: params.key_deposit
+              keyDeposit: params.key_deposit,
+              coinsPerUtxoWord: params.coins_per_utxo_word,
+              maxValSize: params.max_val_size.toString(),
+              maxTxSize: params.max_tx_size
             })
           }).catch(() => {
             isMounted && setProtocolParameters('error')
