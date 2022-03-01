@@ -1,6 +1,7 @@
-import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash } from '@emurgo/cardano-serialization-lib-browser'
+import type { BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder } from '@emurgo/cardano-serialization-lib-browser'
 import { Buffer } from 'buffer'
 import { useEffect, useState } from 'react'
+import { ProtocolParameters } from './query-api'
 
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
@@ -41,6 +42,22 @@ class Cardano {
     const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
 
     return this.getScriptAddress(buildScript(), networkInfo)
+  }
+
+  public createTxBuilder(protocolParameters: ProtocolParameters): TransactionBuilder {
+    const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
+    const { minFeeA, minFeeB, poolDeposit, keyDeposit,
+            coinsPerUtxoWord, maxTxSize, maxValSize } = protocolParameters
+    const toBigNum = (value: number) => BigNum.from_str(value.toString())
+    const config = TransactionBuilderConfigBuilder.new()
+      .fee_algo(LinearFee.new(toBigNum(minFeeA), toBigNum(minFeeB)))
+      .pool_deposit(toBigNum(poolDeposit))
+      .key_deposit(toBigNum(keyDeposit))
+      .coins_per_utxo_word(toBigNum(coinsPerUtxoWord))
+      .max_tx_size(maxTxSize)
+      .max_value_size(maxValSize)
+      .build()
+    return TransactionBuilder.new(config)
   }
 
   private getAddressKeyHash(bech32Address: string): Ed25519KeyHash {

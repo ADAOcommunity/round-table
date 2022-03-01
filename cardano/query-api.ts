@@ -160,7 +160,7 @@ type ProtocolParameters = {
   poolDeposit: number
   keyDeposit: number
   coinsPerUtxoWord: number
-  maxValSize: string
+  maxValSize: number
   maxTxSize: number
 }
 
@@ -219,7 +219,7 @@ const useProtocolParametersQuery = (config: Config) => {
             poolDeposit: params.poolDeposit,
             keyDeposit: params.keyDeposit,
             coinsPerUtxoWord: params.coinsPerUtxoWord,
-            maxValSize: params.maxValSize,
+            maxValSize: parseFloat(params.maxValSize),
             maxTxSize: params.maxTxSize
           })
         }).catch(() => {
@@ -256,7 +256,7 @@ const useProtocolParametersQuery = (config: Config) => {
               poolDeposit: params.pool_deposit,
               keyDeposit: params.key_deposit,
               coinsPerUtxoWord: params.coins_per_utxo_word,
-              maxValSize: params.max_val_size.toString(),
+              maxValSize: params.max_val_size,
               maxTxSize: params.max_tx_size
             })
           }).catch(() => {
