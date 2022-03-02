@@ -8,7 +8,7 @@ import type { Address, TransactionBody } from '@emurgo/cardano-serialization-lib
 type Recipient = {
   address: string
   value: Value
-  buildAddress?: Result<Address>
+  addressResult?: Result<Address>
 }
 
 const defaultRecipient: Recipient = {
@@ -77,7 +77,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     budget: Value
   }
   const Recipient = ({ recipient, index, budget }: RecipientProps) => {
-    const { address, value, buildAddress } = recipient
+    const { address, value, addressResult } = recipient
     const { lovelace, assets } = value
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
@@ -88,7 +88,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       setRecipient({
         ...recipient,
         address: address,
-        buildAddress: cardano.buildAddress(address)
+        addressResult: cardano.buildAddress(address)
       })
     }
     const setLovelace = (lovelace: bigint) => {
@@ -124,7 +124,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
               required={true}
               placeholder='Address' />
           </label>
-          {buildAddress && !buildAddress.isOk && (
+          {addressResult && !addressResult.isOk && (
             <p className='text-sm text-right text-red-500'>Invalid Address</p>
           )}
         </div>
