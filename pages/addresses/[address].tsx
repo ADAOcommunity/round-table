@@ -17,29 +17,30 @@ const GetAddress: NextPage = () => {
   const protocolParameters = useProtocolParametersQuery(config)
 
   const loading = <LoadingPage><p className='p-8 text-lg text-gray-900'>Loading...</p></LoadingPage>
+  const ErrorMessage: NextPage = ({ children }) => <p className='p-4 font-bold text-lg text-red-600'>{children}</p>
 
   if (!cardano) return <div className='text-center'>Loading Cardano Serialization Lib</div>
   if (utxos.type === 'loading') return loading
   if (protocolParameters.type === 'loading') return loading
   if (utxos.type === 'error') return (
     <ErrorPage>
-      <p className='p-4 font-bold text-lg text-red-600'>An error happened when query balance.</p>
+      <ErrorMessage>An error happened when query balance.</ErrorMessage>
     </ErrorPage>
   )
   if (protocolParameters.type === 'error') return (
     <ErrorPage>
-      <p className='p-4 font-bold text-lg text-red-600'>An error happened when query protocol parameters.</p>
+      <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>
     </ErrorPage>
   )
   if (!address || typeof address !== 'string') return (
     <ErrorPage>
-      <p className='p-4 font-bold text-lg text-red-600'>Invalid address</p>
+      <ErrorMessage>Invalid address</ErrorMessage>
     </ErrorPage>
   )
   const addressResult = cardano.buildAddress(address)
   if (!addressResult.isOk) return (
     <ErrorPage>
-      <p className='p-4 font-bold text-lg text-red-600'>Invalid address</p>
+      <ErrorMessage>Invalid address</ErrorMessage>
     </ErrorPage>
   )
 
