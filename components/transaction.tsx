@@ -3,7 +3,7 @@ import { toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody, TransactionBuilder, TransactionOutput, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
 
 type Recipient = {
   address: string
@@ -148,7 +148,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     }
     const setAsset = (id: string, quantity: bigint) => {
       setRecipient({
-        address,
+        ...recipient,
         value: {
           ...value,
           assets: new Map(assets).set(id, quantity)
@@ -159,7 +159,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       const newAssets = new Map(assets)
       newAssets.delete(id)
       setRecipient({
-        address,
+        ...recipient,
         value: { ...value, assets: newAssets }
       })
     }
@@ -273,16 +273,24 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     return utxosSet
   }
 
-  const chooseStrategy = (): number => {
-    const { CoinSelectionStrategyCIP2 } = cardano.lib
-    const hasAsset = recipients.some(({ value }) => {
-      const assets = value.assets
-      return assets.size > 0
-    })
-    if (hasAsset) {
-      return CoinSelectionStrategyCIP2.RandomImproveMultiAsset
-    } else {
-      return CoinSelectionStrategyCIP2.RandomImprove
+  const addChange = (builder: TransactionBuilder, UTxOSet: TransactionUnspentOutputs, address: Address): void => {
+    const Strategy = cardano.lib.CoinSelectionStrategyCIP2
+    try {
+      builder.add_inputs_from(UTxOSet, Strategy.RandomImprove)
+      builder.add_change_if_needed(address)
+    } catch {
+      try {
+        builder.add_inputs_from(UTxOSet, Strategy.LargestFirst)
+        builder.add_change_if_needed(address)
+      } catch {
+        try {
+          builder.add_inputs_from(UTxOSet, Strategy.RandomImproveMultiAsset)
+          builder.add_change_if_needed(address)
+        } catch {
+          builder.add_inputs_from(UTxOSet, Strategy.LargestFirstMultiAsset)
+          builder.add_change_if_needed(address)
+        }
+      }
     }
   }
 
@@ -295,8 +303,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
         txBuilder.add_output(txOutputResult.data)
       })
 
-      txBuilder.add_inputs_from(buildUTxOSet(), chooseStrategy())
-      txBuilder.add_change_if_needed(senderAddress)
+      addChange(txBuilder, buildUTxOSet(), senderAddress)
 
       return { isOk: true, data: txBuilder.build() }
     } catch (error) {
