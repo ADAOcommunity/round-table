@@ -6,7 +6,7 @@ import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
 import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
-import { ErrorPage } from '../../components/status'
+import { ErrorPage, LoadingPage } from '../../components/status'
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
@@ -16,15 +16,11 @@ const GetAddress: NextPage = () => {
   const cardano = useCardanoSerializationLib()
   const protocolParameters = useProtocolParametersQuery(config)
 
-  const Loading = () => (
-    <div className='text-center'>
-      Loading...
-    </div>
-  )
+  const loading = <LoadingPage><p className='p-8 text-lg text-gray-900'>Loading...</p></LoadingPage>
 
   if (!cardano) return <div className='text-center'>Loading Cardano Serialization Lib</div>
-  if (utxos.type === 'loading') return <Loading />
-  if (protocolParameters.type === 'loading') return <Loading />
+  if (utxos.type === 'loading') return loading
+  if (protocolParameters.type === 'loading') return loading
   if (utxos.type === 'error') return (
     <ErrorPage>
       <p className='p-4 font-bold text-lg text-red-600'>An error happened when query balance.</p>
