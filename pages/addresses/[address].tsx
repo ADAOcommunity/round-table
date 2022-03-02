@@ -10,7 +10,7 @@ import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
 const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
-  const [ config, _ ] = useContext(ConfigContext)
+  const [config, _] = useContext(ConfigContext)
   const utxos = useAddressUTxOsQuery(address as string, config)
   const cardano = useCardanoSerializationLib()
   const protocolParameters = useProtocolParametersQuery(config)
@@ -29,12 +29,15 @@ const GetAddress: NextPage = () => {
   if (!address) return <div>No address</div>
   if (typeof address !== 'string') return <div>Multiple addresses</div>
 
+  const addressResult = cardano.buildAddress(address)
+  if (!addressResult.isOk) return <div>Invalid Bech32 address</div>
+
   return (
     <Layout>
       <div className='p-4 rounded-md bg-white my-2'>
         <h1 className='font-medium text-center'>{address}</h1>
       </div>
-      <NewTransaction senderAddress={address} cardano={cardano} protocolParameters={protocolParameters.data} utxos={utxos.data} />
+      <NewTransaction senderAddress={addressResult.data} cardano={cardano} protocolParameters={protocolParameters.data} utxos={utxos.data} />
     </Layout>
   )
 }

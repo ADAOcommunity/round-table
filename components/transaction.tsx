@@ -3,12 +3,13 @@ import { toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 
 type Recipient = {
   address: string
   value: Value
   addressResult?: Result<Address>
+  txOutputResult?: Result<TransactionOutput>
 }
 
 const defaultRecipient: Recipient = {
@@ -62,7 +63,7 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
 }
 
 type NewTransactionProps = {
-  senderAddress: string
+  senderAddress: Address
   cardano: Cardano
   protocolParameters: ProtocolParameters
   utxos: UTxO[]
@@ -70,6 +71,61 @@ type NewTransactionProps = {
 
 const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
+
+  const buildAddress = (recipient: Recipient): Recipient => {
+    return {
+      ...recipient,
+      addressResult: cardano.buildAddress(recipient.address)
+    }
+  }
+
+  const buildTxOutput = (recipient: Recipient): Recipient => {
+    const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
+    const addressResult = recipient.addressResult
+
+    if (!addressResult?.isOk) return recipient
+
+    const address = addressResult.data
+
+    const build = (): TransactionOutput => {
+      const builder = TransactionOutputBuilder
+        .new()
+        .with_address(address)
+        .next()
+      const { lovelace, assets } = recipient.value
+      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      if (assets.size > 0) {
+        const multiAsset = MultiAsset.new()
+        assets.forEach((quantity, id, _) => {
+          const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
+          const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
+          const value = BigNum.from_str(quantity.toString())
+          multiAsset.set_asset(policyId, assetName, value)
+        })
+        value.set_multiasset(multiAsset)
+      }
+      return builder.with_value(value).build()
+    }
+
+    const tryBuild = (): Result<TransactionOutput> => {
+      try {
+        return {
+          isOk: true,
+          data: build()
+        }
+      } catch (error) {
+        return {
+          isOk: false,
+          message: error instanceof Error ? error.message : String(error)
+        }
+      }
+    }
+
+    return {
+      ...recipient,
+      txOutputResult: tryBuild()
+    }
+  }
 
   type RecipientProps = {
     recipient: Recipient
@@ -81,18 +137,14 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     const { lovelace, assets } = value
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
-        return _index === index ? newRecipient : oldRecipient
+        return _index === index ? buildTxOutput(newRecipient) : oldRecipient
       }))
     }
     const setAddress = (address: string) => {
-      setRecipient({
-        ...recipient,
-        address: address,
-        addressResult: cardano.buildAddress(address)
-      })
+      setRecipient(buildAddress({ ...recipient, address: address }))
     }
     const setLovelace = (lovelace: bigint) => {
-      setRecipient({ ...recipient, value: { ...value, lovelace} })
+      setRecipient({ ...recipient, value: { ...value, lovelace } })
     }
     const setAsset = (id: string, quantity: bigint) => {
       setRecipient({
@@ -192,57 +244,59 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       return { lovelace, assets }
     }, getBalance(utxos))
 
+  const buildUTxOSet = () => {
+    const { AssetName, BigNum, MultiAsset, ScriptHash,
+      TransactionInput, TransactionHash, TransactionOutput,
+      TransactionUnspentOutput, TransactionUnspentOutputs } = cardano.lib
+
+    const utxosSet = TransactionUnspentOutputs.new()
+    utxos.forEach((utxo) => {
+      const { txHash, index, lovelace, assets } = utxo
+      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      if (assets.length > 0) {
+        const multiAsset = MultiAsset.new()
+        assets.forEach((asset) => {
+          const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
+          const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
+          const quantity = BigNum.from_str(asset.quantity.toString())
+          multiAsset.set_asset(policyId, assetName, quantity)
+        })
+        value.set_multiasset(multiAsset)
+      }
+      const txUnspentOutput = TransactionUnspentOutput.new(
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
+        TransactionOutput.new(senderAddress, value)
+      )
+      utxosSet.add(txUnspentOutput)
+    })
+
+    return utxosSet
+  }
+
+  const chooseStrategy = (): number => {
+    const { CoinSelectionStrategyCIP2 } = cardano.lib
+    const hasAsset = recipients.some(({ value }) => {
+      const assets = value.assets
+      return assets.size > 0
+    })
+    if (hasAsset) {
+      return CoinSelectionStrategyCIP2.RandomImproveMultiAsset
+    } else {
+      return CoinSelectionStrategyCIP2.RandomImprove
+    }
+  }
 
   const buildTransaction = (): Result<TransactionBody> => {
     try {
       const txBuilder = cardano.createTxBuilder(protocolParameters)
-      const { Address, AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
-      recipients.forEach((recipient) => {
-        const address = Address.from_bech32(recipient.address)
-        const txOutputBuilder = TransactionOutputBuilder
-          .new()
-          .with_address(address)
-          .next()
-        const { lovelace, assets } = recipient.value
-        const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
-        if (assets.size > 0) {
-          const multiAsset = MultiAsset.new()
-          assets.forEach((quantity, id, _) => {
-            const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
-            const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
-            const value = BigNum.from_str(quantity.toString())
-            multiAsset.set_asset(policyId, assetName, value)
-          })
-          value.set_multiasset(multiAsset)
-        }
-        const txOutput = txOutputBuilder.with_value(value).build()
-        txBuilder.add_output(txOutput)
+
+      recipients.forEach(({ txOutputResult }) => {
+        if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
+        txBuilder.add_output(txOutputResult.data)
       })
 
-      const { TransactionInput, TransactionHash, TransactionOutput, TransactionUnspentOutput, TransactionUnspentOutputs } = cardano.lib
-      const utxosSet = TransactionUnspentOutputs.new()
-      const utxosAddress = Address.from_bech32(senderAddress)
-      utxos.forEach((utxo) => {
-        const { txHash, index, lovelace, assets } = utxo
-        const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
-        if (assets.length > 0) {
-          const multiAsset = MultiAsset.new()
-          assets.forEach((asset) => {
-            const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
-            const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
-            const quantity = BigNum.from_str(asset.quantity.toString())
-            multiAsset.set_asset(policyId, assetName, quantity)
-          })
-          value.set_multiasset(multiAsset)
-        }
-        const txUnspentOutput = TransactionUnspentOutput.new(
-          TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
-          TransactionOutput.new(utxosAddress, value)
-        )
-        utxosSet.add(txUnspentOutput)
-      })
-      txBuilder.add_inputs_from(utxosSet, cardano.lib.CoinSelectionStrategyCIP2.LargestFirstMultiAsset)
-      txBuilder.add_change_if_needed(utxosAddress)
+      txBuilder.add_inputs_from(buildUTxOSet(), chooseStrategy())
+      txBuilder.add_change_if_needed(senderAddress)
 
       return { isOk: true, data: txBuilder.build() }
     } catch (error) {
@@ -253,16 +307,27 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     }
   }
 
-  console.log(buildTransaction())
+  const buildTxResult = buildTransaction()
 
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
+      {buildTxResult && !buildTxResult.isOk && (
+        <header>
+          <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
+        </header>
+      )}
       <ul className='divide-y'>
-        {recipients.map((recipient, index) => (
-          <li key={index}>
-            <Recipient recipient={recipient} index={index} budget={budget} />
-          </li>
-        ))}
+        {recipients.map((recipient, index) => {
+          const { txOutputResult } = recipient
+          return (
+            <li key={index}>
+              <Recipient recipient={recipient} index={index} budget={budget} />
+              {txOutputResult && !txOutputResult?.isOk && (
+                <p className='p-2 text-center text-red-600 bg-red-200'>{txOutputResult.message}</p>
+              )}
+            </li>
+          )
+        })}
       </ul>
       <footer className='p-4 bg-gray-100'>
         <button
