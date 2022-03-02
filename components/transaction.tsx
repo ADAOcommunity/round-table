@@ -3,11 +3,12 @@ import { toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { TransactionBody } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody } from '@emurgo/cardano-serialization-lib-browser'
 
 type Recipient = {
   address: string
   value: Value
+  buildAddress?: Result<Address>
 }
 
 const defaultRecipient: Recipient = {
@@ -76,12 +77,19 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     budget: Value
   }
   const Recipient = ({ recipient, index, budget }: RecipientProps) => {
-    const { address, value } = recipient
+    const { address, value, buildAddress } = recipient
     const { lovelace, assets } = value
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
         return _index === index ? newRecipient : oldRecipient
       }))
+    }
+    const setAddress = (address: string) => {
+      setRecipient({
+        ...recipient,
+        address: address,
+        buildAddress: cardano.buildAddress(address)
+      })
     }
     const setLovelace = (lovelace: bigint) => {
       setRecipient({ ...recipient, value: { ...value, lovelace} })
@@ -106,15 +114,20 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
 
     return (
       <div className='p-4 space-y-2'>
-        <label className='flex block border rounded-md overflow-hidden'>
-          <span className='p-2 bg-gray-200'>TO</span>
-          <input
-            className='p-2 block w-full outline-none'
-            value={address}
-            onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
-            required={true}
-            placeholder='Address' />
-        </label>
+        <div>
+          <label className='flex block border rounded-md overflow-hidden'>
+            <span className='p-2 bg-gray-200'>TO</span>
+            <input
+              className='p-2 block w-full outline-none'
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              required={true}
+              placeholder='Address' />
+          </label>
+          {buildAddress && !buildAddress.isOk && (
+            <p className='text-sm text-right text-red-500'>Invalid Address</p>
+          )}
+        </div>
         <LabeledCurrencyInput
           symbol='₳'
           decimal={6}
@@ -231,10 +244,10 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       txBuilder.add_inputs_from(utxosSet, cardano.lib.CoinSelectionStrategyCIP2.LargestFirstMultiAsset)
       txBuilder.add_change_if_needed(utxosAddress)
 
-      return { type: 'ok', data: txBuilder.build() }
-    } catch(error) {
+      return { isOk: true, data: txBuilder.build() }
+    } catch (error) {
       return {
-        type: 'error',
+        isOk: false,
         message: error instanceof Error ? error.message : String(error)
       }
     }

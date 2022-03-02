@@ -9,8 +9,8 @@ type MultiSigType = 'all' | 'any' | 'atLeast'
 const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
 
 type Result<T> =
-  | { type: 'ok', data: T }
-  | { type: 'error', message: string }
+  | { isOk: true, data: T }
+  | { isOk: false, message: string }
 
 class Cardano {
   private _wasm: CardanoWASM
@@ -26,12 +26,12 @@ class Cardano {
   public buildAddress(bech32Address: string): Result<Address> {
     try {
       return {
-        type: 'ok',
+        isOk: true,
         data: this.lib.Address.from_bech32(bech32Address)
       }
     } catch(error) {
       return {
-        type: 'error',
+        isOk: false,
         message: error instanceof Error ? error.message : String(error)
       }
     }
