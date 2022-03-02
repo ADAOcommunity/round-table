@@ -6,6 +6,7 @@ import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
 import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { ErrorPage } from '../../components/status'
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
@@ -24,13 +25,27 @@ const GetAddress: NextPage = () => {
   if (!cardano) return <div className='text-center'>Loading Cardano Serialization Lib</div>
   if (utxos.type === 'loading') return <Loading />
   if (protocolParameters.type === 'loading') return <Loading />
-  if (utxos.type === 'error') return <div>An error happened when query balance.</div>
-  if (protocolParameters.type === 'error') return <div>An error happened when query protocol parameters.</div>
-  if (!address) return <div>No address</div>
-  if (typeof address !== 'string') return <div>Multiple addresses</div>
-
+  if (utxos.type === 'error') return (
+    <ErrorPage>
+      <p className='p-4 font-bold text-lg text-red-600'>An error happened when query balance.</p>
+    </ErrorPage>
+  )
+  if (protocolParameters.type === 'error') return (
+    <ErrorPage>
+      <p className='p-4 font-bold text-lg text-red-600'>An error happened when query protocol parameters.</p>
+    </ErrorPage>
+  )
+  if (!address || typeof address !== 'string') return (
+    <ErrorPage>
+      <p className='p-4 font-bold text-lg text-red-600'>Invalid address</p>
+    </ErrorPage>
+  )
   const addressResult = cardano.buildAddress(address)
-  if (!addressResult.isOk) return <div>Invalid Bech32 address</div>
+  if (!addressResult.isOk) return (
+    <ErrorPage>
+      <p className='p-4 font-bold text-lg text-red-600'>Invalid address</p>
+    </ErrorPage>
+  )
 
   return (
     <Layout>
