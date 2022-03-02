@@ -311,10 +311,11 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
 
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
+      <header className='p-2 text-center bg-gray-100'>
+        <h1 className='font-bold text-lg'>New Transaction</h1>
+      </header>
       {buildTxResult && !buildTxResult.isOk && (
-        <header>
-          <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
-        </header>
+        <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
       )}
       <ul className='divide-y'>
         {recipients.map((recipient, index) => {
@@ -329,7 +330,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
           )
         })}
       </ul>
-      <footer className='p-4 bg-gray-100'>
+      <footer className='flex flex-row-reverse p-2 bg-gray-100 space-x-2'>
         <button
           className='p-2 rounded-md bg-blue-200'
           onClick={() => setRecipients(recipients.concat(defaultRecipient))}
