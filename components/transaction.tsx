@@ -8,8 +8,6 @@ import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardan
 type Recipient = {
   address: string
   value: Value
-  addressResult?: Result<Address>
-  txOutputResult?: Result<TransactionOutput>
 }
 
 const defaultRecipient: Recipient = {
@@ -72,18 +70,14 @@ type NewTransactionProps = {
 const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
 
-  const buildAddress = (recipient: Recipient): Recipient => {
-    return {
-      ...recipient,
-      addressResult: cardano.parseAddress(recipient.address)
-    }
-  }
-
-  const buildTxOutput = (recipient: Recipient): Recipient => {
+  const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
     const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
-    const addressResult = recipient.addressResult
+    const addressResult = cardano.parseAddress(recipient.address)
 
-    if (!addressResult?.isOk) return recipient
+    if (!addressResult?.isOk) return {
+      isOk: false,
+      message: 'Invalid address'
+    }
 
     const address = addressResult.data
 
@@ -107,25 +101,20 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       return builder.with_value(value).build()
     }
 
-    const tryBuild = (): Result<TransactionOutput> => {
-      try {
-        return {
-          isOk: true,
-          data: build()
-        }
-      } catch (error) {
-        return {
-          isOk: false,
-          message: error instanceof Error ? error.message : String(error)
-        }
+    try {
+      return {
+        isOk: true,
+        data: build()
+      }
+    } catch (error) {
+      return {
+        isOk: false,
+        message: error instanceof Error ? error.message : String(error)
       }
     }
-
-    return {
-      ...recipient,
-      txOutputResult: tryBuild()
-    }
   }
+
+  const txOutputResults = recipients.map(buildTxOutput)
 
   type RecipientProps = {
     recipient: Recipient
@@ -133,15 +122,15 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     budget: Value
   }
   const Recipient = ({ recipient, index, budget }: RecipientProps) => {
-    const { address, value, addressResult } = recipient
+    const { address, value } = recipient
     const { lovelace, assets } = value
     const setRecipient = (newRecipient: Recipient) => {
       setRecipients(recipients.map((oldRecipient, _index) => {
-        return _index === index ? buildTxOutput(newRecipient) : oldRecipient
+        return _index === index ? newRecipient : oldRecipient
       }))
     }
     const setAddress = (address: string) => {
-      setRecipient(buildAddress({ ...recipient, address: address }))
+      setRecipient({ ...recipient, address: address })
     }
     const setLovelace = (lovelace: bigint) => {
       setRecipient({ ...recipient, value: { ...value, lovelace } })
@@ -173,12 +162,8 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
               className='p-2 block w-full outline-none'
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              required={true}
               placeholder='Address' />
           </label>
-          {addressResult && !addressResult.isOk && (
-            <p className='text-sm text-right text-red-500'>Invalid Address</p>
-          )}
         </div>
         <LabeledCurrencyInput
           symbol='₳'
@@ -277,7 +262,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     try {
       const txBuilder = cardano.createTxBuilder(protocolParameters)
 
-      recipients.forEach(({ txOutputResult }) => {
+      txOutputResults.forEach((txOutputResult) => {
         if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
         txBuilder.add_output(txOutputResult.data)
       })
@@ -300,21 +285,15 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       <header className='p-2 text-center bg-gray-100'>
         <h1 className='font-bold text-lg'>New Transaction</h1>
       </header>
-      {buildTxResult && !buildTxResult.isOk && (
+      {!buildTxResult.isOk && (
         <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
       )}
       <ul className='divide-y'>
-        {recipients.map((recipient, index) => {
-          const { txOutputResult } = recipient
-          return (
-            <li key={index}>
-              <Recipient recipient={recipient} index={index} budget={budget} />
-              {txOutputResult && !txOutputResult?.isOk && (
-                <p className='p-2 text-center text-red-600 bg-red-200'>{txOutputResult.message}</p>
-              )}
-            </li>
-          )
-        })}
+        {recipients.map((recipient, index) =>
+          <li key={index}>
+            <Recipient recipient={recipient} index={index} budget={budget} />
+          </li>
+        )}
       </ul>
       <footer className='flex flex-row-reverse p-2 bg-gray-100 space-x-2'>
         <button
