@@ -383,6 +383,7 @@ const TransactionViewer = ({ txBody }: TransactionProps) => {
   return (
     <div className='p-4 bg-white rounded-md'>
       <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
+      <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
       <h2 className='font-bold my-2'>Outputs</h2>
       <ul>
         {recipients.map(({ id, address, value }) =>
