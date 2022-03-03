@@ -3,15 +3,15 @@ import { useRouter } from 'next/router'
 import Layout from '../../components/layout'
 import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
 
-const GetDraft: NextPage = () => {
+const GetProposal: NextPage = () => {
   const router = useRouter()
-  const { draft } = router.query
+  const { proposal } = router.query
   const cardano = useCardanoSerializationLib()
 
   if (!cardano) return <div className='text-center'>Loading Cardano Serialization Lib</div>
-  if (typeof draft !== 'string') return <div></div>
+  if (typeof proposal !== 'string') return <div></div>
 
-  console.log(cardano.decodeTxBody(draft))
+  console.log(cardano.decodeTxBody(proposal))
 
   return (
     <Layout>
@@ -19,4 +19,4 @@ const GetDraft: NextPage = () => {
   )
 }
 
-export default GetDraft
+export default GetProposal

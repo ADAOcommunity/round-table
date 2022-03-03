@@ -328,7 +328,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
           Add Recipient
         </button>
         {buildTxResult.isOk &&
-          <Link href={`/drafts/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
+          <Link href={`/proposals/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
             <a
               className='p-2 rounded-md bg-blue-200'
             >
