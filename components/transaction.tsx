@@ -3,7 +3,7 @@ import { toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionBuilder, TransactionOutput, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 
 type Recipient = {
   address: string
@@ -273,27 +273,6 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     return utxosSet
   }
 
-  const addChange = (builder: TransactionBuilder, UTxOSet: TransactionUnspentOutputs, address: Address): void => {
-    const Strategy = cardano.lib.CoinSelectionStrategyCIP2
-    try {
-      builder.add_inputs_from(UTxOSet, Strategy.RandomImprove)
-      builder.add_change_if_needed(address)
-    } catch {
-      try {
-        builder.add_inputs_from(UTxOSet, Strategy.LargestFirst)
-        builder.add_change_if_needed(address)
-      } catch {
-        try {
-          builder.add_inputs_from(UTxOSet, Strategy.RandomImproveMultiAsset)
-          builder.add_change_if_needed(address)
-        } catch {
-          builder.add_inputs_from(UTxOSet, Strategy.LargestFirstMultiAsset)
-          builder.add_change_if_needed(address)
-        }
-      }
-    }
-  }
-
   const buildTransaction = (): Result<TransactionBody> => {
     try {
       const txBuilder = cardano.createTxBuilder(protocolParameters)
@@ -303,7 +282,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
         txBuilder.add_output(txOutputResult.data)
       })
 
-      addChange(txBuilder, buildUTxOSet(), senderAddress)
+      cardano.chainCoinSelection(txBuilder, buildUTxOSet(), senderAddress)
 
       return { isOk: true, data: txBuilder.build() }
     } catch (error) {

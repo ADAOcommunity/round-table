@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
 import { Buffer } from 'buffer'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
@@ -29,10 +29,31 @@ class Cardano {
         isOk: true,
         data: this.lib.Address.from_bech32(bech32Address)
       }
-    } catch(error) {
+    } catch (error) {
       return {
         isOk: false,
         message: error instanceof Error ? error.message : String(error)
+      }
+    }
+  }
+
+  public chainCoinSelection(builder: TransactionBuilder, UTxOSet: TransactionUnspentOutputs, address: Address): void {
+    const Strategy = this.lib.CoinSelectionStrategyCIP2
+    try {
+      builder.add_inputs_from(UTxOSet, Strategy.RandomImprove)
+      builder.add_change_if_needed(address)
+    } catch {
+      try {
+        builder.add_inputs_from(UTxOSet, Strategy.LargestFirst)
+        builder.add_change_if_needed(address)
+      } catch {
+        try {
+          builder.add_inputs_from(UTxOSet, Strategy.RandomImproveMultiAsset)
+          builder.add_change_if_needed(address)
+        } catch {
+          builder.add_inputs_from(UTxOSet, Strategy.LargestFirstMultiAsset)
+          builder.add_change_if_needed(address)
+        }
       }
     }
   }
