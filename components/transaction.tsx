@@ -133,7 +133,9 @@ const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
                 value={quantity}
                 max={quantity + assetBudget}
                 onChange={onChange} />
-              <button className='px-2 bg-gray-100 rounded-md' onClick={() => deleteAsset(id)}>Del</button>
+              <button className='px-2' onClick={() => deleteAsset(id)}>
+                <XIcon className='h-4 w-4' />
+              </button>
             </li>
           )
         })}
