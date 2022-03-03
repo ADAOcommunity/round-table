@@ -1,30 +1,34 @@
 import { useState } from 'react'
-import { toDecimal, CurrencyInput } from './currency'
+import { toADA, toDecimal, CurrencyInput } from './currency'
+import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
+import { Cardano } from '../cardano/serialization-lib'
+import type { Result } from '../cardano/serialization-lib'
+import type { Address, TransactionBody, TransactionInput, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import { nanoid } from 'nanoid'
+import { XIcon } from '@heroicons/react/solid'
+import Link from 'next/link'
 
-type Assets = Map<string, bigint>
-
-type TxOutput = {
-  txHash: string
-  index: number
+type Recipient = {
+  id: string
+  address: string
+  value: Value
 }
 
-type Value = {
-  lovelace: bigint
-  assets: Assets
-}
-
-type Balance = { txOutputs: TxOutput[], value: Value }
-type Recipient = { address: string, value: Value }
-
-const defaultRecipient: Recipient = {
-  address: '',
-  value: {
-    lovelace: BigInt(0),
-    assets: new Map()
+const newRecipient = (): Recipient => {
+  return {
+    id: nanoid(),
+    address: '',
+    value: {
+      lovelace: BigInt(0),
+      assets: new Map()
+    }
   }
 }
 
-const getAssetName = (assetName: string): string => {
+const getPolicyId = (assetId: string) => assetId.slice(0, 56)
+const getAssetName = (assetId: string) => assetId.slice(56)
+
+const decodeASCII = (assetName: string): string => {
   const buffer = Buffer.from(assetName, 'hex')
   const decoder = new TextDecoder('ascii')
   return decoder.decode(buffer)
@@ -63,108 +67,162 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   )
 }
 
-type NewTransactionProps = {
-  balance: Balance
+type RecipientProps = {
+  recipient: Recipient
+  budget: Value
+  onChange: (recipient: Recipient) => void
 }
 
-const NewTransaction = ({ balance }: NewTransactionProps) => {
-  const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
-
-  type RecipientProps = {
-    recipient: Recipient
-    index: number
-    budget: Value
+const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
+  const { address, value } = recipient
+  const setRecipient = (recipient: Recipient) => {
+    onChange(recipient)
   }
-  const Recipient = ({ recipient, index, budget }: RecipientProps) => {
-    const { address, value } = recipient
-    const { lovelace, assets } = value
-    const setRecipient = (newRecipient: Recipient) => {
-      setRecipients(recipients.map((oldRecipient, _index) => {
-        return _index === index ? newRecipient : oldRecipient
-      }))
-    }
-    const setLovelace = (lovelace: bigint) => {
-      setRecipient({ ...recipient, value: { ...value, lovelace} })
-    }
-    const setAsset = (id: string, quantity: bigint) => {
-      setRecipient({
-        address,
-        value: {
-          ...value,
-          assets: new Map(assets).set(id, quantity)
-        }
-      })
-    }
-    const deleteAsset = (id: string) => {
-      const newAssets = new Map(assets)
-      newAssets.delete(id)
-      setRecipient({
-        address,
-        value: { ...value, assets: newAssets }
-      })
-    }
+  const setAddress = (address: string) => {
+    setRecipient({ ...recipient, address })
+  }
+  const setLovelace = (lovelace: bigint) => {
+    setRecipient({ ...recipient, value: { ...value, lovelace } })
+  }
+  const setAsset = (id: string, quantity: bigint) => {
+    setRecipient({
+      ...recipient,
+      value: {
+        ...value,
+        assets: new Map(value.assets).set(id, quantity)
+      }
+    })
+  }
+  const deleteAsset = (id: string) => {
+    const newAssets = new Map(value.assets)
+    newAssets.delete(id)
+    setRecipient({
+      ...recipient,
+      value: { ...value, assets: newAssets }
+    })
+  }
 
-    return (
-      <div className='p-4 space-y-2'>
+  return (
+    <div className='p-4 space-y-2'>
+      <div>
         <label className='flex block border rounded-md overflow-hidden'>
           <span className='p-2 bg-gray-200'>TO</span>
           <input
             className='p-2 block w-full outline-none'
             value={address}
-            onChange={(e) => setRecipient({ ...recipient, address: e.target.value })}
+            onChange={(e) => setAddress(e.target.value)}
             placeholder='Address' />
         </label>
-        <LabeledCurrencyInput
-          symbol='₳'
-          decimal={6}
-          value={lovelace}
-          max={lovelace + budget.lovelace}
-          onChange={setLovelace}
-          placeholder='0.000000' />
-        <ul className='space-y-2'>
-          {Array.from(assets).map(([id, quantity]) => {
-            const symbol = getAssetName(id.slice(56))
-            const assetBudget = (budget.assets.get(id) || BigInt(0))
-            const onChange = (value: bigint) => setAsset(id, value)
-            return (
-              <li key={id} className='flex space-x-2'>
-                <LabeledCurrencyInput
-                  symbol={symbol}
-                  decimal={0}
-                  value={quantity}
-                  max={quantity + assetBudget}
-                  onChange={onChange} />
-                <button className='px-2 bg-gray-100 rounded-md' onClick={() => deleteAsset(id)}>Del</button>
-              </li>
-            )
-          })}
-        </ul>
-        <div className='relative'>
-          <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
-          <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
-            {Array.from(budget.assets)
-              .filter(([id, quantity]) => !assets.has(id) && quantity > BigInt(0))
-              .map(([id, quantity]) => (
-                <li key={id}>
-                  <button
-                    onClick={() => setAsset(id, BigInt(0))}
-                    className='block w-full h-full px-1 py-2 hover:bg-slate-100'
-                  >
-                    <div className='flex space-x-2'>
-                      <span>{getAssetName(id.slice(56))}</span>
-                      <span className='grow text-right'>{quantity.toString()}</span>
-                    </div>
-                    <div className='flex space-x-1'>
-                      <span className='font-mono text-gray-500 text-xs'>{id.slice(0, 56)}</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </div>
       </div>
-    )
+      <LabeledCurrencyInput
+        symbol='₳'
+        decimal={6}
+        value={value.lovelace}
+        max={value.lovelace + budget.lovelace}
+        onChange={setLovelace}
+        placeholder='0.000000' />
+      <ul className='space-y-2'>
+        {Array.from(value.assets).map(([id, quantity]) => {
+          const symbol = decodeASCII(getAssetName(id))
+          const assetBudget = (budget.assets.get(id) || BigInt(0))
+          const onChange = (value: bigint) => setAsset(id, value)
+          return (
+            <li key={id} className='flex space-x-2'>
+              <LabeledCurrencyInput
+                symbol={symbol}
+                decimal={0}
+                value={quantity}
+                max={quantity + assetBudget}
+                onChange={onChange} />
+              <button className='px-2' onClick={() => deleteAsset(id)}>
+                <XIcon className='h-4 w-4' />
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+      <div className='relative'>
+        <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
+        <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
+          {Array.from(budget.assets)
+            .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
+            .map(([id, quantity]) => (
+              <li key={id}>
+                <button
+                  onClick={() => setAsset(id, BigInt(0))}
+                  className='block w-full h-full px-1 py-2 hover:bg-slate-100'
+                >
+                  <div className='flex space-x-2'>
+                    <span>{decodeASCII(getAssetName(id))}</span>
+                    <span className='grow text-right'>{quantity.toString()}</span>
+                  </div>
+                  <div className='flex space-x-1'>
+                    <span className='font-mono text-gray-500 text-xs'>{id.slice(0, 56)}</span>
+                  </div>
+                </button>
+              </li>
+            ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+type NewTransactionProps = {
+  senderAddress: Address
+  cardano: Cardano
+  protocolParameters: ProtocolParameters
+  utxos: UTxO[]
+}
+
+const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: NewTransactionProps) => {
+  const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
+
+  const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
+    const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
+    const addressResult = cardano.parseAddress(recipient.address)
+
+    if (!addressResult?.isOk) return {
+      isOk: false,
+      message: 'Invalid address'
+    }
+
+    const address = addressResult.data
+
+    const build = (): TransactionOutput => {
+      const builder = TransactionOutputBuilder
+        .new()
+        .with_address(address)
+        .next()
+      const { lovelace, assets } = recipient.value
+      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      if (assets.size > 0) {
+        const multiAsset = MultiAsset.new()
+        assets.forEach((quantity, id, _) => {
+          const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
+          const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
+          const value = BigNum.from_str(quantity.toString())
+          multiAsset.set_asset(policyId, assetName, value)
+        })
+        value.set_multiasset(multiAsset)
+      }
+      return builder.with_value(value).build()
+    }
+
+    try {
+      return {
+        isOk: true,
+        data: build()
+      }
+    } catch (error) {
+      return {
+        isOk: false,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    }
   }
+
+  const txOutputResults = recipients.map(buildTxOutput)
 
   const budget: Value = recipients
     .map(({ value }) => value)
@@ -176,28 +234,186 @@ const NewTransaction = ({ balance }: NewTransactionProps) => {
         _quantity && assets.set(id, _quantity - quantity)
       })
       return { lovelace, assets }
-    }, balance.value)
+    }, getBalance(utxos))
+
+  const buildUTxOSet = () => {
+    const { AssetName, BigNum, MultiAsset, ScriptHash,
+      TransactionInput, TransactionHash, TransactionOutput,
+      TransactionUnspentOutput, TransactionUnspentOutputs } = cardano.lib
+
+    const utxosSet = TransactionUnspentOutputs.new()
+    utxos.forEach((utxo) => {
+      const { txHash, index, lovelace, assets } = utxo
+      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      if (assets.length > 0) {
+        const multiAsset = MultiAsset.new()
+        assets.forEach((asset) => {
+          const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
+          const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
+          const quantity = BigNum.from_str(asset.quantity.toString())
+          multiAsset.set_asset(policyId, assetName, quantity)
+        })
+        value.set_multiasset(multiAsset)
+      }
+      const txUnspentOutput = TransactionUnspentOutput.new(
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
+        TransactionOutput.new(senderAddress, value)
+      )
+      utxosSet.add(txUnspentOutput)
+    })
+
+    return utxosSet
+  }
+
+  const buildTransaction = (): Result<TransactionBody> => {
+    try {
+      const txBuilder = cardano.createTxBuilder(protocolParameters)
+
+      txOutputResults.forEach((txOutputResult) => {
+        if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
+        txBuilder.add_output(txOutputResult.data)
+      })
+
+      cardano.chainCoinSelection(txBuilder, buildUTxOSet(), senderAddress)
+
+      return { isOk: true, data: txBuilder.build() }
+    } catch (error) {
+      return {
+        isOk: false,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    }
+  }
+
+  const buildTxResult = buildTransaction()
+
+  const handleRecipientChange = (recipient: Recipient) => {
+    setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
+  }
+
+  const deleteRecipient = (recipient: Recipient) => {
+    setRecipients(recipients.filter(({ id }) => id !== recipient.id))
+  }
 
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
+      <header className='p-2 text-center border-b bg-gray-100'>
+        <h1 className='font-bold text-lg'>New Transaction</h1>
+      </header>
+      {!buildTxResult.isOk && (
+        <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
+      )}
       <ul className='divide-y'>
-        {recipients.map((recipient, index) => (
-          <li key={index}>
-            <Recipient recipient={recipient} index={index} budget={budget} />
+        {recipients.map((recipient, index) =>
+          <li key={recipient.id}>
+            <header className='flex px-4 py-2 bg-gray-100'>
+              <h2 className='grow font-bold'>Recipient #{index + 1}</h2>
+              <nav className='flex justify-between items-center'>
+                {recipients.length > 1 &&
+                  <button onClick={() => deleteRecipient(recipient)}>
+                    <XIcon className='h-4 w-4' />
+                  </button>
+                }
+              </nav>
+            </header>
+            <Recipient recipient={recipient} budget={budget} onChange={handleRecipientChange} />
           </li>
-        ))}
+        )}
       </ul>
-      <footer className='p-4 bg-gray-100'>
-        <button
-          className='p-2 rounded-md bg-blue-200'
-          onClick={() => setRecipients(recipients.concat(defaultRecipient))}
-        >
-          Add Recipient
-        </button>
+      <footer className='flex px-4 py-2 bg-gray-100 items-center'>
+        <div className='grow'>
+          {buildTxResult.isOk &&
+            <p className='flex space-x-1 font-bold'>
+              <span>Fee:</span>
+              <span>{toADA(BigInt(buildTxResult.data.fee().to_str()))}</span>
+            </p>
+          }
+        </div>
+        <nav className='flex space-x-2'>
+          <button
+            className='p-2 rounded-md bg-blue-200'
+            onClick={() => setRecipients(recipients.concat(newRecipient()))}
+          >
+            Add Recipient
+          </button>
+          {buildTxResult.isOk &&
+            <Link href={`/proposals/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
+              <a
+                className='p-2 rounded-md bg-blue-200'
+              >
+                Review
+              </a>
+            </Link>
+          }
+        </nav>
       </footer>
     </div>
   )
 }
 
-export type { Assets, Balance }
-export { NewTransaction }
+type TransactionProps = {
+  txBody: TransactionBody
+}
+const TransactionViewer = ({ txBody }: TransactionProps) => {
+  const fee = BigInt(txBody.fee().to_str())
+  const getRequiredSigners = () => {
+    const requiredSigners = txBody.required_signers()
+    return requiredSigners && Array.from({ length: requiredSigners.len() }, (_, i) => requiredSigners.get(i))
+  }
+  const requiredSigners = getRequiredSigners()
+  console.log(requiredSigners)
+  const txInputs: TransactionInput[] =
+    Array.from({ length: txBody.inputs().len() }, (_, i) => txBody.inputs().get(i))
+  console.log(txInputs)
+  const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
+    const output = txBody.outputs().get(i)
+    const address = output.address().to_bech32()
+    const amount = output.amount()
+    const assets = new Map()
+    return {
+      id: i.toString(),
+      address,
+      value: {
+        lovelace: BigInt(amount.coin().to_str()),
+        assets
+      }
+    }
+  })
+
+  return (
+    <div className='p-4 bg-white rounded-md'>
+      <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
+      <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
+      <h2 className='font-bold my-2'>Outputs</h2>
+      <ul>
+        {recipients.map(({ id, address, value }) =>
+          <li key={id}>
+            <p className='flex space-x-1'>
+              <span>Address:</span>
+              <span>{address}</span>
+            </p>
+            <p>
+              <span>{toADA(value.lovelace)}</span>
+              <span>₳</span>
+            </p>
+            <ul>
+              {Array.from(value.assets).map(([id, quantity]) =>
+                <li key={id}>
+                  <span>{quantity.toString()}</span>
+                  <span>{decodeASCII(getAssetName(id))}</span>
+                </li>
+              )}
+            </ul>
+          </li>
+        )}
+      </ul>
+      <p className='flex space-x-1'>
+        <span>Fee:</span>
+        <span>{toADA(fee)}</span>
+        <span>₳</span>
+      </p>
+    </div>
+  )
+}
+
+export { TransactionViewer, NewTransaction }

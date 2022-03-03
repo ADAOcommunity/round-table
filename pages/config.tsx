@@ -1,6 +1,6 @@
 import { NextPage } from "next";
 import { ChangeEvent, useContext, useState } from "react";
-import { ConfigContext } from "../components/config";
+import { ConfigContext } from "../cardano/config";
 import Layout from '../components/layout'
 
 const Configure: NextPage = () => {

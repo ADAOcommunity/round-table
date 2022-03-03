@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 const Layout: NextPage = ({ children }) => {
   return (
-    <div className='absolute w-full h-full bg-gradient-to-br from-slate-100 to-blue-100 overflow-y-scroll'>
+    <div className='min-h-screen bg-gradient-to-br from-slate-100 to-blue-100'>
       <header className='bg-white border-b border-gray-100 mb-2 shadow'>
         <div className='max-w-7xl mx-auto'>
           <nav className='flex flex-row-reverse divide-x divide-x-reverse font-medium '>
