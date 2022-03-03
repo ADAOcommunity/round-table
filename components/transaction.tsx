@@ -4,17 +4,23 @@ import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-ap
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import { nanoid } from 'nanoid'
+import { XIcon } from '@heroicons/react/solid'
 
 type Recipient = {
+  id: string
   address: string
   value: Value
 }
 
-const defaultRecipient: Recipient = {
-  address: '',
-  value: {
-    lovelace: BigInt(0),
-    assets: new Map()
+const newRecipient = (): Recipient => {
+  return {
+    id: nanoid(),
+    address: '',
+    value: {
+      lovelace: BigInt(0),
+      assets: new Map()
+    }
   }
 }
 
@@ -62,15 +68,14 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
 
 type RecipientProps = {
   recipient: Recipient
-  index: number
   budget: Value
-  onChange: (recipient: Recipient, index: number) => void
+  onChange: (recipient: Recipient) => void
 }
 
-const Recipient = ({ recipient, index, budget, onChange }: RecipientProps) => {
+const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
   const { address, value } = recipient
   const setRecipient = (recipient: Recipient) => {
-    onChange(recipient, index)
+    onChange(recipient)
   }
   const setAddress = (address: string) => {
     setRecipient({ ...recipient, address })
@@ -168,7 +173,7 @@ type NewTransactionProps = {
 }
 
 const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: NewTransactionProps) => {
-  const [recipients, setRecipients] = useState<Recipient[]>([defaultRecipient])
+  const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
     const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
@@ -279,13 +284,17 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
 
   const buildTxResult = buildTransaction()
 
-  const handleRecipientChange = (recipient: Recipient, index: number) => {
-    setRecipients(recipients.map((_recipient, _index) => _index === index ? recipient : _recipient))
+  const handleRecipientChange = (recipient: Recipient) => {
+    setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
+  }
+
+  const deleteRecipient = (recipient: Recipient) => {
+    setRecipients(recipients.filter(({ id }) => id !== recipient.id))
   }
 
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
-      <header className='p-2 text-center bg-gray-100'>
+      <header className='p-2 text-center border-b bg-gray-100'>
         <h1 className='font-bold text-lg'>New Transaction</h1>
       </header>
       {!buildTxResult.isOk && (
@@ -293,15 +302,25 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       )}
       <ul className='divide-y'>
         {recipients.map((recipient, index) =>
-          <li key={index}>
-            <Recipient recipient={recipient} index={index} budget={budget} onChange={handleRecipientChange} />
+          <li key={recipient.id}>
+            <header className='flex px-4 py-2 bg-gray-100'>
+              <h2 className='grow font-bold'>Recipient #{index + 1}</h2>
+              <nav className='flex justify-between items-center'>
+                {recipients.length > 1 &&
+                  <button onClick={() => deleteRecipient(recipient)}>
+                    <XIcon className='h-4 w-4' />
+                  </button>
+                }
+              </nav>
+            </header>
+            <Recipient recipient={recipient} budget={budget} onChange={handleRecipientChange} />
           </li>
         )}
       </ul>
       <footer className='flex flex-row-reverse p-2 bg-gray-100 space-x-2'>
         <button
           className='p-2 rounded-md bg-blue-200'
-          onClick={() => setRecipients(recipients.concat(defaultRecipient))}
+          onClick={() => setRecipients(recipients.concat(newRecipient()))}
         >
           Add Recipient
         </button>
