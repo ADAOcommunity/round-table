@@ -320,22 +320,32 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
           </li>
         )}
       </ul>
-      <footer className='flex flex-row-reverse space-x-reverse p-2 bg-gray-100 space-x-2'>
-        <button
-          className='p-2 rounded-md bg-blue-200'
-          onClick={() => setRecipients(recipients.concat(newRecipient()))}
-        >
-          Add Recipient
-        </button>
-        {buildTxResult.isOk &&
-          <Link href={`/proposals/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
-            <a
-              className='p-2 rounded-md bg-blue-200'
-            >
-              Review
-            </a>
-          </Link>
-        }
+      <footer className='flex px-4 py-2 bg-gray-100 items-center'>
+        <div className='grow'>
+          {buildTxResult.isOk &&
+            <p className='flex space-x-1 font-bold'>
+              <span>Fee:</span>
+              <span>{toADA(BigInt(buildTxResult.data.fee().to_str()))}</span>
+            </p>
+          }
+        </div>
+        <nav className='flex space-x-2'>
+          <button
+            className='p-2 rounded-md bg-blue-200'
+            onClick={() => setRecipients(recipients.concat(newRecipient()))}
+          >
+            Add Recipient
+          </button>
+          {buildTxResult.isOk &&
+            <Link href={`/proposals/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
+              <a
+                className='p-2 rounded-md bg-blue-200'
+              >
+                Review
+              </a>
+            </Link>
+          }
+        </nav>
       </footer>
     </div>
   )
