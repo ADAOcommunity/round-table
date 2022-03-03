@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { toDecimal, CurrencyInput } from './currency'
+import { toADA, toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody, TransactionInput, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -341,4 +341,68 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
   )
 }
 
-export { NewTransaction }
+type TransactionProps = {
+  txBody: TransactionBody
+}
+const TransactionViewer = ({ txBody }: TransactionProps) => {
+  const fee = BigInt(txBody.fee().to_str())
+  const getRequiredSigners = () => {
+    const requiredSigners = txBody.required_signers()
+    return requiredSigners && Array.from({ length: requiredSigners.len() }, (_, i) => requiredSigners.get(i))
+  }
+  const requiredSigners = getRequiredSigners()
+  console.log(requiredSigners)
+  const txInputs: TransactionInput[] =
+    Array.from({ length: txBody.inputs().len() }, (_, i) => txBody.inputs().get(i))
+  console.log(txInputs)
+  const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
+    const output = txBody.outputs().get(i)
+    const address = output.address().to_bech32()
+    const amount = output.amount()
+    const assets = new Map()
+    return {
+      id: i.toString(),
+      address,
+      value: {
+        lovelace: BigInt(amount.coin().to_str()),
+        assets
+      }
+    }
+  })
+
+  return (
+    <div className='p-4 bg-white rounded-md'>
+      <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
+      <h2 className='font-bold my-2'>Outputs</h2>
+      <ul>
+        {recipients.map(({ id, address, value }) =>
+          <li key={id}>
+            <p className='flex space-x-1'>
+              <span>Address:</span>
+              <span>{address}</span>
+            </p>
+            <p>
+              <span>{toADA(value.lovelace)}</span>
+              <span>₳</span>
+            </p>
+            <ul>
+              {Array.from(value.assets).map(([id, quantity]) =>
+                <li key={id}>
+                  <span>{quantity.toString()}</span>
+                  <span>{decodeASCII(getAssetName(id))}</span>
+                </li>
+              )}
+            </ul>
+          </li>
+        )}
+      </ul>
+      <p className='flex space-x-1'>
+        <span>Fee:</span>
+        <span>{toADA(fee)}</span>
+        <span>₳</span>
+      </p>
+    </div>
+  )
+}
+
+export { TransactionViewer, NewTransaction }

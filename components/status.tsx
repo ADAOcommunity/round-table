@@ -19,4 +19,12 @@ const LoadingPage: NextPage = ({ children }) => {
   )
 }
 
-export { ErrorPage, LoadingPage }
+const ErrorMessage: NextPage = ({ children }) => (
+  <ErrorPage>
+    <p className='p-4 font-bold text-lg text-red-600'>{children}</p>
+  </ErrorPage>
+)
+
+const Loading = () => <LoadingPage><p className='p-8 text-lg text-gray-900'>Loading...</p></LoadingPage>
+
+export { ErrorPage, ErrorMessage, Loading, LoadingPage }

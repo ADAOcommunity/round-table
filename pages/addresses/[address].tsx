@@ -6,7 +6,7 @@ import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
 import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
-import { ErrorPage, LoadingPage } from '../../components/status'
+import { ErrorMessage, Loading } from '../../components/status'
 
 const GetAddress: NextPage = () => {
   const router = useRouter()
@@ -16,33 +16,14 @@ const GetAddress: NextPage = () => {
   const cardano = useCardanoSerializationLib()
   const protocolParameters = useProtocolParametersQuery(config)
 
-  const loading = <LoadingPage><p className='p-8 text-lg text-gray-900'>Loading...</p></LoadingPage>
-  const ErrorMessage: NextPage = ({ children }) => <p className='p-4 font-bold text-lg text-red-600'>{children}</p>
-
-  if (!cardano) return <div className='text-center'>Loading Cardano Serialization Lib</div>
-  if (utxos.type === 'loading') return loading
-  if (protocolParameters.type === 'loading') return loading
-  if (utxos.type === 'error') return (
-    <ErrorPage>
-      <ErrorMessage>An error happened when query balance.</ErrorMessage>
-    </ErrorPage>
-  )
-  if (protocolParameters.type === 'error') return (
-    <ErrorPage>
-      <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>
-    </ErrorPage>
-  )
-  if (!address || typeof address !== 'string') return (
-    <ErrorPage>
-      <ErrorMessage>Invalid address</ErrorMessage>
-    </ErrorPage>
-  )
-  const addressResult = cardano.parseAddress(address)
-  if (!addressResult.isOk) return (
-    <ErrorPage>
-      <ErrorMessage>Invalid address</ErrorMessage>
-    </ErrorPage>
-  )
+  if (!cardano) return <Loading />;
+  if (utxos.type === 'loading') return <Loading />;
+  if (protocolParameters.type === 'loading') return <Loading />;
+  if (utxos.type === 'error') return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
+  if (protocolParameters.type === 'error') return <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>;
+  if (typeof address !== 'string') return <ErrorMessage>Invalid address</ErrorMessage>;
+  const addressResult = cardano.parseAddress(address);
+  if (!addressResult.isOk) return <ErrorMessage>Invalid address</ErrorMessage>;
 
   return (
     <Layout>
