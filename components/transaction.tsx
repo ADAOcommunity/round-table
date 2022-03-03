@@ -75,7 +75,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
   const buildAddress = (recipient: Recipient): Recipient => {
     return {
       ...recipient,
-      addressResult: cardano.buildAddress(recipient.address)
+      addressResult: cardano.parseAddress(recipient.address)
     }
   }
 

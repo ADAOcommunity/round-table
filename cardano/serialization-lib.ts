@@ -23,7 +23,7 @@ class Cardano {
     return this._wasm
   }
 
-  public buildAddress(bech32Address: string): Result<Address> {
+  public parseAddress(bech32Address: string): Result<Address> {
     try {
       return {
         isOk: true,

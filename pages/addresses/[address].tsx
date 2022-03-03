@@ -37,7 +37,7 @@ const GetAddress: NextPage = () => {
       <ErrorMessage>Invalid address</ErrorMessage>
     </ErrorPage>
   )
-  const addressResult = cardano.buildAddress(address)
+  const addressResult = cardano.parseAddress(address)
   if (!addressResult.isOk) return (
     <ErrorPage>
       <ErrorMessage>Invalid address</ErrorMessage>
