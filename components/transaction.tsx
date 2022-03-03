@@ -60,6 +60,106 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   )
 }
 
+type RecipientProps = {
+  recipient: Recipient
+  index: number
+  budget: Value
+  onChange: (recipient: Recipient, index: number) => void
+}
+
+const Recipient = ({ recipient, index, budget, onChange }: RecipientProps) => {
+  const { address, value } = recipient
+  const setRecipient = (recipient: Recipient) => {
+    onChange(recipient, index)
+  }
+  const setAddress = (address: string) => {
+    setRecipient({ ...recipient, address })
+  }
+  const setLovelace = (lovelace: bigint) => {
+    setRecipient({ ...recipient, value: { ...value, lovelace } })
+  }
+  const setAsset = (id: string, quantity: bigint) => {
+    setRecipient({
+      ...recipient,
+      value: {
+        ...value,
+        assets: new Map(value.assets).set(id, quantity)
+      }
+    })
+  }
+  const deleteAsset = (id: string) => {
+    const newAssets = new Map(value.assets)
+    newAssets.delete(id)
+    setRecipient({
+      ...recipient,
+      value: { ...value, assets: newAssets }
+    })
+  }
+
+  return (
+    <div className='p-4 space-y-2'>
+      <div>
+        <label className='flex block border rounded-md overflow-hidden'>
+          <span className='p-2 bg-gray-200'>TO</span>
+          <input
+            className='p-2 block w-full outline-none'
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder='Address' />
+        </label>
+      </div>
+      <LabeledCurrencyInput
+        symbol='₳'
+        decimal={6}
+        value={value.lovelace}
+        max={value.lovelace + budget.lovelace}
+        onChange={setLovelace}
+        placeholder='0.000000' />
+      <ul className='space-y-2'>
+        {Array.from(value.assets).map(([id, quantity]) => {
+          const symbol = decodeASCII(getAssetName(id))
+          const assetBudget = (budget.assets.get(id) || BigInt(0))
+          const onChange = (value: bigint) => setAsset(id, value)
+          return (
+            <li key={id} className='flex space-x-2'>
+              <LabeledCurrencyInput
+                symbol={symbol}
+                decimal={0}
+                value={quantity}
+                max={quantity + assetBudget}
+                onChange={onChange} />
+              <button className='px-2 bg-gray-100 rounded-md' onClick={() => deleteAsset(id)}>Del</button>
+            </li>
+          )
+        })}
+      </ul>
+      <div className='relative'>
+        <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
+        <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
+          {Array.from(budget.assets)
+            .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
+            .map(([id, quantity]) => (
+              <li key={id}>
+                <button
+                  onClick={() => setAsset(id, BigInt(0))}
+                  className='block w-full h-full px-1 py-2 hover:bg-slate-100'
+                >
+                  <div className='flex space-x-2'>
+                    <span>{decodeASCII(getAssetName(id))}</span>
+                    <span className='grow text-right'>{quantity.toString()}</span>
+                  </div>
+                  <div className='flex space-x-1'>
+                    <span className='font-mono text-gray-500 text-xs'>{id.slice(0, 56)}</span>
+                  </div>
+                </button>
+              </li>
+            ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
 type NewTransactionProps = {
   senderAddress: Address
   cardano: Cardano
@@ -115,107 +215,6 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
   }
 
   const txOutputResults = recipients.map(buildTxOutput)
-
-  type RecipientProps = {
-    recipient: Recipient
-    index: number
-    budget: Value
-  }
-  const Recipient = ({ recipient, index, budget }: RecipientProps) => {
-    const { address, value } = recipient
-    const { lovelace, assets } = value
-    const setRecipient = (newRecipient: Recipient) => {
-      setRecipients(recipients.map((oldRecipient, _index) => {
-        return _index === index ? newRecipient : oldRecipient
-      }))
-    }
-    const setAddress = (address: string) => {
-      setRecipient({ ...recipient, address: address })
-    }
-    const setLovelace = (lovelace: bigint) => {
-      setRecipient({ ...recipient, value: { ...value, lovelace } })
-    }
-    const setAsset = (id: string, quantity: bigint) => {
-      setRecipient({
-        ...recipient,
-        value: {
-          ...value,
-          assets: new Map(assets).set(id, quantity)
-        }
-      })
-    }
-    const deleteAsset = (id: string) => {
-      const newAssets = new Map(assets)
-      newAssets.delete(id)
-      setRecipient({
-        ...recipient,
-        value: { ...value, assets: newAssets }
-      })
-    }
-
-    return (
-      <div className='p-4 space-y-2'>
-        <div>
-          <label className='flex block border rounded-md overflow-hidden'>
-            <span className='p-2 bg-gray-200'>TO</span>
-            <input
-              className='p-2 block w-full outline-none'
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder='Address' />
-          </label>
-        </div>
-        <LabeledCurrencyInput
-          symbol='₳'
-          decimal={6}
-          value={lovelace}
-          max={lovelace + budget.lovelace}
-          onChange={setLovelace}
-          placeholder='0.000000' />
-        <ul className='space-y-2'>
-          {Array.from(assets).map(([id, quantity]) => {
-            const symbol = decodeASCII(getAssetName(id))
-            const assetBudget = (budget.assets.get(id) || BigInt(0))
-            const onChange = (value: bigint) => setAsset(id, value)
-            return (
-              <li key={id} className='flex space-x-2'>
-                <LabeledCurrencyInput
-                  symbol={symbol}
-                  decimal={0}
-                  value={quantity}
-                  max={quantity + assetBudget}
-                  onChange={onChange} />
-                <button className='px-2 bg-gray-100 rounded-md' onClick={() => deleteAsset(id)}>Del</button>
-              </li>
-            )
-          })}
-        </ul>
-        <div className='relative'>
-          <button className='block rounded-md bg-gray-200 p-2 peer'>Add Asset</button>
-          <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 rounded-md shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
-            {Array.from(budget.assets)
-              .filter(([id, quantity]) => !assets.has(id) && quantity > BigInt(0))
-              .map(([id, quantity]) => (
-                <li key={id}>
-                  <button
-                    onClick={() => setAsset(id, BigInt(0))}
-                    className='block w-full h-full px-1 py-2 hover:bg-slate-100'
-                  >
-                    <div className='flex space-x-2'>
-                      <span>{decodeASCII(getAssetName(id))}</span>
-                      <span className='grow text-right'>{quantity.toString()}</span>
-                    </div>
-                    <div className='flex space-x-1'>
-                      <span className='font-mono text-gray-500 text-xs'>{id.slice(0, 56)}</span>
-                    </div>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </div>
-      </div>
-    )
-  }
 
   const budget: Value = recipients
     .map(({ value }) => value)
@@ -280,6 +279,10 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
 
   const buildTxResult = buildTransaction()
 
+  const handleRecipientChange = (recipient: Recipient, index: number) => {
+    setRecipients(recipients.map((_recipient, _index) => _index === index ? recipient : _recipient))
+  }
+
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
       <header className='p-2 text-center bg-gray-100'>
@@ -291,7 +294,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       <ul className='divide-y'>
         {recipients.map((recipient, index) =>
           <li key={index}>
-            <Recipient recipient={recipient} index={index} budget={budget} />
+            <Recipient recipient={recipient} index={index} budget={budget} onChange={handleRecipientChange} />
           </li>
         )}
       </ul>
