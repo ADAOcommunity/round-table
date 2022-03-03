@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBody, TransactionBuilder, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
 import { Buffer } from 'buffer'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
@@ -6,7 +6,7 @@ import { ProtocolParameters } from './query-api'
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
 
-const toHex = (input: ArrayBuffer) => Buffer.from(input).toString("hex")
+const toHex = (input: ArrayBuffer) => Buffer.from(input).toString('hex')
 
 type Result<T> =
   | { isOk: true, data: T }
@@ -21,6 +21,15 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public encodeTxBody(body: TransactionBody) {
+    return Buffer.from(body.to_bytes()).toString('base64')
+  }
+
+  public decodeTxBody(text: string): TransactionBody {
+    const bytes = Buffer.from(text, 'base64')
+    return this.lib.TransactionBody.from_bytes(bytes)
   }
 
   public parseAddress(bech32Address: string): Result<Address> {

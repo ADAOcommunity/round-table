@@ -6,6 +6,7 @@ import type { Result } from '../cardano/serialization-lib'
 import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { XIcon } from '@heroicons/react/solid'
+import Link from 'next/link'
 
 type Recipient = {
   id: string
@@ -319,13 +320,22 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
           </li>
         )}
       </ul>
-      <footer className='flex flex-row-reverse p-2 bg-gray-100 space-x-2'>
+      <footer className='flex flex-row-reverse space-x-reverse p-2 bg-gray-100 space-x-2'>
         <button
           className='p-2 rounded-md bg-blue-200'
           onClick={() => setRecipients(recipients.concat(newRecipient()))}
         >
           Add Recipient
         </button>
+        {buildTxResult.isOk &&
+          <Link href={`/drafts/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
+            <a
+              className='p-2 rounded-md bg-blue-200'
+            >
+              Review
+            </a>
+          </Link>
+        }
       </footer>
     </div>
   )
