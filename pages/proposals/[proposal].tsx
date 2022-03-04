@@ -12,11 +12,12 @@ const GetProposal: NextPage = () => {
 
   if (!cardano) return <Loading />;
   if (typeof proposal !== 'string') return <ErrorMessage>Invalid transaction body</ErrorMessage>;
+  const decodeResult = cardano.decodeTxBody(proposal)
+  if (!decodeResult.isOk) return <ErrorMessage>Invalid transaction body</ErrorMessage>;
 
-  const txBody = cardano.decodeTxBody(proposal)
   return (
     <Layout>
-      <TransactionViewer txBody={txBody} />
+      <TransactionViewer txBody={decodeResult.data} />
     </Layout>
   )
 }

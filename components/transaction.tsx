@@ -3,9 +3,9 @@ import { toADA, toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionInput, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { XIcon } from '@heroicons/react/solid'
+import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 
 type Recipient = {
@@ -351,10 +351,10 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
   )
 }
 
-type TransactionProps = {
+type TransactionViewerProps = {
   txBody: TransactionBody
 }
-const TransactionViewer = ({ txBody }: TransactionProps) => {
+const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   const fee = BigInt(txBody.fee().to_str())
   const getRequiredSigners = () => {
     const requiredSigners = txBody.required_signers()
@@ -362,16 +362,41 @@ const TransactionViewer = ({ txBody }: TransactionProps) => {
   }
   const requiredSigners = getRequiredSigners()
   console.log(requiredSigners)
-  const txInputs: TransactionInput[] =
-    Array.from({ length: txBody.inputs().len() }, (_, i) => txBody.inputs().get(i))
-  console.log(txInputs)
+
+  type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
+  const txInputs: TxInputSet = {
+    isQueried: false,
+    data: Array.from({ length: txBody.inputs().len() }, (_, i) => {
+      const input = txBody.inputs().get(i)
+      return {
+        txHash: Buffer.from(input.transaction_id().to_bytes()).toString('hex'),
+        index: input.index()
+      }
+    })
+  }
+
   const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
     const output = txBody.outputs().get(i)
     const address = output.address().to_bech32()
     const amount = output.amount()
     const assets = new Map()
+    const multiAsset = amount.multiasset()
+    if (multiAsset) {
+      const keys = multiAsset.keys()
+      Array.from({ length: keys.len() }, (_, i) => {
+        const policyId = keys.get(i)
+        const _asset = multiAsset.get(policyId)
+        _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
+          const assetName = _asset.keys().get(i)
+          const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
+          const id = Buffer.from(policyId.to_bytes()).toString('hex') +
+            Buffer.from(assetName.to_bytes()).toString('hex')
+          assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
+        })
+      })
+    }
     return {
-      id: i.toString(),
+      id: nanoid(),
       address,
       value: {
         lovelace: BigInt(amount.coin().to_str()),
@@ -383,35 +408,41 @@ const TransactionViewer = ({ txBody }: TransactionProps) => {
   return (
     <div className='p-4 bg-white rounded-md'>
       <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
-      <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
-      <h2 className='font-bold my-2'>Outputs</h2>
-      <ul>
-        {recipients.map(({ id, address, value }) =>
-          <li key={id}>
-            <p className='flex space-x-1'>
-              <span>Address:</span>
-              <span>{address}</span>
-            </p>
-            <p>
-              <span>{toADA(value.lovelace)}</span>
-              <span>₳</span>
-            </p>
-            <ul>
-              {Array.from(value.assets).map(([id, quantity]) =>
-                <li key={id}>
-                  <span>{quantity.toString()}</span>
-                  <span>{decodeASCII(getAssetName(id))}</span>
-                </li>
-              )}
-            </ul>
+      <p className='my-2'>This is the page for transaction review and signing. Share the URI to other required signers.</p>
+      <div className='flex items-center'>
+        <ul className='basis-[47.5%] space-y-1'>
+          {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
+            <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
+          )}
+        </ul>
+        <div className='basis-[5%] flex justify-center'>
+          <ArrowRightIcon className='h-10 w-10' />
+        </div>
+        <ul className='basis-[47.5%] space-y-1'>
+          {recipients.map(({ id, address, value }) =>
+            <li key={id} className='p-2 border rounded-md'>
+              <p className='flex space-x-1 break-all'>{address}</p>
+              <p className='flex space-x-1'>
+                <span>{toADA(value.lovelace)}</span>
+                <span>₳</span>
+              </p>
+              <ul>
+                {Array.from(value.assets).map(([id, quantity]) =>
+                  <li key={id} className='flex space-x-1'>
+                    <span>{quantity.toString()}</span>
+                    <span>{decodeASCII(getAssetName(id))}</span>
+                  </li>
+                )}
+              </ul>
+            </li>
+          )}
+          <li className='p-2 border rounded-md space-x-1'>
+            <span>Fee:</span>
+            <span>{toADA(fee)}</span>
+            <span>₳</span>
           </li>
-        )}
-      </ul>
-      <p className='flex space-x-1'>
-        <span>Fee:</span>
-        <span>{toADA(fee)}</span>
-        <span>₳</span>
-      </p>
+        </ul>
+      </div>
     </div>
   )
 }
