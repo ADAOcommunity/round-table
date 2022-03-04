@@ -27,9 +27,19 @@ class Cardano {
     return Buffer.from(body.to_bytes()).toString('base64')
   }
 
-  public decodeTxBody(text: string): TransactionBody {
-    const bytes = Buffer.from(text, 'base64')
-    return this.lib.TransactionBody.from_bytes(bytes)
+  public decodeTxBody(text: string): Result<TransactionBody> {
+    try {
+      const bytes = Buffer.from(text, 'base64')
+      return {
+        isOk: true,
+        data: this.lib.TransactionBody.from_bytes(bytes)
+      }
+    } catch (error) {
+      return {
+        isOk: false,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    }
   }
 
   public parseAddress(bech32Address: string): Result<Address> {
