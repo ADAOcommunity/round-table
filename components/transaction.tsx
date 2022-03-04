@@ -5,7 +5,7 @@ import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { XIcon } from '@heroicons/react/solid'
+import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 
 type Recipient = {
@@ -409,35 +409,34 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
     <div className='p-4 bg-white rounded-md'>
       <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
       <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
-      <div className='flex'>
-        <div className='basis-1/2'>
-          <ul className='space-y-1'>
-            {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
-              <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
-            )}
-          </ul>
+      <div className='flex items-center'>
+        <ul className='basis-[47.5%] space-y-1'>
+          {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
+            <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
+          )}
+        </ul>
+        <div className='basis-[5%] flex justify-center'>
+          <ArrowRightIcon className='h-10 w-10' />
         </div>
-        <div className='basis-1/2'>
-          <ul className='space-y-1'>
-            {recipients.map(({ id, address, value }) =>
-              <li key={id} className='p-2 border rounded-md'>
-                <p className='flex space-x-1 break-all'>{address}</p>
-                <p className='flex space-x-1'>
-                  <span>{toADA(value.lovelace)}</span>
-                  <span>₳</span>
-                </p>
-                <ul>
-                  {Array.from(value.assets).map(([id, quantity]) =>
-                    <li key={id} className='flex space-x-1'>
-                      <span>{quantity.toString()}</span>
-                      <span>{decodeASCII(getAssetName(id))}</span>
-                    </li>
-                  )}
-                </ul>
-              </li>
-            )}
-          </ul>
-        </div>
+        <ul className='basis-[47.5%] space-y-1'>
+          {recipients.map(({ id, address, value }) =>
+            <li key={id} className='p-2 border rounded-md'>
+              <p className='flex space-x-1 break-all'>{address}</p>
+              <p className='flex space-x-1'>
+                <span>{toADA(value.lovelace)}</span>
+                <span>₳</span>
+              </p>
+              <ul>
+                {Array.from(value.assets).map(([id, quantity]) =>
+                  <li key={id} className='flex space-x-1'>
+                    <span>{quantity.toString()}</span>
+                    <span>{decodeASCII(getAssetName(id))}</span>
+                  </li>
+                )}
+              </ul>
+            </li>
+          )}
+        </ul>
       </div>
       <p className='flex space-x-1'>
         <span>Fee:</span>
