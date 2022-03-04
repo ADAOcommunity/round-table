@@ -3,7 +3,7 @@ import { toADA, toDecimal, CurrencyInput } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionInput, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -362,9 +362,19 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   }
   const requiredSigners = getRequiredSigners()
   console.log(requiredSigners)
-  const txInputs: TransactionInput[] =
-    Array.from({ length: txBody.inputs().len() }, (_, i) => txBody.inputs().get(i))
-  console.log(txInputs)
+
+  type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
+  const txInputs: TxInputSet = {
+    isQueried: false,
+    data: Array.from({ length: txBody.inputs().len() }, (_, i) => {
+      const input = txBody.inputs().get(i)
+      return {
+        txHash: Buffer.from(input.transaction_id().to_bytes()).toString('hex'),
+        index: input.index()
+      }
+    })
+  }
+
   const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
     const output = txBody.outputs().get(i)
     const address = output.address().to_bech32()
@@ -399,18 +409,19 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
     <div className='p-4 bg-white rounded-md'>
       <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
       <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
-      <div className='flex divide-x'>
+      <div className='flex'>
         <div className='basis-1/2'>
+          <ul className='space-y-1'>
+            {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
+              <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
+            )}
+          </ul>
         </div>
-        <div className='basis-1/2 p-4'>
-          <h2 className='font-bold my-2'>Outputs</h2>
-          <ul>
+        <div className='basis-1/2'>
+          <ul className='space-y-1'>
             {recipients.map(({ id, address, value }) =>
-              <li key={id}>
-                <p className='flex space-x-1'>
-                  <span>Address:</span>
-                  <span>{address}</span>
-                </p>
+              <li key={id} className='p-2 border rounded-md'>
+                <p className='flex space-x-1 break-all'>{address}</p>
                 <p className='flex space-x-1'>
                   <span>{toADA(value.lovelace)}</span>
                   <span>₳</span>
