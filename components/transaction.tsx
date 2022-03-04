@@ -370,6 +370,21 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
     const address = output.address().to_bech32()
     const amount = output.amount()
     const assets = new Map()
+    const multiAsset = amount.multiasset()
+    if (multiAsset) {
+      const keys = multiAsset.keys()
+      Array.from({ length: keys.len() }, (_, i) => {
+        const policyId = keys.get(i)
+        const _asset = multiAsset.get(policyId)
+        _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
+          const assetName = _asset.keys().get(i)
+          const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
+          const id = Buffer.from(policyId.to_bytes()).toString('hex') +
+            Buffer.from(assetName.to_bytes()).toString('hex')
+          assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
+        })
+      })
+    }
     return {
       id: nanoid(),
       address,
@@ -384,29 +399,35 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
     <div className='p-4 bg-white rounded-md'>
       <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
       <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
-      <h2 className='font-bold my-2'>Outputs</h2>
-      <ul>
-        {recipients.map(({ id, address, value }) =>
-          <li key={id}>
-            <p className='flex space-x-1'>
-              <span>Address:</span>
-              <span>{address}</span>
-            </p>
-            <p>
-              <span>{toADA(value.lovelace)}</span>
-              <span>₳</span>
-            </p>
-            <ul>
-              {Array.from(value.assets).map(([id, quantity]) =>
-                <li key={id}>
-                  <span>{quantity.toString()}</span>
-                  <span>{decodeASCII(getAssetName(id))}</span>
-                </li>
-              )}
-            </ul>
-          </li>
-        )}
-      </ul>
+      <div className='flex divide-x'>
+        <div className='basis-1/2'>
+        </div>
+        <div className='basis-1/2 p-4'>
+          <h2 className='font-bold my-2'>Outputs</h2>
+          <ul>
+            {recipients.map(({ id, address, value }) =>
+              <li key={id}>
+                <p className='flex space-x-1'>
+                  <span>Address:</span>
+                  <span>{address}</span>
+                </p>
+                <p className='flex space-x-1'>
+                  <span>{toADA(value.lovelace)}</span>
+                  <span>₳</span>
+                </p>
+                <ul>
+                  {Array.from(value.assets).map(([id, quantity]) =>
+                    <li key={id} className='flex space-x-1'>
+                      <span>{quantity.toString()}</span>
+                      <span>{decodeASCII(getAssetName(id))}</span>
+                    </li>
+                  )}
+                </ul>
+              </li>
+            )}
+          </ul>
+        </div>
+      </div>
       <p className='flex space-x-1'>
         <span>Fee:</span>
         <span>{toADA(fee)}</span>
