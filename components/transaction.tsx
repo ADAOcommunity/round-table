@@ -351,10 +351,10 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
   )
 }
 
-type TransactionProps = {
+type TransactionViewerProps = {
   txBody: TransactionBody
 }
-const TransactionViewer = ({ txBody }: TransactionProps) => {
+const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   const fee = BigInt(txBody.fee().to_str())
   const getRequiredSigners = () => {
     const requiredSigners = txBody.required_signers()
@@ -371,7 +371,7 @@ const TransactionViewer = ({ txBody }: TransactionProps) => {
     const amount = output.amount()
     const assets = new Map()
     return {
-      id: i.toString(),
+      id: nanoid(),
       address,
       value: {
         lovelace: BigInt(amount.coin().to_str()),
