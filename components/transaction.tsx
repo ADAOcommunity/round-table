@@ -408,7 +408,7 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   return (
     <div className='p-4 bg-white rounded-md'>
       <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
-      <p>This is the page for transaction review and signing. Share the URI to other required signers.</p>
+      <p className='my-2'>This is the page for transaction review and signing. Share the URI to other required signers.</p>
       <div className='flex items-center'>
         <ul className='basis-[47.5%] space-y-1'>
           {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
