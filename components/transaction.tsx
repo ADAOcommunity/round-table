@@ -436,13 +436,13 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
               </ul>
             </li>
           )}
+          <li className='p-2 border rounded-md space-x-1'>
+            <span>Fee:</span>
+            <span>{toADA(fee)}</span>
+            <span>₳</span>
+          </li>
         </ul>
       </div>
-      <p className='flex space-x-1'>
-        <span>Fee:</span>
-        <span>{toADA(fee)}</span>
-        <span>₳</span>
-      </p>
     </div>
   )
 }
