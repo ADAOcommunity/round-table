@@ -18,6 +18,11 @@ You can start editing the page by modifying `pages/index.tsx`. The page auto-upd
 
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
+### Environment Variable
+
+* To use it on Cardano Testnet, set `NEXT_PUBLIC_TESTNET=y`.
+* To connect it to a GraphQL node, set `NEXT_PUBLIC_GRAPHQL` to the URI of the node. The default Query API is [Koios](https://www.koios.rest/).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
