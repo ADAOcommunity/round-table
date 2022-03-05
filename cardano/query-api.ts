@@ -212,8 +212,8 @@ const useProtocolParametersQuery = (config: Config) => {
       })
 
       type QueryData = {
-        genesis: {
-          shelley: {
+        cardano: {
+          currentEpoch: {
             protocolParams: {
               minFeeA: number
               minFeeB: number
@@ -228,7 +228,7 @@ const useProtocolParametersQuery = (config: Config) => {
       }
 
       apollo.query<QueryData>({ query: ProtocolParametersQuery }).then(({ data }) => {
-        const params = data?.genesis.shelley.protocolParams
+        const params = data?.cardano.currentEpoch.protocolParams
 
         params && isMounted && setResult({
           type: 'ok',
