@@ -387,12 +387,13 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
       const keys = multiAsset.keys()
       Array.from({ length: keys.len() }, (_, i) => {
         const policyId = keys.get(i)
+        const policyIdHex = Buffer.from(policyId.to_bytes()).toString('hex')
         const _asset = multiAsset.get(policyId)
         _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
           const assetName = _asset.keys().get(i)
+          const assetNameHex = Buffer.from(assetName.to_bytes()).toString('hex')
           const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
-          const id = Buffer.from(policyId.to_bytes()).toString('hex') +
-            Buffer.from(assetName.to_bytes()).toString('hex')
+          const id = policyIdHex + assetNameHex
           assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
         })
       })
