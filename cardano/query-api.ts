@@ -1,4 +1,5 @@
 import { gql, ApolloClient, InMemoryCache } from '@apollo/client'
+import { Cardano, TransactionOutput } from '@cardano-graphql/client-ts'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { Config } from './config'
@@ -74,26 +75,11 @@ const useAddressUTxOsQuery = (address: string, config: Config) => {
         cache: new InMemoryCache()
       })
 
-      type QueryData = {
-        utxos: {
-          txHash: string
-          index: number
-          value: string
-          tokens: {
-            asset: {
-              policyId: string
-              assetName: string
-            }
-            quantity: string
-          }[]
-        }[]
-      }
-
       type QueryVars = {
         address: string
       }
 
-      address && apollo.query<QueryData, QueryVars>({
+      address && apollo.query<{ utxos: TransactionOutput[] }, QueryVars>({
         query: UTxOsQuery,
         variables: { address: address }
       }).then(({ data }) => {
@@ -211,34 +197,23 @@ const useProtocolParametersQuery = (config: Config) => {
         cache: new InMemoryCache()
       })
 
-      type QueryData = {
-        cardano: {
-          currentEpoch: {
-            protocolParams: {
-              minFeeA: number
-              minFeeB: number
-              poolDeposit: number
-              keyDeposit: number
-              coinsPerUtxoWord: number
-              maxValSize: string
-              maxTxSize: number
-            }
-          }
-        }
-      }
-
-      apollo.query<QueryData>({ query: ProtocolParametersQuery }).then(({ data }) => {
+      apollo.query<{ cardano: Cardano }>({ query: ProtocolParametersQuery }).then(({ data }) => {
         const params = data?.cardano.currentEpoch.protocolParams
+        if (!params) throw new Error('No protocol parameter found')
+        if (!params.coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord parameter')
+        const coinsPerUtxoWord: number = params.coinsPerUtxoWord
+        if (!params.maxValSize) throw new Error('No maxValSize parameter')
+        const maxValSize = parseFloat(params.maxValSize)
 
-        params && isMounted && setResult({
+        isMounted && setResult({
           type: 'ok',
           data: {
             minFeeA: params.minFeeA,
             minFeeB: params.minFeeB,
             poolDeposit: params.poolDeposit,
             keyDeposit: params.keyDeposit,
-            coinsPerUtxoWord: params.coinsPerUtxoWord,
-            maxValSize: parseFloat(params.maxValSize),
+            coinsPerUtxoWord,
+            maxValSize,
             maxTxSize: params.maxTxSize
           }
         })

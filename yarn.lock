@@ -56,6 +56,11 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
+"@cardano-graphql/client-ts@^6.2.0":
+  version "6.2.0"
+  resolved "https://registry.yarnpkg.com/@cardano-graphql/client-ts/-/client-ts-6.2.0.tgz#e28de304320596b24b17887ae28701f812e0fdf0"
+  integrity sha512-xuvHz5nT19Lh2P0SK8rb2YxUWhNqaflYFPj/jGOXdfOYI3Pkt2W2jT4nxb6OaEgq1EgPvWbZu+vy2nABsSpPCA==
+
 "@emurgo/cardano-serialization-lib-browser@^10.0.3":
   version "10.0.3"
   resolved "https://registry.yarnpkg.com/@emurgo/cardano-serialization-lib-browser/-/cardano-serialization-lib-browser-10.0.3.tgz#bc3aa7c8da5129a15f5d0ed1c108d49a24b5cbca"
