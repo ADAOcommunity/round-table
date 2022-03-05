@@ -1,5 +1,6 @@
-import { ChangeEvent, KeyboardEvent, useState } from "react"
+import { ChangeEvent, useContext } from "react"
 import NumberFormat from "react-number-format"
+import { Config, ConfigContext } from "../cardano/config"
 
 type Props = {
   value: bigint
@@ -43,6 +44,36 @@ const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
   )
 }
 
-const toADA = (lovelace: bigint) => toDecimal(lovelace, 6)
+const getADASymbol = (config: Config) => config.isMainnet ? '₳' : 't₳'
 
-export { toADA, toDecimal, CurrencyInput }
+type AssetAmountProps = {
+  quantity: bigint
+  decimals: number
+  symbol: string
+  className?: string
+}
+
+const AssetAmount = ({quantity, decimals, symbol, className}: AssetAmountProps) => (
+  <NumberFormat
+    className={className}
+    value={toDecimal(quantity, decimals)}
+    decimalSeparator='.'
+    isNumericString={true}
+    thousandSeparator={false}
+    allowNegative={false}
+    decimalScale={decimals}
+    suffix={` ${symbol}`}
+    displayType='text' />
+)
+
+type ADAAmountProps = {
+  lovelace: bigint
+  className?: string
+}
+
+const ADAAmount = ({ lovelace, className }: ADAAmountProps) => {
+  const [config, _] = useContext(ConfigContext)
+  return <AssetAmount quantity={lovelace} decimals={6} symbol={getADASymbol(config)} className={className} />
+}
+
+export { getADASymbol, toDecimal, ADAAmount, AssetAmount, CurrencyInput }
