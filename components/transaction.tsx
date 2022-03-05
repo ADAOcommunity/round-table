@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { toADA, toDecimal, CurrencyInput } from './currency'
+import { useContext, useState } from 'react'
+import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
@@ -7,6 +7,7 @@ import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardan
 import { nanoid } from 'nanoid'
 import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
+import { ConfigContext } from '../cardano/config'
 
 type Recipient = {
   id: string
@@ -74,6 +75,7 @@ type RecipientProps = {
 }
 
 const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
+  const [ config, _ ] = useContext(ConfigContext)
   const { address, value } = recipient
   const setRecipient = (recipient: Recipient) => {
     onChange(recipient)
@@ -115,7 +117,7 @@ const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
         </label>
       </div>
       <LabeledCurrencyInput
-        symbol='₳'
+        symbol={getADASymbol(config)}
         decimal={6}
         value={value.lovelace}
         max={value.lovelace + budget.lovelace}
@@ -325,7 +327,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
           {buildTxResult.isOk &&
             <p className='flex space-x-1 font-bold'>
               <span>Fee:</span>
-              <span>{toADA(BigInt(buildTxResult.data.fee().to_str()))}</span>
+              <span><ADAAmount lovelace={BigInt(buildTxResult.data.fee().to_str())} /></span>
             </p>
           }
         </div>
@@ -422,15 +424,16 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
           {recipients.map(({ id, address, value }) =>
             <li key={id} className='p-2 border rounded-md'>
               <p className='flex space-x-1 break-all'>{address}</p>
-              <p className='flex space-x-1'>
-                <span>{toADA(value.lovelace)}</span>
-                <span>₳</span>
+              <p>
+                <ADAAmount lovelace={value.lovelace} />
               </p>
               <ul>
                 {Array.from(value.assets).map(([id, quantity]) =>
-                  <li key={id} className='flex space-x-1'>
-                    <span>{quantity.toString()}</span>
-                    <span>{decodeASCII(getAssetName(id))}</span>
+                  <li key={id}>
+                    <AssetAmount
+                      quantity={quantity}
+                      decimals={0}
+                      symbol={decodeASCII(getAssetName(id))} />
                   </li>
                 )}
               </ul>
@@ -438,8 +441,7 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
           )}
           <li className='p-2 border rounded-md space-x-1'>
             <span>Fee:</span>
-            <span>{toADA(fee)}</span>
-            <span>₳</span>
+            <ADAAmount lovelace={fee} />
           </li>
         </ul>
       </div>
