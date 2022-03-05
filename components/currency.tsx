@@ -34,6 +34,7 @@ const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
       type='text'
       value={inputValue}
       decimalSeparator='.'
+      isNumericString={true}
       displayType='input'
       thousandSeparator={false}
       allowNegative={false}
