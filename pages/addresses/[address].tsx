@@ -11,7 +11,7 @@ import { ErrorMessage, Loading } from '../../components/status'
 const GetAddress: NextPage = () => {
   const router = useRouter()
   const { address } = router.query
-  const [ config, _ ] = useContext(ConfigContext)
+  const [config, _] = useContext(ConfigContext)
   const utxos = useAddressUTxOsQuery(address as string, config)
   const cardano = useCardanoSerializationLib()
   const protocolParameters = useProtocolParametersQuery(config)

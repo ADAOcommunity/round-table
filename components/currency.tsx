@@ -54,7 +54,7 @@ type AssetAmountProps = {
   className?: string
 }
 
-const AssetAmount = ({quantity, decimals, symbol, className}: AssetAmountProps) => (
+const AssetAmount = ({ quantity, decimals, symbol, className }: AssetAmountProps) => (
   <NumberFormat
     className={className}
     value={toDecimal(quantity, decimals)}
