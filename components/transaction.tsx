@@ -28,11 +28,8 @@ const newRecipient = (): Recipient => {
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
-
 const decodeASCII = (assetName: string): string => {
-  const buffer = Buffer.from(assetName, 'hex')
-  const decoder = new TextDecoder('ascii')
-  return decoder.decode(buffer)
+  return Buffer.from(assetName, 'hex').toString('ascii')
 }
 
 type LabeledCurrencyInputProps = {
@@ -75,7 +72,7 @@ type RecipientProps = {
 }
 
 const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
-  const [ config, _ ] = useContext(ConfigContext)
+  const [config, _] = useContext(ConfigContext)
   const { address, value } = recipient
   const setRecipient = (recipient: Recipient) => {
     onChange(recipient)
@@ -391,7 +388,7 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
         const _asset = multiAsset.get(policyId)
         _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
           const assetName = _asset.keys().get(i)
-          const assetNameHex = Buffer.from(assetName.to_bytes()).toString('hex')
+          const assetNameHex = Buffer.from(assetName.name()).toString('hex')
           const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
           const id = policyIdHex + assetNameHex
           assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
