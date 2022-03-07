@@ -93,11 +93,11 @@ class Cardano {
     return TransactionBuilder.new(config)
   }
 
-  public getScriptAddress(script: NativeScript, isMainnet: boolean): string {
+  public getScriptAddress(script: NativeScript, isMainnet: boolean): Address {
     const { ScriptHashNamespace, NetworkInfo } = this.lib
     const scriptHash = script.hash(ScriptHashNamespace.NativeScript)
     const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
-    return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address().to_bech32()
+    return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address()
   }
 
   private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {

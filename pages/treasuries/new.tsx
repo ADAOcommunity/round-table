@@ -113,7 +113,7 @@ const NewTreasury: NextPage = () => {
               {!scriptAddress && <p className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</p>}
               {script && scriptAddress &&
                 <p className='border-b border-gray-100 font-bold text-center p-4'>
-                  <Link href={`/treasuries/${encodeURIComponent(base64Script)}`}><a>{scriptAddress}</a></Link>
+                  <Link href={`/treasuries/${encodeURIComponent(base64Script)}`}><a>{scriptAddress.to_bech32()}</a></Link>
                 </p>
               }
             </div>

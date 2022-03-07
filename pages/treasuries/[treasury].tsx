@@ -18,12 +18,12 @@ const NewProposal: NextPage = () => {
   const parseResult = getResult(() => cardano.lib.NativeScript.from_bytes(Buffer.from(treasury, 'base64')))
   if (!parseResult.isOk) return <ErrorMessage>Invalid script</ErrorMessage>;
   const script = parseResult.data
-  const scriptAddress = cardano.getScriptAddress(script, config.isMainnet)
+  const address = cardano.getScriptAddress(script, config.isMainnet)
 
   return (
     <Layout>
       <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
-      <h2 className='my-4 text-center'>{scriptAddress}</h2>
+      <h2 className='my-4 text-center'>{address.to_bech32()}</h2>
     </Layout>
   )
 }
