@@ -36,25 +36,27 @@ const NewProposal = ({ address, cardano, protocolParameters, script, treasury }:
 
   return (
     <Layout>
-      <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
-      <Panel title='Summary'>
-        <div className='p-4'>
-          <p className='space-x-2'>
-            <span>Address:</span>
-            <span>{address.to_bech32()}</span>
-          </p>
-          <p className='space-x-2'>
-            <span>Required Signers:</span>
-            <span>{formatRequiredSigners()}</span>
-          </p>
-        </div>
-      </Panel>
-      <NewTransaction
-        senderAddress={address}
-        cardano={cardano}
-        protocolParameters={protocolParameters}
-        previewURI={(body) => `/treasuries/${encodeURIComponent(treasury)}/${body}`}
-        utxos={utxos.data} />
+      <div className='space-y-2'>
+        <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
+        <Panel title='Summary'>
+          <div className='p-4'>
+            <p className='space-x-2'>
+              <span>Address:</span>
+              <span>{address.to_bech32()}</span>
+            </p>
+            <p className='space-x-2'>
+              <span>Required Signers:</span>
+              <span>{formatRequiredSigners()}</span>
+            </p>
+          </div>
+        </Panel>
+        <NewTransaction
+          senderAddress={address}
+          cardano={cardano}
+          protocolParameters={protocolParameters}
+          previewURI={(body) => `/treasuries/${encodeURIComponent(treasury)}/${body}`}
+          utxos={utxos.data} />
+      </div>
     </Layout>
   )
 }

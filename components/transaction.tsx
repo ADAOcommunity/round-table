@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid'
 import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
+import { Panel } from './layout'
 
 type Recipient = {
   id: string
@@ -298,10 +299,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
   const base64TxBody = buildTxResult.isOk && Buffer.from(buildTxResult.data.to_bytes()).toString('base64')
 
   return (
-    <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
-      <header className='p-2 text-center border-b bg-gray-100'>
-        <h1 className='font-bold text-lg'>New Transaction</h1>
-      </header>
+    <Panel title='New Transaction'>
       {!buildTxResult.isOk && (
         <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
       )}
@@ -349,7 +347,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
           }
         </nav>
       </footer>
-    </div>
+    </Panel>
   )
 }
 
