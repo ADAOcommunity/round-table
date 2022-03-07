@@ -9,29 +9,43 @@ import { ConfigContext } from '../../cardano/config'
 import { NewTransaction } from '../../components/transaction'
 import type { ProtocolParameters } from '../../cardano/query-api'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
-import type { Address } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, NativeScript } from '@emurgo/cardano-serialization-lib-browser'
 
 type NewProposalProps = {
   address: Address
   cardano: Cardano
   protocolParameters: ProtocolParameters
+  script: NativeScript
   treasury: string
 }
 
-const NewProposal = ({ address, cardano, protocolParameters, treasury }: NewProposalProps) => {
+const NewProposal = ({ address, cardano, protocolParameters, script, treasury }: NewProposalProps) => {
   const [config, _] = useContext(ConfigContext)
   const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
   if (utxos.type === 'loading') return <Loading />;
   if (utxos.type === 'error') return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
+
+  const formatRequiredSigners = () => {
+    const number = script.get_required_signers().len()
+    switch (cardano.getScriptType(script)) {
+      case 'all': return `All of ${number}`
+      case 'any': return `Any of ${number}`
+      case `atLeast`: return `At least ${number}`
+    }
+  }
 
   return (
     <Layout>
       <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
       <Panel title='Summary'>
         <div className='p-4'>
-          <p>
+          <p className='space-x-2'>
             <span>Address:</span>
             <span>{address.to_bech32()}</span>
+          </p>
+          <p className='space-x-2'>
+            <span>Required Signers:</span>
+            <span>{formatRequiredSigners()}</span>
           </p>
         </div>
       </Panel>
@@ -61,7 +75,12 @@ const Treasury: NextPage = () => {
   if (protocolParameters.type === 'loading') return <Loading />;
   if (protocolParameters.type === 'error') return <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>;
 
-  return <NewProposal address={address} cardano={cardano} protocolParameters={protocolParameters.data} treasury={treasury} />
+  return <NewProposal
+    address={address}
+    cardano={cardano}
+    protocolParameters={protocolParameters.data}
+    script={script}
+    treasury={treasury} />
 }
 
 export default Treasury

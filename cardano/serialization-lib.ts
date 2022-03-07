@@ -100,6 +100,16 @@ class Cardano {
     return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address()
   }
 
+  public getScriptType(script: NativeScript): MultiSigType {
+    const { NativeScriptKind } = this.lib
+    switch (script.kind()) {
+      case NativeScriptKind.ScriptAll: return 'all'
+      case NativeScriptKind.ScriptAny: return 'any'
+      case NativeScriptKind.ScriptNOfK: return 'atLeast'
+      default: throw new Error(`Unsupported Script Type: ${script.kind()}`)
+    }
+  }
+
   private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
     const { ScriptPubkey, NativeScript } = this.lib
     return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
