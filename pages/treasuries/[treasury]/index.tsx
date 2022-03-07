@@ -11,7 +11,7 @@ import type { ProtocolParameters } from '../../../cardano/query-api'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../../cardano/query-api'
 import type { Address, NativeScript } from '@emurgo/cardano-serialization-lib-browser'
 
-type NewProposalProps = {
+type UTxOQueryProps = {
   address: Address
   cardano: Cardano
   protocolParameters: ProtocolParameters
@@ -19,7 +19,7 @@ type NewProposalProps = {
   treasury: string
 }
 
-const NewProposal = ({ address, cardano, protocolParameters, script, treasury }: NewProposalProps) => {
+const UTxOQuery = ({ address, cardano, protocolParameters, script, treasury }: UTxOQueryProps) => {
   const [config, _] = useContext(ConfigContext)
   const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
   if (utxos.type === 'loading') return <Loading />;
@@ -77,7 +77,7 @@ const Treasury: NextPage = () => {
   if (protocolParameters.type === 'loading') return <Loading />;
   if (protocolParameters.type === 'error') return <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>;
 
-  return <NewProposal
+  return <UTxOQuery
     address={address}
     cardano={cardano}
     protocolParameters={protocolParameters.data}
