@@ -6,8 +6,6 @@ import { ProtocolParameters } from './query-api'
 type CardanoWASM = typeof import('@emurgo/cardano-serialization-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
 
-const toHex = (input: ArrayBuffer) => Buffer.from(input).toString('hex')
-
 type Result<T> =
   | { isOk: true, data: T }
   | { isOk: false, message: string }
@@ -77,29 +75,30 @@ class Cardano {
     }
   }
 
-  public getKeyHashHex(address: string): string {
-    const bytes = this.getAddressKeyHash(address).to_bytes()
-    return toHex(bytes)
-  }
-
-  public getMultiSigScriptAddress(addresses: Set<string>, type: MultiSigType, required: number, isMainnet: boolean): string {
-    const publicKeyScripts = Array.from(addresses, (address) => {
-      const keyHash = this.getAddressKeyHash(address)
-      return this.buildPublicKeyScript(keyHash)
-    })
-
-    const buildScript = (): NativeScript => {
-      switch (type) {
-        case 'all': return this.buildAllScript(publicKeyScripts)
-        case 'any': return this.buildAnyScript(publicKeyScripts)
-        case 'atLeast': return this.buildAtLeastScript(publicKeyScripts, required)
+  public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
+    try {
+      const keyHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_keyhash()
+      if (!keyHash) throw new Error('failed to get keyhash from address')
+      return {
+        isOk: true,
+        data: keyHash
+      }
+    } catch (error) {
+      return {
+        isOk: false,
+        message: error instanceof Error ? error.message : String(error)
       }
     }
+  }
 
-    const { NetworkInfo } = this.lib
-    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+  public buildMultiSigScript(keyHashes: Ed25519KeyHash[], type: MultiSigType, required: number): NativeScript {
+    const publicKeyScripts = keyHashes.map((keyHash) => this.buildPublicKeyScript(keyHash))
 
-    return this.getScriptAddress(buildScript(), networkInfo)
+    switch (type) {
+      case 'all': return this.buildAllScript(publicKeyScripts)
+      case 'any': return this.buildAnyScript(publicKeyScripts)
+      case 'atLeast': return this.buildAtLeastScript(publicKeyScripts, required)
+    }
   }
 
   public createTxBuilder(protocolParameters: ProtocolParameters): TransactionBuilder {
@@ -118,16 +117,11 @@ class Cardano {
     return TransactionBuilder.new(config)
   }
 
-  private getAddressKeyHash(bech32Address: string): Ed25519KeyHash {
-    const { Address, BaseAddress } = this.lib
-    const address = Address.from_bech32(bech32Address)
-    const keyHash = BaseAddress.from_address(address)?.payment_cred().to_keyhash()
-
-    if (!keyHash) {
-      throw new Error('failed to get keyhash from address')
-    }
-
-    return keyHash
+  public getScriptAddress(script: NativeScript, isMainnet: boolean): string {
+    const { ScriptHashNamespace, NetworkInfo } = this.lib
+    const scriptHash = script.hash(ScriptHashNamespace.NativeScript)
+    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+    return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address().to_bech32()
   }
 
   private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
@@ -159,21 +153,11 @@ class Cardano {
     return nativeScripts
   }
 
-  private getScriptHash(script: NativeScript): ScriptHash {
-    const { ScriptHashNamespace } = this.lib
-    return script.hash(ScriptHashNamespace.NativeScript)
-  }
-
   private getScriptHashBaseAddress(scriptHash: ScriptHash, networkInfo: NetworkInfo): BaseAddress {
     const { BaseAddress, StakeCredential } = this.lib
     const networkId = networkInfo.network_id()
     const credential = StakeCredential.from_scripthash(scriptHash)
     return BaseAddress.new(networkId, credential, credential)
-  }
-
-  private getScriptAddress(script: NativeScript, networkInfo: NetworkInfo): string {
-    const scriptHash = this.getScriptHash(script)
-    return this.getScriptHashBaseAddress(scriptHash, networkInfo).to_address().to_bech32()
   }
 }
 
