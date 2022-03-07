@@ -28,8 +28,8 @@ const Layout: NextPage = ({ children }) => {
           </div>
           <nav className='flex divide-x font-medium items-center'>
             <div className='p-4'>
-              <Link href='/scripts/new'>
-                <a className='text-base text-gray-500 hover:text-gray-900'>New Script</a>
+              <Link href='/treasuries/new'>
+                <a className='text-base text-gray-500 hover:text-gray-900'>Treasury</a>
               </Link>
             </div>
             <div className='p-4'>
