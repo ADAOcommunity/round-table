@@ -172,9 +172,10 @@ type NewTransactionProps = {
   cardano: Cardano
   protocolParameters: ProtocolParameters
   utxos: UTxO[]
+  previewURI: (_: string) => string
 }
 
-const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: NewTransactionProps) => {
+const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, previewURI }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
@@ -294,6 +295,8 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     setRecipients(recipients.filter(({ id }) => id !== recipient.id))
   }
 
+  const base64TxBody = buildTxResult.isOk && Buffer.from(buildTxResult.data.to_bytes()).toString('base64')
+
   return (
     <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
       <header className='p-2 text-center border-b bg-gray-100'>
@@ -335,8 +338,8 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
           >
             Add Recipient
           </button>
-          {buildTxResult.isOk &&
-            <Link href={`/proposals/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
+          {base64TxBody &&
+            <Link href={previewURI(encodeURIComponent(base64TxBody))}>
               <a
                 className='p-2 rounded-md bg-blue-200'
               >

@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import Layout from '../../components/layout'
-import { useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { TransactionViewer } from '../../components/transaction'
 
@@ -12,7 +12,7 @@ const GetProposal: NextPage = () => {
 
   if (!cardano) return <Loading />;
   if (typeof proposal !== 'string') return <ErrorMessage>Invalid transaction body</ErrorMessage>;
-  const decodeResult = cardano.decodeTxBody(proposal)
+  const decodeResult = getResult(() => cardano.lib.TransactionBody.from_bytes(Buffer.from(proposal, 'base64')))
   if (!decodeResult.isOk) return <ErrorMessage>Invalid transaction body</ErrorMessage>;
 
   return (

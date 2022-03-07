@@ -1,5 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBody, TransactionBuilder, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
-import { Buffer } from 'buffer'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
@@ -9,6 +8,20 @@ type MultiSigType = 'all' | 'any' | 'atLeast'
 type Result<T> =
   | { isOk: true, data: T }
   | { isOk: false, message: string }
+
+function getResult<T>(callback: () => T): Result<T> {
+  try {
+    return {
+      isOk: true,
+      data: callback()
+    }
+  } catch (error) {
+    return {
+      isOk: false,
+      message: error instanceof Error ? error.message : String(error)
+    }
+  }
+}
 
 class Cardano {
   private _wasm: CardanoWASM
@@ -21,37 +34,8 @@ class Cardano {
     return this._wasm
   }
 
-  public encodeTxBody(body: TransactionBody) {
-    return Buffer.from(body.to_bytes()).toString('base64')
-  }
-
-  public decodeTxBody(text: string): Result<TransactionBody> {
-    try {
-      const bytes = Buffer.from(text, 'base64')
-      return {
-        isOk: true,
-        data: this.lib.TransactionBody.from_bytes(bytes)
-      }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
-  }
-
   public parseAddress(bech32Address: string): Result<Address> {
-    try {
-      return {
-        isOk: true,
-        data: this.lib.Address.from_bech32(bech32Address)
-      }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
+    return getResult(() => this.lib.Address.from_bech32(bech32Address))
   }
 
   public chainCoinSelection(builder: TransactionBuilder, UTxOSet: TransactionUnspentOutputs, address: Address): void {
@@ -76,19 +60,11 @@ class Cardano {
   }
 
   public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
-    try {
+    return getResult(() => {
       const keyHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_keyhash()
       if (!keyHash) throw new Error('failed to get keyhash from address')
-      return {
-        isOk: true,
-        data: keyHash
-      }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
+      return keyHash
+    })
   }
 
   public buildMultiSigScript(keyHashes: Ed25519KeyHash[], type: MultiSigType, required: number): NativeScript {
@@ -196,4 +172,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, Result, MultiSigType }
-export { useCardanoSerializationLib }
+export { getResult, useCardanoSerializationLib }

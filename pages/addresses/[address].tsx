@@ -30,7 +30,12 @@ const GetAddress: NextPage = () => {
       <div className='p-4 rounded-md bg-white my-2'>
         <h1 className='font-medium text-center'>{address}</h1>
       </div>
-      <NewTransaction senderAddress={addressResult.data} cardano={cardano} protocolParameters={protocolParameters.data} utxos={utxos.data} />
+      <NewTransaction
+        senderAddress={addressResult.data}
+        cardano={cardano}
+        protocolParameters={protocolParameters.data}
+        previewURI={(body) => `/proposals/${body}`}
+        utxos={utxos.data} />
     </Layout>
   )
 }
