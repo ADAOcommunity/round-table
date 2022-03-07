@@ -25,15 +25,6 @@ const UTxOQuery = ({ address, cardano, protocolParameters, script, treasury }: U
   if (utxos.type === 'loading') return <Loading />;
   if (utxos.type === 'error') return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
 
-  const formatRequiredSigners = () => {
-    const number = script.get_required_signers().len()
-    switch (cardano.getScriptType(script)) {
-      case 'all': return `All of ${number}`
-      case 'any': return `Any of ${number}`
-      case `atLeast`: return `At least ${number}`
-    }
-  }
-
   return (
     <Layout>
       <div className='space-y-2'>
@@ -46,7 +37,7 @@ const UTxOQuery = ({ address, cardano, protocolParameters, script, treasury }: U
             </p>
             <p className='space-x-2'>
               <span>Required Signers:</span>
-              <span>{formatRequiredSigners()}</span>
+              <span>{cardano.formatRequiredSigners(script)}</span>
             </p>
           </div>
         </Panel>

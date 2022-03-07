@@ -110,6 +110,15 @@ class Cardano {
     }
   }
 
+  public formatRequiredSigners(script: NativeScript) {
+    const number = script.get_required_signers().len()
+    switch (this.getScriptType(script)) {
+      case 'all': return `All of ${number}`
+      case 'any': return `Any of ${number}`
+      case `atLeast`: return `At least ${number}`
+    }
+  }
+
   private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
     const { ScriptPubkey, NativeScript } = this.lib
     return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
