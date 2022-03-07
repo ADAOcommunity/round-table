@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { ConfigContext } from '../../cardano/config'
-import Layout from '../../components/layout'
+import { Layout } from '../../components/layout'
 import { useContext } from 'react'
 import { NewTransaction } from '../../components/transaction'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'

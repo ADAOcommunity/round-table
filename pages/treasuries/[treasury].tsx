@@ -1,12 +1,49 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import Layout from '../../components/layout'
+import { Layout, Panel } from '../../components/layout'
+import type { Cardano } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { useContext } from 'react'
 import { ConfigContext } from '../../cardano/config'
 import { NewTransaction } from '../../components/transaction'
+import type { ProtocolParameters } from '../../cardano/query-api'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
+import type { Address } from '@emurgo/cardano-serialization-lib-browser'
+
+type NewProposalProps = {
+  address: Address
+  cardano: Cardano
+  protocolParameters: ProtocolParameters
+  treasury: string
+}
+
+const NewProposal = ({ address, cardano, protocolParameters, treasury }: NewProposalProps) => {
+  const [config, _] = useContext(ConfigContext)
+  const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
+  if (utxos.type === 'loading') return <Loading />;
+  if (utxos.type === 'error') return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
+
+  return (
+    <Layout>
+      <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
+      <Panel title='Summary'>
+        <div className='p-4'>
+          <p>
+            <span>Address:</span>
+            <span>{address.to_bech32()}</span>
+          </p>
+        </div>
+      </Panel>
+      <NewTransaction
+        senderAddress={address}
+        cardano={cardano}
+        protocolParameters={protocolParameters}
+        previewURI={(body) => `/treasuries/${encodeURIComponent(treasury)}/${body}`}
+        utxos={utxos.data} />
+    </Layout>
+  )
+}
 
 const Treasury: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
@@ -24,28 +61,7 @@ const Treasury: NextPage = () => {
   if (protocolParameters.type === 'loading') return <Loading />;
   if (protocolParameters.type === 'error') return <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>;
 
-  const NewProposal = () => {
-    const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
-    if (utxos.type === 'loading') return <Loading />;
-    if (utxos.type === 'error') return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
-
-    return (
-      <NewTransaction
-        senderAddress={address}
-        cardano={cardano}
-        protocolParameters={protocolParameters.data}
-        previewURI={(body) => `/treasuries/${encodeURIComponent(treasury)}/${body}`}
-        utxos={utxos.data} />
-    )
-  }
-
-  return (
-    <Layout>
-      <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
-      <h2 className='my-4 text-center'>{address.to_bech32()}</h2>
-      <NewProposal />
-    </Layout>
-  )
+  return <NewProposal address={address} cardano={cardano} protocolParameters={protocolParameters.data} treasury={treasury} />
 }
 
 export default Treasury

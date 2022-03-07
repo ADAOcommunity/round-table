@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import { useState, useContext, ChangeEvent } from 'react'
-import Layout from '../../components/layout'
+import { Layout, Panel } from '../../components/layout'
 import { Result, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
@@ -8,15 +8,6 @@ import { ConfigContext } from '../../cardano/config'
 import { Loading } from '../../components/status'
 import type { Ed25519KeyHash } from '@emurgo/cardano-serialization-lib-browser'
 import { XIcon } from '@heroicons/react/solid'
-
-const Panel: NextPage<{ title: string }> = ({ title, children }) => (
-  <div className='bg-white rounded-md shadow overflow-hidden'>
-    <header className='border-b'>
-      <h2 className='p-4 font-bold bg-gray-100 text-lg text-center'>{title}</h2>
-    </header>
-    <div>{children}</div>
-  </div>
-)
 
 const NewTreasury: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
@@ -65,26 +56,27 @@ const NewTreasury: NextPage = () => {
       <h1 className='my-8 font-bold text-2xl text-center'>Create Multi-Sig Address</h1>
       <div className='space-y-2'>
         <Panel title='Address Setting'>
-          <ul className='divide-y border-b'>
-            {Array.from(addresses).map((address) => {
-              const result = cardano.parseAddress(address)
-              const keyHash = result.isOk ? cardano.getAddressKeyHash(result.data) : result
-              return (
-                <li key={address} className='flex p-4 items-center'>
-                  <div className='grow'>
-                    <p>{address}</p>
-                    {keyHash.isOk && <p className='text-gray-500'>{Buffer.from(keyHash.data.to_bytes()).toString('hex')}</p>}
-                    {!keyHash.isOk && <p className='text-red-500'>Invalid Address</p>}
-                  </div>
-                  <nav className='flex items-center'>
-                    <button>
-                      <XIcon className='h-5 w-5' onClick={() => deleteAddress(address)} />
-                    </button>
-                  </nav>
-                </li>
-              )
-            })}
-          </ul>
+          {addresses.size > 0 &&
+            <ul className='divide-y border-b'>
+              {Array.from(addresses).map((address) => {
+                const result = cardano.parseAddress(address)
+                const keyHash = result.isOk ? cardano.getAddressKeyHash(result.data) : result
+                return (
+                  <li key={address} className='flex p-4 items-center'>
+                    <div className='grow'>
+                      <p>{address}</p>
+                      {keyHash.isOk && <p className='text-gray-500'>{Buffer.from(keyHash.data.to_bytes()).toString('hex')}</p>}
+                      {!keyHash.isOk && <p className='text-red-500'>Invalid Address</p>}
+                    </div>
+                    <nav className='flex items-center'>
+                      <button>
+                        <XIcon className='h-5 w-5' onClick={() => deleteAddress(address)} />
+                      </button>
+                    </nav>
+                  </li>
+                )
+              })}
+            </ul>}
           <AddAddress cardano={cardano} onAdd={addAddress} />
         </Panel>
         {addresses.size > 0 &&
