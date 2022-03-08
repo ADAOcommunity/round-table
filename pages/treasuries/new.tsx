@@ -145,7 +145,7 @@ function AddAddress({ cardano, onAdd }: AddAddressProps) {
     <div>
       <div className='p-4'>
         <textarea
-          className='block w-full border border-gray-400 rounded-md p-2'
+          className='block w-full border rounded-md p-2'
           onChange={changeHandle}
           rows={4}
           value={value}

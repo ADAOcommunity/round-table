@@ -59,6 +59,20 @@ const GetProposal: NextPage = () => {
           </table>
           <footer className='px-4 py-2 bg-gray-100'>Type: {cardano.formatRequiredSigners(script)}</footer>
         </Panel>
+        <Panel title='Signature'>
+          <div className='p-4'>
+            <textarea
+              className='block w-full border rounded-md p-2'
+              rows={4}
+              placeholder="Signature">
+            </textarea>
+          </div>
+          <footer className='flex flex-row-reverse px-4 py-2 bg-gray-100'>
+            <button className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
+              Sign
+            </button>
+          </footer>
+        </Panel>
       </div>
     </Layout>
   )
