@@ -45,7 +45,7 @@ const GetProposal: NextPage = () => {
           <p className='p-4'>{address.to_bech32()}</p>
         </Panel>
         <TransactionViewer txBody={txBody} />
-        <Panel title='Policy'>
+        <Panel title={`Policy: ${cardano.formatRequiredSigners(script)}`}>
           <table className='table-fixed border-collapse w-full text-sm'>
             <thead className='border-b'>
               <tr className='divide-x'>
@@ -65,7 +65,6 @@ const GetProposal: NextPage = () => {
               })}
             </tbody>
           </table>
-          <footer className='px-4 py-2 bg-gray-100'>Type: {cardano.formatRequiredSigners(script)}</footer>
         </Panel>
         <Panel title='Signature'>
           <div className='p-4'>
