@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
@@ -9,6 +9,7 @@ import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
 import { Panel } from './layout'
+import { NextPage } from 'next'
 
 type Recipient = {
   id: string
@@ -441,4 +442,35 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   )
 }
 
-export { TransactionViewer, NewTransaction }
+const SignTxButton: NextPage<{ className?: string, txBody: TransactionBody, partialSign: boolean, signHandle: (_: string) => void }> = (props) => {
+  type WalletAPI = {
+    signTx(tx: string, partialSign: boolean): Promise<string>
+  }
+
+  const [run, setRun] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const enableWallet = (): Promise<WalletAPI> => (window as any).cardano?.ccvault?.enable()
+
+    run && enableWallet()
+      .then((walletAPI: WalletAPI) => {
+        const hex = Buffer.from(props.txBody.to_bytes()).toString('hex')
+        walletAPI
+          .signTx(hex, props.partialSign)
+          .then(props.signHandle)
+          .catch((error) => console.error(error))
+      })
+      .catch((error) => console.error(error))
+      .finally(() => setRun(false))
+
+    return () => {
+      isMounted = false
+    }
+  }, [run])
+
+  return <button className={props.className} onClick={() => setRun(true)}>{props.children}</button>
+}
+
+export { SignTxButton, TransactionViewer, NewTransaction }

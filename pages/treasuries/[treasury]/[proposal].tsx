@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../../components/layout'
 import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../../components/status'
-import { TransactionViewer } from '../../../components/transaction'
+import { SignTxButton, TransactionViewer } from '../../../components/transaction'
 import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
 import { nanoid } from 'nanoid'
@@ -29,6 +29,14 @@ const GetProposal: NextPage = () => {
   const requiredSigners = Array.from({ length: script.get_required_signers().len() }, (_, i) => {
     return script.get_required_signers().get(i)
   })
+  const txBody = txBodyResult.data
+
+  const signHandle = (content: string) => {
+    console.log(`signed: ${content}`)
+    const bytes = Buffer.from(content, 'hex')
+    const witnessSet = cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+    console.log(witnessSet.vkeys()?.len())
+  }
 
   return (
     <Layout>
@@ -36,7 +44,7 @@ const GetProposal: NextPage = () => {
         <Panel title='Treasury Address'>
           <p className='p-4'>{address.to_bech32()}</p>
         </Panel>
-        <TransactionViewer txBody={txBodyResult.data} />
+        <TransactionViewer txBody={txBody} />
         <Panel title='Policy'>
           <table className='table-fixed border-collapse w-full text-sm'>
             <thead className='border-b'>
@@ -67,9 +75,16 @@ const GetProposal: NextPage = () => {
               placeholder="Signature">
             </textarea>
           </div>
-          <footer className='flex flex-row-reverse px-4 py-2 bg-gray-100'>
+          <footer className='flex flex-row-reverse px-4 py-2 bg-gray-100 space-x-2 space-x-reverse'>
+            <SignTxButton
+              txBody={txBody}
+              partialSign={true}
+              signHandle={signHandle}
+              className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
+              Sign with ccvault
+            </SignTxButton>
             <button className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
-              Sign
+              Manual Sign
             </button>
           </footer>
         </Panel>
