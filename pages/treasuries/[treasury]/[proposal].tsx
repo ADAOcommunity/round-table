@@ -38,17 +38,25 @@ const GetProposal: NextPage = () => {
         </Panel>
         <TransactionViewer txBody={txBodyResult.data} />
         <Panel title='Policy'>
-          <ul className='divide-y'>
-            {requiredSigners.map((keyHash) => {
-              const hex = Buffer.from(keyHash.to_bytes()).toString('hex')
-              return (
-                <li key={nanoid()} className='flex items-center p-4'>
-                  <div>{hex}</div>
-                  <div></div>
-                </li>
-              )
-            })}
-          </ul>
+          <table className='table-fixed border-collapse w-full text-sm'>
+            <thead className='border-b'>
+              <tr className='divide-x'>
+                <th className='px-4 py-1'>Signer</th>
+                <th className='px-4 py-1'>Signature</th>
+              </tr>
+            </thead>
+            <tbody className='divide-y font-mono'>
+              {requiredSigners.map((keyHash) => {
+                const hex = Buffer.from(keyHash.to_bytes()).toString('hex')
+                return (
+                  <tr key={nanoid()} className="divide-x">
+                    <td className='px-4 py-1 text-gray-500'>{hex}</td>
+                    <td className='px-4 py-1'></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
           <footer className='px-4 py-2 bg-gray-100'>Type: {cardano.formatRequiredSigners(script)}</footer>
         </Panel>
       </div>

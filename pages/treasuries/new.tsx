@@ -63,7 +63,7 @@ const NewTreasury: NextPage = () => {
                 const keyHash = result.isOk ? cardano.getAddressKeyHash(result.data) : result
                 return (
                   <li key={address} className='flex p-4 items-center'>
-                    <div className='grow'>
+                    <div className='grow font-mono'>
                       <p>{address}</p>
                       {keyHash.isOk && <p className='text-gray-500'>{Buffer.from(keyHash.data.to_bytes()).toString('hex')}</p>}
                       {!keyHash.isOk && <p className='text-red-500'>Invalid Address</p>}
