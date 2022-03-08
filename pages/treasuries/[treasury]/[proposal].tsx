@@ -79,8 +79,17 @@ const GetProposal: NextPage = () => {
               txBody={txBody}
               partialSign={true}
               signHandle={signHandle}
+              wallet={'ccvault'}
               className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
               Sign with ccvault
+            </SignTxButton>
+            <SignTxButton
+              txBody={txBody}
+              partialSign={true}
+              signHandle={signHandle}
+              wallet={'nami'}
+              className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
+              Sign with nami
             </SignTxButton>
             <button className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
               Manual Sign

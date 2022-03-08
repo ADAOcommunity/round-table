@@ -442,7 +442,14 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   )
 }
 
-const SignTxButton: NextPage<{ className?: string, txBody: TransactionBody, partialSign: boolean, signHandle: (_: string) => void }> = (props) => {
+const SignTxButton: NextPage<{
+  className?: string,
+  txBody: TransactionBody,
+  partialSign: boolean,
+  signHandle: (_: string) => void,
+  wallet: 'ccvault' | 'nami'
+}> = (props) => {
+
   type WalletAPI = {
     signTx(tx: string, partialSign: boolean): Promise<string>
   }
@@ -452,7 +459,14 @@ const SignTxButton: NextPage<{ className?: string, txBody: TransactionBody, part
   useEffect(() => {
     let isMounted = true;
 
-    const enableWallet = (): Promise<WalletAPI> => (window as any).cardano?.ccvault?.enable()
+    const chooseWallet = () => {
+      const cardano = (window as any).cardano
+      switch (props.wallet) {
+        case 'ccvault': return cardano?.ccvault
+        case 'nami': return cardano?.nami
+      }
+    }
+    const enableWallet = (): Promise<WalletAPI> => chooseWallet()?.enable()
 
     run && enableWallet()
       .then((walletAPI: WalletAPI) => {
