@@ -1,13 +1,15 @@
-import { useContext, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano } from '../cardano/serialization-lib'
+import { Cardano, getResult, mapCardanoSet, toHex } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
+import { ArrowRightIcon, CheckIcon, DuplicateIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
+import { Panel } from './layout'
+import { NextPage } from 'next'
 
 type Recipient = {
   id: string
@@ -65,13 +67,12 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   )
 }
 
-type RecipientProps = {
+const Recipient: NextPage<{
   recipient: Recipient
   budget: Value
   onChange: (recipient: Recipient) => void
-}
+}> = ({ recipient, budget, onChange }) => {
 
-const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
   const [config, _] = useContext(ConfigContext)
   const { address, value } = recipient
   const setRecipient = (recipient: Recipient) => {
@@ -167,14 +168,14 @@ const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
   )
 }
 
-type NewTransactionProps = {
-  senderAddress: Address
+const NewTransaction: NextPage<{
   cardano: Cardano
+  changeAddress?: Address
   protocolParameters: ProtocolParameters
+  nativeScriptSet?: NativeScripts
   utxos: UTxO[]
-}
+}> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
 
-const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
@@ -208,17 +209,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       return builder.with_value(value).build()
     }
 
-    try {
-      return {
-        isOk: true,
-        data: build()
-      }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
+    return getResult(() => build())
   }
 
   const txOutputResults = recipients.map(buildTxOutput)
@@ -236,7 +227,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     }, getBalance(utxos))
 
   const buildUTxOSet = () => {
-    const { AssetName, BigNum, MultiAsset, ScriptHash,
+    const { Address, AssetName, BigNum, MultiAsset, ScriptHash,
       TransactionInput, TransactionHash, TransactionOutput,
       TransactionUnspentOutput, TransactionUnspentOutputs } = cardano.lib
 
@@ -244,6 +235,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     utxos.forEach((utxo) => {
       const { txHash, index, lovelace, assets } = utxo
       const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      const address = Address.from_bech32(utxo.address)
       if (assets.length > 0) {
         const multiAsset = MultiAsset.new()
         assets.forEach((asset) => {
@@ -256,7 +248,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       }
       const txUnspentOutput = TransactionUnspentOutput.new(
         TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
-        TransactionOutput.new(senderAddress, value)
+        TransactionOutput.new(address, value)
       )
       utxosSet.add(txUnspentOutput)
     })
@@ -264,27 +256,24 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     return utxosSet
   }
 
-  const buildTransaction = (): Result<TransactionBody> => {
-    try {
-      const txBuilder = cardano.createTxBuilder(protocolParameters)
+  const transactionResult = getResult(() => {
+    const txBuilder = cardano.createTxBuilder(protocolParameters)
+    const { Address, Transaction, TransactionWitnessSet } = cardano.lib
 
-      txOutputResults.forEach((txOutputResult) => {
-        if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
-        txBuilder.add_output(txOutputResult.data)
-      })
+    txOutputResults.forEach((txOutputResult) => {
+      if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
+      txBuilder.add_output(txOutputResult.data)
+    })
 
-      cardano.chainCoinSelection(txBuilder, buildUTxOSet(), senderAddress)
+    const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
+    cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
 
-      return { isOk: true, data: txBuilder.build() }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
-  }
+    const txBody = txBuilder.build()
+    const witnessSet = TransactionWitnessSet.new()
+    nativeScriptSet && witnessSet.set_native_scripts(nativeScriptSet)
 
-  const buildTxResult = buildTransaction()
+    return Transaction.new(txBody, witnessSet)
+  })
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
@@ -294,13 +283,12 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
     setRecipients(recipients.filter(({ id }) => id !== recipient.id))
   }
 
+  const base64Transaction = transactionResult.isOk && Buffer.from(transactionResult.data.to_bytes()).toString('base64')
+
   return (
-    <div className='my-2 rounded-md border bg-white overflow-hidden shadow'>
-      <header className='p-2 text-center border-b bg-gray-100'>
-        <h1 className='font-bold text-lg'>New Transaction</h1>
-      </header>
-      {!buildTxResult.isOk && (
-        <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
+    <Panel title='New Transaction'>
+      {!transactionResult.isOk && (
+        <p className='p-2 text-center text-red-600 bg-red-200'>{transactionResult.message}</p>
       )}
       <ul className='divide-y'>
         {recipients.map((recipient, index) =>
@@ -321,54 +309,39 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos }: N
       </ul>
       <footer className='flex px-4 py-2 bg-gray-100 items-center'>
         <div className='grow'>
-          {buildTxResult.isOk &&
+          {transactionResult.isOk &&
             <p className='flex space-x-1 font-bold'>
               <span>Fee:</span>
-              <span><ADAAmount lovelace={BigInt(buildTxResult.data.fee().to_str())} /></span>
+              <span><ADAAmount lovelace={BigInt(transactionResult.data.body().fee().to_str())} /></span>
             </p>
           }
         </div>
         <nav className='flex space-x-2'>
           <button
             className='p-2 rounded-md bg-blue-200'
-            onClick={() => setRecipients(recipients.concat(newRecipient()))}
-          >
+            onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
           </button>
-          {buildTxResult.isOk &&
-            <Link href={`/proposals/${encodeURIComponent(cardano.encodeTxBody(buildTxResult.data))}`}>
-              <a
-                className='p-2 rounded-md bg-blue-200'
-              >
-                Review
-              </a>
+          {base64Transaction &&
+            <Link href={`/transactions/${encodeURIComponent(base64Transaction)}`}>
+              <a className='p-2 rounded-md bg-blue-200'>Review</a>
             </Link>
           }
         </nav>
       </footer>
-    </div>
+    </Panel>
   )
 }
 
-type TransactionViewerProps = {
-  txBody: TransactionBody
-}
-const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
+const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }) => {
   const fee = BigInt(txBody.fee().to_str())
-  const getRequiredSigners = () => {
-    const requiredSigners = txBody.required_signers()
-    return requiredSigners && Array.from({ length: requiredSigners.len() }, (_, i) => requiredSigners.get(i))
-  }
-  const requiredSigners = getRequiredSigners()
-  console.log(requiredSigners)
-
   type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
   const txInputs: TxInputSet = {
     isQueried: false,
     data: Array.from({ length: txBody.inputs().len() }, (_, i) => {
       const input = txBody.inputs().get(i)
       return {
-        txHash: Buffer.from(input.transaction_id().to_bytes()).toString('hex'),
+        txHash: toHex(input.transaction_id()),
         index: input.index()
       }
     })
@@ -384,7 +357,7 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
       const keys = multiAsset.keys()
       Array.from({ length: keys.len() }, (_, i) => {
         const policyId = keys.get(i)
-        const policyIdHex = Buffer.from(policyId.to_bytes()).toString('hex')
+        const policyIdHex = toHex(policyId)
         const _asset = multiAsset.get(policyId)
         _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
           const assetName = _asset.keys().get(i)
@@ -406,45 +379,143 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
   })
 
   return (
-    <div className='p-4 bg-white rounded-md'>
-      <h1 className='font-bold text-lg my-2'>Transaction Proposal</h1>
-      <p className='my-2'>This is the page for transaction review and signing. Share the URI to other required signers.</p>
-      <div className='flex items-center'>
-        <ul className='basis-[47.5%] space-y-1'>
-          {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
-            <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
-          )}
-        </ul>
-        <div className='basis-[5%] flex justify-center'>
-          <ArrowRightIcon className='h-10 w-10' />
-        </div>
-        <ul className='basis-[47.5%] space-y-1'>
-          {recipients.map(({ id, address, value }) =>
-            <li key={id} className='p-2 border rounded-md'>
-              <p className='flex space-x-1 break-all'>{address}</p>
-              <p>
-                <ADAAmount lovelace={value.lovelace} />
-              </p>
-              <ul>
-                {Array.from(value.assets).map(([id, quantity]) =>
-                  <li key={id}>
-                    <AssetAmount
-                      quantity={quantity}
-                      decimals={0}
-                      symbol={decodeASCII(getAssetName(id))} />
-                  </li>
-                )}
-              </ul>
+    <Panel title='Proposal'>
+      <div className='p-4'>
+        <div className='flex items-center'>
+          <ul className='basis-[47.5%] space-y-1'>
+            {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
+              <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
+            )}
+          </ul>
+          <div className='basis-[5%] flex justify-center'>
+            <ArrowRightIcon className='h-10 w-10' />
+          </div>
+          <ul className='basis-[47.5%] space-y-1'>
+            {recipients.map(({ id, address, value }) =>
+              <li key={id} className='p-2 border rounded-md'>
+                <p className='flex space-x-1 break-all'>{address}</p>
+                <p>
+                  <ADAAmount lovelace={value.lovelace} />
+                </p>
+                <ul>
+                  {Array.from(value.assets).map(([id, quantity]) =>
+                    <li key={id}>
+                      <AssetAmount
+                        quantity={quantity}
+                        decimals={0}
+                        symbol={decodeASCII(getAssetName(id))} />
+                    </li>
+                  )}
+                </ul>
+              </li>
+            )}
+            <li className='p-2 border rounded-md space-x-1'>
+              <span>Fee:</span>
+              <ADAAmount lovelace={fee} />
             </li>
-          )}
-          <li className='p-2 border rounded-md space-x-1'>
-            <span>Fee:</span>
-            <ADAAmount lovelace={fee} />
-          </li>
-        </ul>
+          </ul>
+        </div>
       </div>
-    </div>
+    </Panel>
   )
 }
 
-export { TransactionViewer, NewTransaction }
+const SignTxButton: NextPage<{
+  className?: string,
+  transaction: Transaction,
+  partialSign: boolean,
+  signHandle: (_: string) => void,
+  wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
+}> = (props) => {
+
+  type WalletAPI = {
+    signTx(tx: string, partialSign: boolean): Promise<string>
+  }
+
+  const [run, setRun] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const chooseWallet = () => {
+      const cardano = (window as any).cardano
+      switch (props.wallet) {
+        case 'ccvault': return cardano?.ccvault
+        case 'nami': return cardano?.nami
+        case 'gero': return cardano?.gerowallet
+        case 'flint': return cardano?.flint
+      }
+    }
+    const enableWallet = (): Promise<WalletAPI> => chooseWallet()?.enable()
+
+    run && enableWallet()
+      .then((walletAPI: WalletAPI) => {
+        const hex = toHex(props.transaction)
+        walletAPI
+          .signTx(hex, props.partialSign)
+          .then(props.signHandle)
+          .catch((error) => console.error(error))
+      })
+      .catch((error) => console.error(error))
+      .finally(() => setRun(false))
+
+    return () => {
+      isMounted = false
+    }
+  }, [run])
+
+  return <button className={props.className} onClick={() => setRun(true)}>{props.children}</button>
+}
+
+const CopyToClipboardButton: NextPage<{
+  className?: string
+  content: string
+}> = ({ className, content, children }) => {
+
+  const clickHandle = () => {
+    navigator.clipboard.writeText(content)
+  }
+
+  return (
+    <button
+      onClick={clickHandle}
+      className={className}>
+      {children}
+    </button>
+  )
+}
+
+const NativeScriptViewer: NextPage<{
+  cardano: Cardano
+  script: NativeScript
+  signatures?: Map<string, Vkeywitness>
+}> = ({ cardano, script, signatures }) => {
+
+  const [config, _] = useContext(ConfigContext)
+  const address = cardano.getScriptAddress(script, config.isMainnet)
+  const requireSignatures = cardano.getRequiredSignatures(script)
+
+  return (
+    <Panel title='Native Script'>
+      <div className='p-4 text-center font-mono'>
+        <h3 className='mb-2'>{address.to_bech32()}</h3>
+        <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
+        <ul className='text-gray-500'>
+          {mapCardanoSet(script.get_required_signers(), (keyHash, index) => {
+            const signature = signatures?.get(toHex(keyHash))
+            const hex = signature && cardano.buildSingleSignatureHex(signature)
+            return (
+              <li key={index} className={signature ? 'text-green-500' : ''}>
+                <span>{toHex(keyHash)}</span>
+                {signature && <span><CheckIcon className='h-6 w-6 inline' /></span>}
+                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='h-6 w-6 inline' /></CopyToClipboardButton>}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </Panel>
+  )
+}
+
+export { SignTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }

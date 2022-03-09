@@ -1,6 +1,5 @@
 import { NextPage } from "next";
-import Layout from '../components/layout'
-import { CogIcon } from '@heroicons/react/solid'
+import { Layout, Panel } from '../components/layout'
 import { useContext } from "react";
 import { ConfigContext } from "../cardano/config";
 
@@ -9,11 +8,7 @@ const Configure: NextPage = () => {
 
   return (
     <Layout>
-      <div className='bg-white rounded-md md:mx-64 shadow overflow-hidden'>
-        <header className='flex p-4 bg-gray-100 font-bold items-center space-x-1'>
-          <span><CogIcon className='h-4 w-4' /></span>
-          <h1>Configuration</h1>
-        </header>
+      <Panel title='Configuration'>
         <div className='p-4 space-y-2'>
           <p className='space-x-2'>
             <span>Network:</span>
@@ -30,7 +25,7 @@ const Configure: NextPage = () => {
             </p>
           }
         </div>
-      </div>
+      </Panel>
     </Layout>
   )
 }

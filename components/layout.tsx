@@ -4,6 +4,15 @@ import { CogIcon } from '@heroicons/react/solid'
 import { useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
 
+const Panel: NextPage<{ title: string }> = ({ title, children }) => (
+  <div className='bg-white rounded-md shadow overflow-hidden'>
+    <header className='border-b'>
+      <h2 className='p-2 font-bold bg-gray-100 text-lg text-center'>{title}</h2>
+    </header>
+    <div>{children}</div>
+  </div>
+)
+
 const Layout: NextPage = ({ children }) => {
   const [config, _] = useContext(ConfigContext)
 
@@ -19,8 +28,8 @@ const Layout: NextPage = ({ children }) => {
           </div>
           <nav className='flex divide-x font-medium items-center'>
             <div className='p-4'>
-              <Link href='/scripts/new'>
-                <a className='text-base text-gray-500 hover:text-gray-900'>New Script</a>
+              <Link href='/treasuries/new'>
+                <a className='text-base text-gray-500 hover:text-gray-900'>Treasury</a>
               </Link>
             </div>
             <div className='p-4'>
@@ -42,4 +51,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export default Layout
+export { Layout, Panel }
