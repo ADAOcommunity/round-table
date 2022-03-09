@@ -341,7 +341,7 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
     data: Array.from({ length: txBody.inputs().len() }, (_, i) => {
       const input = txBody.inputs().get(i)
       return {
-        txHash: Buffer.from(input.transaction_id().to_bytes()).toString('hex'),
+        txHash: toHex(input.transaction_id()),
         index: input.index()
       }
     })
@@ -357,7 +357,7 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
       const keys = multiAsset.keys()
       Array.from({ length: keys.len() }, (_, i) => {
         const policyId = keys.get(i)
-        const policyIdHex = Buffer.from(policyId.to_bytes()).toString('hex')
+        const policyIdHex = toHex(policyId)
         const _asset = multiAsset.get(policyId)
         _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
           const assetName = _asset.keys().get(i)
@@ -450,7 +450,7 @@ const SignTxButton: NextPage<{
 
     run && enableWallet()
       .then((walletAPI: WalletAPI) => {
-        const hex = Buffer.from(props.transaction.to_bytes()).toString('hex')
+        const hex = toHex(props.transaction)
         walletAPI
           .signTx(hex, props.partialSign)
           .then(props.signHandle)
