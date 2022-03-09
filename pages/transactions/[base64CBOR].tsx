@@ -1,17 +1,19 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import type { CardanoSet } from '../../cardano/serialization-lib'
+import { CardanoSet, toHex } from '../../cardano/serialization-lib'
 import { getResult, mapCardanoSet, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { SignTxButton, TransactionBodyViewer } from '../../components/transaction'
-import type { Ed25519KeyHash, NativeScript } from '@emurgo/cardano-serialization-lib-browser'
+import type { NativeScript, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
+import { useState } from 'react'
 
 const GetTransaction: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
   const cardano = useCardanoSerializationLib()
+  const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
 
   if (!cardano) return <Loading />;
 
@@ -20,46 +22,66 @@ const GetTransaction: NextPage = () => {
   if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
 
   const transaction = txResult.data
+  const txHash = cardano.lib.hash_transaction(transaction.body()).to_bytes()
   const witnessSet = transaction.witness_set()
   const nativeScriptSet: CardanoSet<NativeScript> | undefined = witnessSet.native_scripts()
+  const signerRegistry = new Set<string>()
+  nativeScriptSet && mapCardanoSet(nativeScriptSet, (script) => {
+    mapCardanoSet(script.get_required_signers(), (signer) => signerRegistry.add(toHex(signer)))
+  })
 
   const signHandle = (content: string) => {
-    console.log(`signed: ${content}`)
-    const bytes = Buffer.from(content, 'hex')
-    const witnessSet = cardano.lib.TransactionWitnessSet.from_bytes(bytes)
-    console.log(witnessSet.vkeys()?.len())
+    const result = getResult(() => {
+      const bytes = Buffer.from(content, 'hex')
+      return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+    })
+    if (!result.isOk) return
+    const witnessSet = result.data
+    const vkeyWitnessSet: CardanoSet<Vkeywitness> | undefined = witnessSet.vkeys()
+    vkeyWitnessSet && mapCardanoSet(vkeyWitnessSet, (vkeyWitness) => {
+      const vkey = vkeyWitness.vkey()
+      const signature = vkeyWitness.signature()
+      const publicKey = vkey.public_key()
+      const keyHash = publicKey.hash()
+      const isValid = publicKey.verify(txHash, signature)
+      const hex = toHex(keyHash)
+      if (isValid && signerRegistry.has(hex)) {
+        const newMap = new Map(signatureMap)
+        newMap.set(hex, vkeyWitness)
+        setSignatureMap(newMap)
+      }
+    })
   }
 
   return (
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer txBody={transaction.body()} />
-        {nativeScriptSet && mapCardanoSet(nativeScriptSet, (script, index) => {
-          const requiredSignerSet: CardanoSet<Ed25519KeyHash> = script.get_required_signers()
-          return (
-            <Panel title='Native Script' key={index}>
-              <table className='table-fixed border-collapse w-full text-sm'>
-                <thead className='border-b'>
-                  <tr className='divide-x'>
-                    <th className='px-4 py-1'>Signer</th>
-                    <th className='px-4 py-1'>Signature</th>
-                  </tr>
-                </thead>
-                <tbody className='divide-y font-mono'>
-                  {mapCardanoSet(requiredSignerSet, (keyHash) => {
-                    const hex = Buffer.from(keyHash.to_bytes()).toString('hex')
-                    return (
-                      <tr key={nanoid()} className="divide-x">
-                        <td className='px-4 py-1 text-gray-500'>{hex}</td>
-                        <td className='px-4 py-1'></td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </Panel>
-          )
-        })}
+        {nativeScriptSet && mapCardanoSet(nativeScriptSet, (script, index) =>
+          <Panel title='Native Script' key={index}>
+            <table className='table-fixed border-collapse w-full text-sm'>
+              <thead className='border-b'>
+                <tr className='divide-x'>
+                  <th className='px-4 py-1'>Signer</th>
+                  <th className='px-4 py-1'>Signature</th>
+                </tr>
+              </thead>
+              <tbody className='divide-y font-mono'>
+                {mapCardanoSet(script.get_required_signers(), (keyHash) => {
+                  const hex = toHex(keyHash)
+                  const vkey = signatureMap.get(hex)
+                  const signature = vkey && cardano.buildSingleSignatureHex(vkey)
+                  return (
+                    <tr key={nanoid()} className={'divide-x ' + (signature ? 'bg-green-100' : '')}>
+                      <td className={'px-4 py-1 ' + (signature ? 'text-green-500' : 'text-gray-500')}>{hex}</td>
+                      <td className='px-4 py-1 text-green-500 break-all'>{signature}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </Panel>
+        )}
         <Panel title='Signature'>
           <div className='p-4'>
             <textarea

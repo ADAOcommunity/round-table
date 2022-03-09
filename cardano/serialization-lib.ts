@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
@@ -32,6 +32,14 @@ function mapCardanoSet<T, R>(set: CardanoSet<T>, callback: (_: T, index?: number
   return Array.from({ length: set.len() }, (_, i) => callback(set.get(i), i))
 }
 
+interface ToBytes<T> {
+  to_bytes: () => Uint8Array
+}
+
+function toHex<T>(data: ToBytes<T>): string {
+  return Buffer.from(data.to_bytes()).toString('hex')
+}
+
 class Cardano {
   private _wasm: CardanoWASM
 
@@ -41,6 +49,15 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public buildSingleSignatureHex(vkey: Vkeywitness): string {
+    const { TransactionWitnessSet, Vkeywitnesses } = this.lib
+    const witnessSet = TransactionWitnessSet.new()
+    const vkeys = Vkeywitnesses.new()
+    vkeys.add(vkey)
+    witnessSet.set_vkeys(vkeys)
+    return toHex(witnessSet)
   }
 
   public parseAddress(bech32Address: string): Result<Address> {
@@ -205,4 +222,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoSet, Result, MultiSigType }
-export { getResult, mapCardanoSet, useCardanoSerializationLib }
+export { getResult, mapCardanoSet, toHex, useCardanoSerializationLib }
