@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano } from '../cardano/serialization-lib'
+import { Cardano, getResult } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, Transaction, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, NativeScripts, Transaction, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -67,13 +67,12 @@ const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
   )
 }
 
-type RecipientProps = {
+const Recipient: NextPage<{
   recipient: Recipient
   budget: Value
   onChange: (recipient: Recipient) => void
-}
+}> = ({ recipient, budget, onChange }) => {
 
-const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
   const [config, _] = useContext(ConfigContext)
   const { address, value } = recipient
   const setRecipient = (recipient: Recipient) => {
@@ -169,15 +168,14 @@ const Recipient = ({ recipient, budget, onChange }: RecipientProps) => {
   )
 }
 
-type NewTransactionProps = {
-  senderAddress: Address
+const NewTransaction: NextPage<{
   cardano: Cardano
+  changeAddress?: Address
   protocolParameters: ProtocolParameters
+  nativeScriptSet?: NativeScripts
   utxos: UTxO[]
-  previewURI: (_: string) => string
-}
+}> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
 
-const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, previewURI }: NewTransactionProps) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
@@ -211,17 +209,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
       return builder.with_value(value).build()
     }
 
-    try {
-      return {
-        isOk: true,
-        data: build()
-      }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
+    return getResult(() => build())
   }
 
   const txOutputResults = recipients.map(buildTxOutput)
@@ -239,7 +227,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
     }, getBalance(utxos))
 
   const buildUTxOSet = () => {
-    const { AssetName, BigNum, MultiAsset, ScriptHash,
+    const { Address, AssetName, BigNum, MultiAsset, ScriptHash,
       TransactionInput, TransactionHash, TransactionOutput,
       TransactionUnspentOutput, TransactionUnspentOutputs } = cardano.lib
 
@@ -247,6 +235,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
     utxos.forEach((utxo) => {
       const { txHash, index, lovelace, assets } = utxo
       const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      const address = Address.from_bech32(utxo.address)
       if (assets.length > 0) {
         const multiAsset = MultiAsset.new()
         assets.forEach((asset) => {
@@ -259,7 +248,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
       }
       const txUnspentOutput = TransactionUnspentOutput.new(
         TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
-        TransactionOutput.new(senderAddress, value)
+        TransactionOutput.new(address, value)
       )
       utxosSet.add(txUnspentOutput)
     })
@@ -267,27 +256,24 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
     return utxosSet
   }
 
-  const buildTransaction = (): Result<TransactionBody> => {
-    try {
-      const txBuilder = cardano.createTxBuilder(protocolParameters)
+  const transactionResult = getResult(() => {
+    const txBuilder = cardano.createTxBuilder(protocolParameters)
+    const { Address, Transaction, TransactionWitnessSet } = cardano.lib
 
-      txOutputResults.forEach((txOutputResult) => {
-        if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
-        txBuilder.add_output(txOutputResult.data)
-      })
+    txOutputResults.forEach((txOutputResult) => {
+      if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
+      txBuilder.add_output(txOutputResult.data)
+    })
 
-      cardano.chainCoinSelection(txBuilder, buildUTxOSet(), senderAddress)
+    const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
+    cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
 
-      return { isOk: true, data: txBuilder.build() }
-    } catch (error) {
-      return {
-        isOk: false,
-        message: error instanceof Error ? error.message : String(error)
-      }
-    }
-  }
+    const txBody = txBuilder.build()
+    const witnessSet = TransactionWitnessSet.new()
+    nativeScriptSet && witnessSet.set_native_scripts(nativeScriptSet)
 
-  const buildTxResult = buildTransaction()
+    return Transaction.new(txBody, witnessSet)
+  })
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
@@ -297,12 +283,12 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
     setRecipients(recipients.filter(({ id }) => id !== recipient.id))
   }
 
-  const base64TxBody = buildTxResult.isOk && Buffer.from(buildTxResult.data.to_bytes()).toString('base64')
+  const base64Transaction = transactionResult.isOk && Buffer.from(transactionResult.data.to_bytes()).toString('base64')
 
   return (
     <Panel title='New Transaction'>
-      {!buildTxResult.isOk && (
-        <p className='p-2 text-center text-red-600 bg-red-200'>{buildTxResult.message}</p>
+      {!transactionResult.isOk && (
+        <p className='p-2 text-center text-red-600 bg-red-200'>{transactionResult.message}</p>
       )}
       <ul className='divide-y'>
         {recipients.map((recipient, index) =>
@@ -323,27 +309,22 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
       </ul>
       <footer className='flex px-4 py-2 bg-gray-100 items-center'>
         <div className='grow'>
-          {buildTxResult.isOk &&
+          {transactionResult.isOk &&
             <p className='flex space-x-1 font-bold'>
               <span>Fee:</span>
-              <span><ADAAmount lovelace={BigInt(buildTxResult.data.fee().to_str())} /></span>
+              <span><ADAAmount lovelace={BigInt(transactionResult.data.body().fee().to_str())} /></span>
             </p>
           }
         </div>
         <nav className='flex space-x-2'>
           <button
             className='p-2 rounded-md bg-blue-200'
-            onClick={() => setRecipients(recipients.concat(newRecipient()))}
-          >
+            onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
           </button>
-          {base64TxBody &&
-            <Link href={previewURI(encodeURIComponent(base64TxBody))}>
-              <a
-                className='p-2 rounded-md bg-blue-200'
-              >
-                Review
-              </a>
+          {base64Transaction &&
+            <Link href={`/transactions/${encodeURIComponent(base64Transaction)}`}>
+              <a className='p-2 rounded-md bg-blue-200'>Review</a>
             </Link>
           }
         </nav>
@@ -352,10 +333,7 @@ const NewTransaction = ({ senderAddress, cardano, protocolParameters, utxos, pre
   )
 }
 
-type TransactionViewerProps = {
-  txBody: TransactionBody
-}
-const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
+const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }) => {
   const fee = BigInt(txBody.fee().to_str())
   type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
   const txInputs: TxInputSet = {
@@ -489,4 +467,4 @@ const SignTxButton: NextPage<{
   return <button className={props.className} onClick={() => setRun(true)}>{props.children}</button>
 }
 
-export { SignTxButton, TransactionViewer, NewTransaction }
+export { SignTxButton, TransactionBodyViewer, NewTransaction }
