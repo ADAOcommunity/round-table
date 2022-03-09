@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import { Cardano, CardanoSet, mapCardanoSet } from '../../cardano/serialization-lib'
+import { Cardano, CardanoSet, mapCardanoSet, toHex } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { useContext } from 'react'
@@ -38,7 +38,7 @@ const NewMultiSigTransaction: NextPage<{
             <h3 className='mb-2'>{address.to_bech32()}</h3>
             <ul className='text-gray-500'>
               {mapCardanoSet(requiredSigners, (keyHash, index) =>
-                <li key={index}>{Buffer.from(keyHash.to_bytes()).toString('hex')}</li>
+                <li key={index}>{toHex(keyHash)}</li>
               )}
             </ul>
           </div>

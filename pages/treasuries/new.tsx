@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useState, useContext, ChangeEvent } from 'react'
 import { Layout, Panel } from '../../components/layout'
-import { Result, useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
 import { ConfigContext } from '../../cardano/config'
@@ -65,7 +65,7 @@ const NewTreasury: NextPage = () => {
                   <li key={address} className='flex p-4 items-center'>
                     <div className='grow font-mono'>
                       <p>{address}</p>
-                      {keyHash.isOk && <p className='text-gray-500'>{Buffer.from(keyHash.data.to_bytes()).toString('hex')}</p>}
+                      {keyHash.isOk && <p className='text-gray-500'>{toHex(keyHash.data)}</p>}
                       {!keyHash.isOk && <p className='text-red-500'>Invalid Address</p>}
                     </div>
                     <nav className='flex items-center'>
@@ -153,7 +153,7 @@ function AddAddress({ cardano, onAdd }: AddAddressProps) {
         </textarea>
         {isChanged && !parseResult.isOk && <p className='text-sm py-1 text-red-400'>{parseResult.message}</p>}
         {keyHashResult.isOk && <p className='text-sm py-1 text-gray-400'>
-          {Buffer.from(keyHashResult.data.to_bytes()).toString('hex')}
+          {toHex(keyHashResult.data)}
         </p>}
       </div>
       <footer className='flex flex-row-reverse px-4 py-3 bg-gray-100'>
