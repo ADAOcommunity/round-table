@@ -30,6 +30,11 @@ const GetProposal: NextPage = () => {
     return script.get_required_signers().get(i)
   })
   const txBody = txBodyResult.data
+  const witnessSet = cardano.lib.TransactionWitnessSet.new()
+  const scriptSet = cardano.lib.NativeScripts.new()
+  scriptSet.add(script)
+  witnessSet.set_native_scripts(scriptSet)
+  const transaction = cardano.lib.Transaction.new(txBody, witnessSet)
 
   const signHandle = (content: string) => {
     console.log(`signed: ${content}`)
@@ -76,20 +81,36 @@ const GetProposal: NextPage = () => {
           </div>
           <footer className='flex flex-row-reverse px-4 py-2 bg-gray-100 space-x-2 space-x-reverse'>
             <SignTxButton
-              txBody={txBody}
+              transaction={transaction}
               partialSign={true}
               signHandle={signHandle}
-              wallet={'ccvault'}
+              wallet='ccvault'
               className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
               Sign with ccvault
             </SignTxButton>
             <SignTxButton
-              txBody={txBody}
+              transaction={transaction}
               partialSign={true}
               signHandle={signHandle}
-              wallet={'nami'}
+              wallet='nami'
               className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
               Sign with nami
+            </SignTxButton>
+            <SignTxButton
+              transaction={transaction}
+              partialSign={true}
+              signHandle={signHandle}
+              wallet='gero'
+              className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
+              Sign with gero
+            </SignTxButton>
+            <SignTxButton
+              transaction={transaction}
+              partialSign={true}
+              signHandle={signHandle}
+              wallet='flint'
+              className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
+              Sign with flint
             </SignTxButton>
             <button className='p-2 border rounded-md bg-blue-300 disabled:bg-gray-400'>
               Manual Sign

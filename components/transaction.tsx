@@ -3,7 +3,7 @@ import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from '
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, Transaction, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -444,10 +444,10 @@ const TransactionViewer = ({ txBody }: TransactionViewerProps) => {
 
 const SignTxButton: NextPage<{
   className?: string,
-  txBody: TransactionBody,
+  transaction: Transaction,
   partialSign: boolean,
   signHandle: (_: string) => void,
-  wallet: 'ccvault' | 'nami'
+  wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
 }> = (props) => {
 
   type WalletAPI = {
@@ -464,13 +464,15 @@ const SignTxButton: NextPage<{
       switch (props.wallet) {
         case 'ccvault': return cardano?.ccvault
         case 'nami': return cardano?.nami
+        case 'gero': return cardano?.gerowallet
+        case 'flint': return cardano?.flint
       }
     }
     const enableWallet = (): Promise<WalletAPI> => chooseWallet()?.enable()
 
     run && enableWallet()
       .then((walletAPI: WalletAPI) => {
-        const hex = Buffer.from(props.txBody.to_bytes()).toString('hex')
+        const hex = Buffer.from(props.transaction.to_bytes()).toString('hex')
         walletAPI
           .signTx(hex, props.partialSign)
           .then(props.signHandle)
