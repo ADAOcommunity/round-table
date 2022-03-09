@@ -13,6 +13,7 @@ const GetTransaction: NextPage = () => {
   const { base64CBOR } = router.query
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
+  const [inputSignature, setInputSignature] = useState('')
 
   if (!cardano) return <Loading />;
 
@@ -52,6 +53,11 @@ const GetTransaction: NextPage = () => {
     })
   }
 
+  const manualSignHandle = () => {
+    signHandle(inputSignature)
+    setInputSignature('')
+  }
+
   return (
     <Layout>
       <div className='space-y-2'>
@@ -64,6 +70,8 @@ const GetTransaction: NextPage = () => {
             <textarea
               className='block w-full border rounded-md p-2'
               rows={4}
+              value={inputSignature}
+              onChange={(e) => setInputSignature(e.target.value)}
               placeholder="Signature">
             </textarea>
           </div>
@@ -100,7 +108,7 @@ const GetTransaction: NextPage = () => {
               className='p-2 border rounded-md bg-blue-300'>
               Sign with flint
             </SignTxButton>
-            <button className='p-2 border rounded-md bg-blue-300'>
+            <button onClick={manualSignHandle} className='p-2 border rounded-md bg-blue-300'>
               Manual Sign
             </button>
           </footer>
