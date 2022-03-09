@@ -141,12 +141,15 @@ class Cardano {
     }
   }
 
-  public formatRequiredSigners(script: NativeScript) {
-    const number = script.get_required_signers().len()
+  public getRequiredSignatures(script: NativeScript): number {
+    const totalNumber = script.get_required_signers().len()
     switch (this.getScriptType(script)) {
-      case 'all': return `All of ${number}`
-      case 'any': return `Any of ${number}`
-      case `atLeast`: return `At least ${number}`
+      case 'all': return totalNumber
+      case 'any': return 1
+      case `atLeast`:
+        const nofK = script.as_script_n_of_k()
+        if (!nofK) throw new Error('cannot convert to ScriptNofK')
+        return nofK.n()
     }
   }
 

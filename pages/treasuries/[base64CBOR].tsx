@@ -1,15 +1,15 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Layout, Panel } from '../../components/layout'
-import { Cardano, CardanoSet, mapCardanoSet, toHex } from '../../cardano/serialization-lib'
+import { Layout } from '../../components/layout'
+import { Cardano } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { useContext } from 'react'
 import { ConfigContext } from '../../cardano/config'
-import { NewTransaction } from '../../components/transaction'
+import { NativeScriptViewer, NewTransaction } from '../../components/transaction'
 import type { ProtocolParameters } from '../../cardano/query-api'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
-import type { Ed25519KeyHash, NativeScript } from '@emurgo/cardano-serialization-lib-browser'
+import type { NativeScript } from '@emurgo/cardano-serialization-lib-browser'
 
 const NewMultiSigTransaction: NextPage<{
   cardano: Cardano
@@ -27,22 +27,11 @@ const NewMultiSigTransaction: NextPage<{
   const nativeScriptSet = cardano.lib.NativeScripts.new()
   nativeScriptSet.add(script)
 
-  const requiredSigners: CardanoSet<Ed25519KeyHash> = script.get_required_signers()
-
   return (
     <Layout>
       <div className='space-y-2'>
         <h1 className='my-8 font-bold text-2xl text-center'>Treasury - Proposal</h1>
-        <Panel title='Native Script'>
-          <div className='p-4 text-center font-mono'>
-            <h3 className='mb-2'>{address.to_bech32()}</h3>
-            <ul className='text-gray-500'>
-              {mapCardanoSet(requiredSigners, (keyHash, index) =>
-                <li key={index}>{toHex(keyHash)}</li>
-              )}
-            </ul>
-          </div>
-        </Panel>
+        <NativeScriptViewer cardano={cardano} script={script} />
         <NewTransaction
           changeAddress={address}
           cardano={cardano}

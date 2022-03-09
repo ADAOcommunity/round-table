@@ -1,11 +1,11 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano, getResult } from '../cardano/serialization-lib'
+import { Cardano, getResult, mapCardanoSet, toHex } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, NativeScripts, Transaction, TransactionBody, TransactionOutput } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { ArrowRightIcon, XIcon } from '@heroicons/react/solid'
+import { ArrowRightIcon, CheckIcon, DuplicateIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
 import { Panel } from './layout'
@@ -467,4 +467,55 @@ const SignTxButton: NextPage<{
   return <button className={props.className} onClick={() => setRun(true)}>{props.children}</button>
 }
 
-export { SignTxButton, TransactionBodyViewer, NewTransaction }
+const CopyToClipboardButton: NextPage<{
+  className?: string
+  content: string
+}> = ({ className, content, children }) => {
+
+  const clickHandle = () => {
+    navigator.clipboard.writeText(content)
+  }
+
+  return (
+    <button
+      onClick={clickHandle}
+      className={className}>
+      {children}
+    </button>
+  )
+}
+
+const NativeScriptViewer: NextPage<{
+  cardano: Cardano
+  script: NativeScript
+  signatures?: Map<string, Vkeywitness>
+}> = ({ cardano, script, signatures }) => {
+
+  const [config, _] = useContext(ConfigContext)
+  const address = cardano.getScriptAddress(script, config.isMainnet)
+  const requireSignatures = cardano.getRequiredSignatures(script)
+
+  return (
+    <Panel title='Native Script'>
+      <div className='p-4 text-center font-mono'>
+        <h3 className='mb-2'>{address.to_bech32()}</h3>
+        <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
+        <ul className='text-gray-500'>
+          {mapCardanoSet(script.get_required_signers(), (keyHash, index) => {
+            const signature = signatures?.get(toHex(keyHash))
+            const hex = signature && cardano.buildSingleSignatureHex(signature)
+            return (
+              <li key={index} className={signature ? 'text-green-500' : ''}>
+                <span>{toHex(keyHash)}</span>
+                {signature && <span><CheckIcon className='h-6 w-6 inline' /></span>}
+                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='h-6 w-6 inline' /></CopyToClipboardButton>}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </Panel>
+  )
+}
+
+export { SignTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }

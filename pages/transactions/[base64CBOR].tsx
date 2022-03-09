@@ -4,9 +4,8 @@ import { Layout, Panel } from '../../components/layout'
 import { CardanoSet, toHex } from '../../cardano/serialization-lib'
 import { getResult, mapCardanoSet, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { SignTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { NativeScriptViewer, SignTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { NativeScript, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
-import { nanoid } from 'nanoid'
 import { useState } from 'react'
 
 const GetTransaction: NextPage = () => {
@@ -58,29 +57,7 @@ const GetTransaction: NextPage = () => {
       <div className='space-y-2'>
         <TransactionBodyViewer txBody={transaction.body()} />
         {nativeScriptSet && mapCardanoSet(nativeScriptSet, (script, index) =>
-          <Panel title='Native Script' key={index}>
-            <table className='table-fixed border-collapse w-full text-sm'>
-              <thead className='border-b'>
-                <tr className='divide-x'>
-                  <th className='px-4 py-1'>Signer</th>
-                  <th className='px-4 py-1'>Signature</th>
-                </tr>
-              </thead>
-              <tbody className='divide-y font-mono'>
-                {mapCardanoSet(script.get_required_signers(), (keyHash) => {
-                  const hex = toHex(keyHash)
-                  const vkey = signatureMap.get(hex)
-                  const signature = vkey && cardano.buildSingleSignatureHex(vkey)
-                  return (
-                    <tr key={nanoid()} className={'divide-x ' + (signature ? 'bg-green-100' : '')}>
-                      <td className={'px-4 py-1 ' + (signature ? 'text-green-500' : 'text-gray-500')}>{hex}</td>
-                      <td className='px-4 py-1 text-green-500 break-all'>{signature}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </Panel>
+          <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
         <Panel title='Signature'>
           <div className='p-4'>
