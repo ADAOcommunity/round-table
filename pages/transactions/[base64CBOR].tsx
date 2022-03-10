@@ -26,7 +26,7 @@ const GetTransaction: NextPage = () => {
   useEffect(() => {
     if (cardano && base64CBOR) {
       //------------ GUN JS ----------------------------
-      gun.get(base64CBOR as string).map().once((data) => {
+      gun.get(base64CBOR as string).map().on((data) => {
         console.log(data)
        // loadedMap=signatureMap;
         try {
