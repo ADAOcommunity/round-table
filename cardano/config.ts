@@ -11,20 +11,20 @@ type Koios = {
 
 type QueryAPI = GraphQL | Koios
 
+type SubmitAPI =
+  | { type: 'wallet' }
+  | { type: 'rest', URI: string }
+
 type Config = {
   isMainnet: boolean
   queryAPI: QueryAPI
-  submitAPI: string
-}
-
-const getDandelionSubmitAPI = (isMainnet: boolean): string => {
-  return isMainnet ? 'https://submit-api.mainnet.dandelion.link' : 'https://submit-api.testnet.dandelion.link'
+  submitAPI: SubmitAPI
 }
 
 const defaultConfig: Config = {
   isMainnet: true,
   queryAPI: { type: 'koios' },
-  submitAPI: getDandelionSubmitAPI(true)
+  submitAPI: { type: 'wallet' }
 }
 
 const createConfig = (): Config => {
@@ -35,7 +35,7 @@ const createConfig = (): Config => {
   return {
     isMainnet,
     queryAPI: grapQLURI ? { type: 'graphql', URI: grapQLURI } : { type: 'koios' },
-    submitAPI: envSubmitAPI ? envSubmitAPI : getDandelionSubmitAPI(isMainnet)
+    submitAPI: envSubmitAPI ? { type: 'rest', URI: envSubmitAPI } : { type: 'wallet' }
   }
 }
 
