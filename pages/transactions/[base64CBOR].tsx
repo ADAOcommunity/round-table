@@ -27,6 +27,7 @@ const GetTransaction: NextPage = () => {
     if (cardano && base64CBOR) {
       //------------ GUN JS ----------------------------
       gun.get(base64CBOR as string).map().once((data) => {
+        console.log(data)
        // loadedMap=signatureMap;
         try {
           let hexVal = data?.hex
@@ -38,7 +39,7 @@ const GetTransaction: NextPage = () => {
             const vkeyWitnessSet: CardanoSet<Vkeywitness> | undefined = witness?.vkeys()
             vkeyWitnessSet && mapCardanoSet(vkeyWitnessSet, (vkeyWitness) => {
               loadedMap.set(hexVal, vkeyWitness)
-              setSignatureMap(loadedMap)
+              //setSignatureMap(loadedMap)
             })
           }
         } catch (e) {
