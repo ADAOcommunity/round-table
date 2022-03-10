@@ -26,13 +26,13 @@ const GetTransaction: NextPage = () => {
 
   //------------ GUN JS ----------------------------
   const gun = GUN(['https://dao-gunjs.herokuapp.com/gun'])
-  let signers = loadedSigners
+  let signers:any[] = loadedSigners
   gun.get(base64CBOR).map().once((data, key) => {
     try {
       let hexVal = data?.hex
       let sig = data?.sig
 
-      if (hexVal && !signers.includes(hexVal)) {
+      if (!signers.includes(hexVal)) {
         signers.push(hexVal)
         setLoadedSigners(signers)
         signHandle(sig)
