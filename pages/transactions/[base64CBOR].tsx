@@ -16,7 +16,8 @@ const GetTransaction: NextPage = () => {
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [inputSignature, setInputSignature] = useState('')
-  const [loadedSigners, setLoadedSigners] = useState([])
+
+  const [loadedSigners, setLoadedSigners] = useState<string[]>([])
 
   if (!cardano) return <Loading />;
 
@@ -26,7 +27,7 @@ const GetTransaction: NextPage = () => {
 
   //------------ GUN JS ----------------------------
   const gun = GUN(['https://dao-gunjs.herokuapp.com/gun'])
-  let signers:any[] = loadedSigners
+  let signers:string[] = loadedSigners
   gun.get(base64CBOR).map().once((data, key) => {
     try {
       let hexVal = data?.hex
