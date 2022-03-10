@@ -524,14 +524,12 @@ const SubmitTxButton: NextPage<{
     submitTx(tx: string): Promise<string>
   }
 
-  const [config, _] = useContext(ConfigContext)
   const [run, setRun] = useState(false)
-  const { submitAPI } = config
 
   useEffect(() => {
     let isMounted = true;
 
-    if (run && submitAPI.type == 'wallet') {
+    if (run) {
       const cardano = (window as any).cardano
       const wallet = cardano?.nami || cardano?.ccvault || cardano?.gerowallet
 
