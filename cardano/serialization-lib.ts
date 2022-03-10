@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
+import { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs, TransactionWitnessSet, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 

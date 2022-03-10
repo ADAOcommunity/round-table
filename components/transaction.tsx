@@ -451,6 +451,7 @@ const SignTxButton: NextPage<{
     run && enableWallet()
       .then((walletAPI: WalletAPI) => {
         const hex = toHex(props.transaction)
+        console.log(hex)
         walletAPI
           .signTx(hex, props.partialSign)
           .then(props.signHandle)
@@ -458,7 +459,6 @@ const SignTxButton: NextPage<{
       })
       .catch((error) => console.error(error))
       .finally(() => setRun(false))
-
     return () => {
       isMounted = false
     }
@@ -494,7 +494,7 @@ const NativeScriptViewer: NextPage<{
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
   const requireSignatures = cardano.getRequiredSignatures(script)
-
+  console.log("signatures",signatures)
   return (
     <Panel title='Native Script'>
       <div className='p-4 text-center font-mono'>

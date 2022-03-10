@@ -8,18 +8,45 @@ import { NativeScriptViewer, SignTxButton, TransactionBodyViewer } from '../../c
 import type { NativeScript, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useState } from 'react'
 
+import GUN from "gun";
+
 const GetTransaction: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [inputSignature, setInputSignature] = useState('')
+  const [loadedSigners, setLoadedSigners] = useState([])
 
   if (!cardano) return <Loading />;
 
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid Transaction CBOR</ErrorMessage>;
   const txResult = getResult(() => cardano.lib.Transaction.from_bytes(Buffer.from(base64CBOR, 'base64')))
   if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
+
+  //------------ GUN JS ----------------------------
+  const gun = GUN(['https://dao-gunjs.herokuapp.com/gun'])
+  let signers = loadedSigners
+  gun.get(base64CBOR).map().once((data, key) => {
+    try {
+      let hexVal = data.hex
+      let sig = data.sig
+
+      if (!signers.includes(hexVal)) {
+        signers.push(hexVal)
+        setLoadedSigners(signers)
+        signHandle(sig)
+      }
+
+    } catch (e) {
+      console.log(e)
+    }
+    /* signatures.push(data.witness)
+    addresses.push(data.address) */
+  })
+
+  // ------------------------------------------------
+
 
   const transaction = txResult.data
   const txHash = cardano.lib.hash_transaction(transaction.body()).to_bytes()
@@ -49,6 +76,9 @@ const GetTransaction: NextPage = () => {
         const newMap = new Map(signatureMap)
         newMap.set(hex, vkeyWitness)
         setSignatureMap(newMap)
+        let sig = cardano.buildSingleSignatureHex(newMap.get(toHex(keyHash)))
+        let copayer = gun.get(hex).put({ hex: hex, sig: sig })
+        gun.get(base64CBOR).set(copayer)
       }
     })
   }

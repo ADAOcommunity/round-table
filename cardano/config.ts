@@ -17,7 +17,7 @@ type Config = {
 }
 
 const defaultConfig: Config = {
-  isMainnet: true,
+  isMainnet: false,
   queryAPI: { type: 'koios' }
 }
 
@@ -25,10 +25,13 @@ const createConfig = (): Config => {
   const isMainnet = !process.env.NEXT_PUBLIC_TESTNET
   const grapQLURI = process.env.NEXT_PUBLIC_GRAPHQL
 
-  return {
+  /* return {
     isMainnet,
     queryAPI: grapQLURI ? { type: 'graphql', URI: grapQLURI } : { type: 'koios' }
-  }
+  } */
+  return(
+    defaultConfig
+  )
 }
 
 const config = createConfig()
