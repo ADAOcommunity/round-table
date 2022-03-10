@@ -34,16 +34,14 @@ const decodeASCII = (assetName: string): string => {
   return Buffer.from(assetName, 'hex').toString('ascii')
 }
 
-type LabeledCurrencyInputProps = {
+const LabeledCurrencyInput: NextPage<{
   symbol: string
   decimal: number
   value: bigint
   max: bigint
   onChange: (_: bigint) => void
   placeholder?: string
-}
-
-const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
+}> = (props) => {
   const { decimal, value, onChange, max, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
