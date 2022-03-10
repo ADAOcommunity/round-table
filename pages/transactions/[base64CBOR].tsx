@@ -77,7 +77,7 @@ const GetTransaction: NextPage = () => {
         const newMap = new Map(signatureMap)
         newMap.set(hex, vkeyWitness)
         setSignatureMap(newMap)
-        let sig = cardano.buildSingleSignatureHex(newMap.get(toHex(keyHash)))
+        let sig = cardano.buildSingleSignatureHex(newMap.get(toHex(keyHash)) as Vkeywitness)
         let copayer = gun.get(hex).put({ hex: hex, sig: sig })
         gun.get(base64CBOR).set(copayer)
       }
