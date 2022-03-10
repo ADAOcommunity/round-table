@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
@@ -49,6 +49,15 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public signTransaction(transaction: Transaction, vkeyIter: IterableIterator<Vkeywitness>): Transaction {
+    const { Transaction, Vkeywitnesses } = this.lib
+    const witnessSet = transaction.witness_set()
+    const vkeyWitnessSet = Vkeywitnesses.new()
+    Array.from(vkeyIter, (vkey) => vkeyWitnessSet.add(vkey))
+    witnessSet.set_vkeys(vkeyWitnessSet)
+    return Transaction.new(transaction.body(), witnessSet)
   }
 
   public buildSingleSignatureHex(vkey: Vkeywitness): string {

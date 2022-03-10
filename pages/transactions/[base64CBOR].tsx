@@ -58,6 +58,8 @@ const GetTransaction: NextPage = () => {
     setInputSignature('')
   }
 
+  const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
+
   return (
     <Layout>
       <div className='space-y-2'>
