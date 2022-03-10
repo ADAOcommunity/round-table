@@ -4,7 +4,7 @@ import { Layout, Panel } from '../../components/layout'
 import { CardanoSet, toHex } from '../../cardano/serialization-lib'
 import { getResult, mapCardanoSet, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { NativeScriptViewer, SignTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { NativeScript, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useState } from 'react'
 
@@ -115,6 +115,13 @@ const GetTransaction: NextPage = () => {
             </button>
           </footer>
         </Panel>
+        <div className='text-center'>
+          <SubmitTxButton
+            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow'
+            transaction={signedTransaction}>
+            Submit Transaction
+          </SubmitTxButton>
+        </div>
       </div>
     </Layout>
   )

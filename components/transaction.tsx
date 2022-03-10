@@ -518,4 +518,44 @@ const NativeScriptViewer: NextPage<{
   )
 }
 
-export { SignTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
+const SubmitTxButton: NextPage<{
+  className?: string
+  transaction: Transaction
+}> = ({ className, children, transaction }) => {
+  type WalletAPI = {
+    submitTx(tx: string): Promise<string>
+  }
+
+  const [config, _] = useContext(ConfigContext)
+  const [run, setRun] = useState(false)
+  const { submitAPI } = config
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (run && submitAPI.type == 'wallet') {
+      const cardano = (window as any).cardano
+      const wallet = cardano?.nami || cardano?.ccvault || cardano?.gerowallet
+
+      if (!wallet) throw new Error('No wallet was found')
+
+      const walletAPI: Promise<WalletAPI> = wallet.enable()
+      walletAPI.then((api) => {
+        api.submitTx(toHex(transaction))
+          .then((response) => console.log(response))
+          .catch((reason) => console.log(reason))
+      })
+        .catch((reason) => console.log(reason))
+        .finally(() => setRun(false))
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [run])
+  return (
+    <button onClick={() => setRun(true)} className={className}>{children}</button>
+  )
+}
+
+export { SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
