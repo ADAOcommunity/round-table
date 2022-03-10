@@ -29,10 +29,10 @@ const GetTransaction: NextPage = () => {
   let signers = loadedSigners
   gun.get(base64CBOR).map().once((data, key) => {
     try {
-      let hexVal = data.hex
-      let sig = data.sig
+      let hexVal = data?.hex
+      let sig = data?.sig
 
-      if (!signers.includes(hexVal)) {
+      if (hexVal && !signers.includes(hexVal)) {
         signers.push(hexVal)
         setLoadedSigners(signers)
         signHandle(sig)
