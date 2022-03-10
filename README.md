@@ -20,8 +20,9 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 ### Environment Variable
 
-* To use it on Cardano Testnet, set `NEXT_PUBLIC_TESTNET=y`.
+* To use it on Cardano Testnet, set `NEXT_PUBLIC_TESTNET=y`. Leave it unset to use the Mainnet.
 * To connect it to a GraphQL node, set `NEXT_PUBLIC_GRAPHQL` to the URI of the node. The default Query API is [Koios](https://www.koios.rest/).
+* To connect it to a Submit API node, set `NEXT_PUBLIC_SUBMIT_API` to the origin of the node. The default is [Dandelion API](https://gimbalabs.com/dandelion/endpoints/submit-api) according to the network mode.
 
 ## Learn More
 

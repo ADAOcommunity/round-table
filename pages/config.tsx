@@ -24,6 +24,10 @@ const Configure: NextPage = () => {
               <span>{config.queryAPI.URI}</span>
             </p>
           }
+          <p className='space-x-2'>
+            <span>Submit API:</span>
+            <span>{config.submitAPI}</span>
+          </p>
         </div>
       </Panel>
     </Layout>
