@@ -27,7 +27,7 @@ const createConfig = (): Config => {
 
   return {
     isMainnet,
-    queryAPI: grapQLURI ? { type: 'graphql', URI: grapQLURI } : { type: 'koios' },
+    queryAPI: grapQLURI ? { type: 'graphql', URI: grapQLURI } : { type: 'koios' }
   }
 }
 
