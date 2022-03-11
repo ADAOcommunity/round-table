@@ -102,6 +102,14 @@ class Cardano {
     })
   }
 
+  public getAddressScriptHash(address: Address): Result<ScriptHash> {
+    return getResult(() => {
+      const scriptHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_scripthash()
+      if (!scriptHash) throw new Error('failed to get script hash from address')
+      return scriptHash
+    })
+  }
+
   public buildMultiSigScript(keyHashes: Ed25519KeyHash[], type: MultiSigType, required: number): NativeScript {
     const publicKeyScripts = keyHashes.map((keyHash) => this.buildPublicKeyScript(keyHash))
 
