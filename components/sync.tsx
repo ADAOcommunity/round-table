@@ -30,7 +30,7 @@ const SyncToggle: NextPage<{
                     let sig: string = data?.sig
                     if (!signatures.includes(sig)) {
                         signatures.push(sig)
-                        // props.signHandle(sig)
+                        props.signHandle(sig)
                         setLoadedSignatures(signatures)
                         // console.log("sig", sig)
                     }
@@ -63,13 +63,6 @@ const SyncToggle: NextPage<{
             }
         })
     }, [props.signatureMap])
-
-    useEffect(() => {
-        var i = 0;
-        loadedSignatures.forEach((signature) => {
-            props.signHandle(signature)
-        })
-    }, [toggled])
 
     return (
         <div className="mb-2">
