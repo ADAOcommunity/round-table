@@ -424,7 +424,7 @@ const SignTxButton: NextPage<{
   partialSign: boolean,
   signHandle: (_: string) => void,
   wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
-}> = (props) => {
+}> = ({ wallet, transaction, partialSign, signHandle, className, children }) => {
 
   type WalletAPI = {
     signTx(tx: string, partialSign: boolean): Promise<string>
@@ -437,7 +437,7 @@ const SignTxButton: NextPage<{
 
     const chooseWallet = () => {
       const cardano = (window as any).cardano
-      switch (props.wallet) {
+      switch (wallet) {
         case 'ccvault': return cardano?.ccvault
         case 'nami': return cardano?.nami
         case 'gero': return cardano?.gerowallet
@@ -448,10 +448,10 @@ const SignTxButton: NextPage<{
 
     run && enableWallet()
       .then((walletAPI: WalletAPI) => {
-        const hex = toHex(props.transaction)
+        const hex = toHex(transaction)
         walletAPI
-          .signTx(hex, props.partialSign)
-          .then(props.signHandle)
+          .signTx(hex, partialSign)
+          .then(signHandle)
           .catch((error) => console.error(error))
       })
       .catch((error) => console.error(error))
@@ -460,9 +460,9 @@ const SignTxButton: NextPage<{
     return () => {
       isMounted = false
     }
-  }, [run])
+  })
 
-  return <button className={props.className} onClick={() => setRun(true)}>{props.children}</button>
+  return <button className={className} onClick={() => setRun(true)}>{children}</button>
 }
 
 const CopyToClipboardButton: NextPage<{
@@ -548,7 +548,8 @@ const SubmitTxButton: NextPage<{
     return () => {
       isMounted = false
     }
-  }, [run])
+  })
+
   return (
     <button onClick={() => setRun(true)} className={className}>{children}</button>
   )
