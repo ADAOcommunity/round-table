@@ -32,11 +32,11 @@ function mapCardanoSet<T, R>(set: CardanoIterable<T>, callback: (_: T, index?: n
   return Array.from({ length: set.len() }, (_, i) => callback(set.get(i), i))
 }
 
-interface ToBytes<T> {
+interface ToBytes {
   to_bytes: () => Uint8Array
 }
 
-function toHex<T>(data: ToBytes<T>): string {
+function toHex(data: ToBytes): string {
   return Buffer.from(data.to_bytes()).toString('hex')
 }
 
