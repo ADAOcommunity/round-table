@@ -23,12 +23,12 @@ function getResult<T>(callback: () => T): Result<T> {
   }
 }
 
-interface CardanoSet<T> {
+interface CardanoIterable<T> {
   len: () => number
   get: (index: number) => T
 }
 
-function mapCardanoSet<T, R>(set: CardanoSet<T>, callback: (_: T, index?: number) => R): R[] {
+function mapCardanoSet<T, R>(set: CardanoIterable<T>, callback: (_: T, index?: number) => R): R[] {
   return Array.from({ length: set.len() }, (_, i) => callback(set.get(i), i))
 }
 
@@ -241,5 +241,5 @@ const useCardanoSerializationLib = () => {
   return cardano
 }
 
-export type { Cardano, CardanoSet, Result, MultiSigType }
+export type { Cardano, CardanoIterable, Result, MultiSigType }
 export { getResult, mapCardanoSet, toHex, useCardanoSerializationLib }

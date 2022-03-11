@@ -1,11 +1,11 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import { CardanoSet, toHex } from '../../cardano/serialization-lib'
+import { toHex } from '../../cardano/serialization-lib'
 import { getResult, mapCardanoSet, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
-import type { NativeScript, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
+import type { Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useState } from 'react'
 
 const GetTransaction: NextPage = () => {
@@ -24,7 +24,7 @@ const GetTransaction: NextPage = () => {
   const transaction = txResult.data
   const txHash = cardano.lib.hash_transaction(transaction.body()).to_bytes()
   const witnessSet = transaction.witness_set()
-  const nativeScriptSet: CardanoSet<NativeScript> | undefined = witnessSet.native_scripts()
+  const nativeScriptSet = witnessSet.native_scripts()
   const signerRegistry = new Set<string>()
   nativeScriptSet && mapCardanoSet(nativeScriptSet, (script) => {
     mapCardanoSet(script.get_required_signers(), (signer) => signerRegistry.add(toHex(signer)))
@@ -37,7 +37,7 @@ const GetTransaction: NextPage = () => {
     })
     if (!result.isOk) return
     const witnessSet = result.data
-    const vkeyWitnessSet: CardanoSet<Vkeywitness> | undefined = witnessSet.vkeys()
+    const vkeyWitnessSet = witnessSet.vkeys()
     vkeyWitnessSet && mapCardanoSet(vkeyWitnessSet, (vkeyWitness) => {
       const vkey = vkeyWitness.vkey()
       const signature = vkeyWitness.signature()
