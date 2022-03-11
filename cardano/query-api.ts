@@ -16,7 +16,6 @@ type Value = {
 
 type UTxO = {
   address: string
-  addressHasScript: boolean
   txHash: string
   index: number
   lovelace: bigint
@@ -53,7 +52,6 @@ const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
   utxos(where: { address: { _eq: $address } }) {
     address
-    addressHasScript
     txHash
     index
     value
@@ -94,7 +92,6 @@ const useAddressUTxOsQuery = (address: string, config: Config) => {
           data: utxos.map((utxo) => {
             return {
               address: utxo.address,
-              addressHasScript: utxo.addressHasScript,
               txHash: utxo.txHash,
               index: utxo.index,
               lovelace: BigInt(utxo.value),
@@ -140,7 +137,6 @@ const useAddressUTxOsQuery = (address: string, config: Config) => {
             data: info.utxo_set.map((utxo) => {
               return {
                 address,
-                addressHasScript: info.script_address,
                 txHash: utxo.tx_hash,
                 index: utxo.tx_index,
                 lovelace: BigInt(utxo.value),
