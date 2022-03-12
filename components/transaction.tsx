@@ -494,7 +494,6 @@ const NativeScriptViewer: NextPage<{
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
   const requireSignatures = cardano.getRequiredSignatures(script)
-  console.log("signatures",signatures)
   return (
     <Panel title='Native Script'>
       <div className='p-4 text-center font-mono'>

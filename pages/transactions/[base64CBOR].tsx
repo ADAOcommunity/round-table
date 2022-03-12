@@ -15,6 +15,7 @@ const GetTransaction: NextPage = () => {
   const { base64CBOR } = router.query
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
+  const [serializedSignatureMap, setSerializedSignatureMap] = useState<Map<string, string>>(new Map())
   const [inputSignature, setInputSignature] = useState('')
 
   if (!cardano) return <Loading />;
@@ -24,6 +25,7 @@ const GetTransaction: NextPage = () => {
   if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
 
   const transaction = txResult.data
+  const txHashHex = toHex(cardano.lib.hash_transaction(transaction.body()))
   const txHash = cardano.lib.hash_transaction(transaction.body()).to_bytes()
   const witnessSet = transaction.witness_set()
   const nativeScriptSet: CardanoSet<NativeScript> | undefined = witnessSet.native_scripts()
@@ -49,8 +51,12 @@ const GetTransaction: NextPage = () => {
       const hex = toHex(keyHash)
       if (isValid && signerRegistry.has(hex)) {
         const newMap = new Map(signatureMap)
+        const newSerializedMap = new Map(serializedSignatureMap)
         newMap.set(hex, vkeyWitness)
+        let sig = cardano.buildSingleSignatureHex(vkeyWitness)
+        newSerializedMap.set(hex, sig)
         setSignatureMap(newMap)
+        setSerializedSignatureMap(newSerializedMap)
       }
     })
   }
@@ -115,8 +121,8 @@ const GetTransaction: NextPage = () => {
             </button>
             <SyncToggle
               signHandle={signHandle}
-              signatureMap={signatureMap}
-              base64CBOR={base64CBOR} >
+              signatureMap={serializedSignatureMap}
+              txHash={txHashHex} >
             </SyncToggle>
           </footer>
         </Panel>
