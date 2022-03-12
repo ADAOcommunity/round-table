@@ -28,8 +28,17 @@ interface CardanoIterable<T> {
   get: (index: number) => T
 }
 
-function mapCardanoSet<T, R>(set: CardanoIterable<T>, callback: (_: T, index?: number) => R): R[] {
-  return Array.from({ length: set.len() }, (_, i) => callback(set.get(i), i))
+function toIter<T>(set: CardanoIterable<T>): IterableIterator<T> {
+  let index = 0
+  return {
+    next: () => {
+      return index < set.len() ? {
+        done: false,
+        value: set.get(index++)
+      } : { done: true, value: null }
+    },
+    [Symbol.iterator]: function() { return this }
+  }
 }
 
 interface ToBytes {
@@ -242,4 +251,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { getResult, mapCardanoSet, toHex, useCardanoSerializationLib }
+export { getResult, toIter, toHex, useCardanoSerializationLib }

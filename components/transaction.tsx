@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano, getResult, mapCardanoSet, toHex } from '../cardano/serialization-lib'
+import { Cardano, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
@@ -499,7 +499,7 @@ const NativeScriptViewer: NextPage<{
         <h3 className='mb-2'>{address.to_bech32()}</h3>
         <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
         <ul className='text-gray-500'>
-          {mapCardanoSet(script.get_required_signers(), (keyHash, index) => {
+          {Array.from(toIter(script.get_required_signers())).map((keyHash, index) => {
             const signature = signatures?.get(toHex(keyHash))
             const hex = signature && cardano.buildSingleSignatureHex(signature)
             return (

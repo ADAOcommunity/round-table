@@ -1,8 +1,8 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import { toHex } from '../../cardano/serialization-lib'
-import { getResult, mapCardanoSet, useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { toHex, toIter } from '../../cardano/serialization-lib'
+import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
@@ -26,8 +26,8 @@ const GetTransaction: NextPage = () => {
   const witnessSet = transaction.witness_set()
   const nativeScriptSet = witnessSet.native_scripts()
   const signerRegistry = new Set<string>()
-  nativeScriptSet && mapCardanoSet(nativeScriptSet, (script) => {
-    mapCardanoSet(script.get_required_signers(), (signer) => signerRegistry.add(toHex(signer)))
+  nativeScriptSet && Array.from(toIter(nativeScriptSet)).forEach((script) => {
+    Array.from(toIter(script.get_required_signers())).forEach((signer) => signerRegistry.add(toHex(signer)))
   })
 
   const signHandle = (content: string) => {
@@ -38,7 +38,7 @@ const GetTransaction: NextPage = () => {
     if (!result.isOk) return
     const witnessSet = result.data
     const vkeyWitnessSet = witnessSet.vkeys()
-    vkeyWitnessSet && mapCardanoSet(vkeyWitnessSet, (vkeyWitness) => {
+    vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet)).forEach((vkeyWitness) => {
       const vkey = vkeyWitness.vkey()
       const signature = vkeyWitness.signature()
       const publicKey = vkey.public_key()
@@ -64,7 +64,7 @@ const GetTransaction: NextPage = () => {
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer txBody={transaction.body()} />
-        {nativeScriptSet && mapCardanoSet(nativeScriptSet, (script, index) =>
+        {nativeScriptSet && Array.from(toIter(nativeScriptSet)).map((script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
         <Panel title='Signature'>
