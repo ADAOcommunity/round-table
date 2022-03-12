@@ -499,7 +499,7 @@ const NativeScriptViewer: NextPage<{
         <h3 className='mb-2'>{address.to_bech32()}</h3>
         <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
         <ul className='text-gray-500'>
-          {Array.from(toIter(script.get_required_signers())).map((keyHash, index) => {
+          {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
             const signature = signatures?.get(toHex(keyHash))
             const hex = signature && cardano.buildSingleSignatureHex(signature)
             return (

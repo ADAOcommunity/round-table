@@ -26,8 +26,8 @@ const GetTransaction: NextPage = () => {
   const witnessSet = transaction.witness_set()
   const nativeScriptSet = witnessSet.native_scripts()
   const signerRegistry = new Set<string>()
-  nativeScriptSet && Array.from(toIter(nativeScriptSet)).forEach((script) => {
-    Array.from(toIter(script.get_required_signers())).forEach((signer) => signerRegistry.add(toHex(signer)))
+  nativeScriptSet && Array.from(toIter(nativeScriptSet), (script) => {
+    Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
   })
 
   const signHandle = (content: string) => {
@@ -38,7 +38,7 @@ const GetTransaction: NextPage = () => {
     if (!result.isOk) return
     const witnessSet = result.data
     const vkeyWitnessSet = witnessSet.vkeys()
-    vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet)).forEach((vkeyWitness) => {
+    vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
       const vkey = vkeyWitness.vkey()
       const signature = vkeyWitness.signature()
       const publicKey = vkey.public_key()
@@ -64,7 +64,7 @@ const GetTransaction: NextPage = () => {
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer txBody={transaction.body()} />
-        {nativeScriptSet && Array.from(toIter(nativeScriptSet)).map((script, index) =>
+        {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
         <Panel title='Signature'>
