@@ -7,7 +7,7 @@ import { sign } from 'crypto';
 const SyncToggle: NextPage<{
   signatureMap: Map<string, string>,
   txHash: string,
-  signHandle: (_: string) => void
+  signHandle: (_: string[]) => void
 }> = (props) => {
   //const [gun, setGun] = useState<typeof GUN>()
   const [toggled, setToggled] = useState(true)
@@ -17,19 +17,19 @@ const SyncToggle: NextPage<{
   useEffect(() => {
     if (toggled) {
       console.log("activated")
-      let i = 0;
-      var signatures: string[] = [...loadedSignatures];
+      var signatures: string[] = [];
       gun.get(props.txHash).map().on((data) => {
+        console.log("changed")
+        //console.log(data)
         let sig: string = data.sig
         if (!signatures.includes(sig)) {
+          props.signHandle([sig])
           signatures.push(sig)
           setLoadedSignatures(signatures)
-          i++;
-          setTimeout(() => {
-            props.signHandle(sig)
-          }, 1000 * i)
         }
       })
+      console.log("here", signatures)
+      props.signHandle(signatures)
     } else {
       console.log("deactivated")
     }
@@ -43,6 +43,10 @@ const SyncToggle: NextPage<{
       }
     })
   }, [props.signatureMap])
+
+  useEffect(()=>{
+    console.log(loadedSignatures)
+  },[loadedSignatures])
 
   return (
     <div className="mb-2">

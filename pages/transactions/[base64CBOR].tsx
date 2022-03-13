@@ -59,6 +59,34 @@ const GetTransaction: NextPage = () => {
       }
     })
   }
+  const signHandleFromArray = (content: string[]) => {
+    const newMap = new Map(signatureMap)
+    const newSerializedMap = new Map(serializedSignatureMap)
+    for (let signer of content) {
+      const result = getResult(() => {
+        const bytes = Buffer.from(signer, 'hex')
+        return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+      })
+      if (!result.isOk) return
+      const witnessSet = result.data
+      const vkeyWitnessSet = witnessSet.vkeys()
+      vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
+        const vkey = vkeyWitness.vkey()
+        const signature = vkeyWitness.signature()
+        const publicKey = vkey.public_key()
+        const keyHash = publicKey.hash()
+        const isValid = publicKey.verify(txHash, signature)
+        const hex = toHex(keyHash)
+        if (isValid && signerRegistry.has(hex)) {
+          newMap.set(hex, vkeyWitness)
+          let sig = cardano.buildSingleSignatureHex(vkeyWitness)
+          newSerializedMap.set(hex, sig)
+        }
+      })
+    }
+    setSignatureMap(newMap)
+    setSerializedSignatureMap(newSerializedMap)
+  }
 
   const manualSignHandle = () => {
     signHandle(inputSignature)
@@ -121,7 +149,7 @@ const GetTransaction: NextPage = () => {
               Manual Sign
             </button>
             <SyncToggle
-              signHandle={signHandle}
+              signHandle={signHandleFromArray}
               signatureMap={serializedSignatureMap}
               txHash={toHex(txHash)} >
             </SyncToggle>
