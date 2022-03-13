@@ -12,6 +12,7 @@ const SyncToggle: NextPage<{
   //const [gun, setGun] = useState<typeof GUN>()
   const [toggled, setToggled] = useState(true)
   const [loadedSignatures, setLoadedSignatures] = useState<string[]>([])
+  const [firstLoad, setFirstLoad] = useState(true)
   const gun = GUN(['https://dao-gunjs.herokuapp.com/gun'])
 
   useEffect(() => {
@@ -19,17 +20,23 @@ const SyncToggle: NextPage<{
       console.log("activated")
       var signatures: string[] = [...loadedSignatures];
       gun.get(props.txHash).map().on((data) => {
-        console.log("changed")
-        //console.log(data)
+        console.log(data)
         let sig: string = data.sig
-        if (!signatures.includes(sig)) {
+        if (!firstLoad) {
+          signatures = [...loadedSignatures]
+        }
+        if (!signatures.includes(sig) && !firstLoad) {
+          console.log(signatures)
           signatures.push(sig)
-          props.signHandle(signatures)
+        } else{
+          signatures.push(sig)
           setLoadedSignatures(signatures)
+          props.signHandle(signatures)
         }
       })
-      console.log("here", signatures)
+      setFirstLoad(false);
       props.signHandle(signatures)
+      setLoadedSignatures(signatures)
     } else {
       console.log("deactivated")
     }
@@ -37,16 +44,16 @@ const SyncToggle: NextPage<{
 
   useEffect(() => {
     console.log("sig map:", props.signatureMap)
+    var signatures: string[] = [...loadedSignatures];
     props.signatureMap.forEach((sig, hex) => {
       if (!loadedSignatures.includes(sig)) {
+        signatures.push(sig)
+        props.signHandle([sig])
         gun.get(props.txHash).get(hex).put({ sig: sig })
       }
     })
+    setLoadedSignatures(signatures)
   }, [props.signatureMap])
-
-  useEffect(()=>{
-    console.log(loadedSignatures)
-  },[loadedSignatures])
 
   return (
     <div className="mb-2">
