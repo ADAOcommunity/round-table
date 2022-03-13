@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
 import { Panel } from './layout'
 import { NextPage } from 'next'
+import { NotificationContext } from './notification'
 
 type Recipient = {
   id: string
@@ -525,9 +526,10 @@ const SubmitTxButton: NextPage<{
   }
 
   const [run, setRun] = useState(false)
+  const { notify } = useContext(NotificationContext)
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
     if (run) {
       const cardano = (window as any).cardano
@@ -538,10 +540,14 @@ const SubmitTxButton: NextPage<{
       const walletAPI: Promise<WalletAPI> = wallet.enable()
       walletAPI.then((api) => {
         api.submitTx(toHex(transaction))
-          .then((response) => console.log(response))
-          .catch((reason) => console.log(reason))
+          .then((response) => {
+            notify('success', response)
+          })
+          .catch((reason) => {
+            notify('error', reason.info)
+          })
       })
-        .catch((reason) => console.log(reason))
+        .catch((reason) => console.error(reason))
         .finally(() => setRun(false))
     }
 
