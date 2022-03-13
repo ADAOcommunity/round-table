@@ -1,6 +1,6 @@
 import { NextPage } from "next"
 import { CheckCircleIcon, XCircleIcon, XIcon } from '@heroicons/react/solid'
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { ProgressBar } from "./status"
 
 type NotificationType = 'success' | 'error'
@@ -38,11 +38,23 @@ const Notification: NextPage<{
 }> = ({ notification, dismissHandle }) => {
   const { id, type, message } = notification
   const [progress, setProgress] = useState(100)
-  const [intervalID, setIntervalID] = useState<NodeJS.Timer | undefined>(undefined)
+  const [timer, setTimer] = useState(true)
 
-  const startTimerHandle = () => {
-    const id = setInterval(() => {
-      setProgress((prev) => {
+  const intervalRef = useRef<NodeJS.Timer>()
+
+  const pauseTimerHandle = () => {
+    const interval = intervalRef.current
+    interval && clearInterval(interval)
+    setTimer(false)
+  }
+
+  const startTimerHandle = () => setTimer(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const id = timer && setInterval(() => {
+      isMounted && setProgress((prev) => {
         if (prev > 0) {
           return prev - 0.1
         }
@@ -50,36 +62,25 @@ const Notification: NextPage<{
       })
     }, 20)
 
-    setIntervalID(id)
-  }
-
-  const pauseTimerHandle = () => {
-    intervalID && clearInterval(intervalID)
-  }
-
-  useEffect(() => {
-    let isMounted = true
-
-    isMounted && startTimerHandle()
+    id && (intervalRef.current = id)
 
     return () => {
       isMounted = false
-      pauseTimerHandle()
+      id && clearInterval(id)
     }
-  }, [])
+  }, [timer])
 
   useEffect(() => {
     let isMounted = true
 
     if (isMounted && progress <= 0) {
-      pauseTimerHandle()
       dismissHandle(id)
     }
 
     return () => {
       isMounted = false
     }
-  }, [progress])
+  })
 
   const getClassName = (): string => {
     const base = 'rounded-md shadow overflow-hidden relative'
