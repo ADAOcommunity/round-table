@@ -45,8 +45,11 @@ interface ToBytes {
   to_bytes: () => Uint8Array
 }
 
-function toHex(data: ToBytes): string {
-  return Buffer.from(data.to_bytes()).toString('hex')
+function toHex(data: ToBytes | Uint8Array): string {
+  if ('to_bytes' in data) {
+    return Buffer.from(data.to_bytes()).toString('hex')
+  }
+  return Buffer.from(data).toString('hex')
 }
 
 class Cardano {

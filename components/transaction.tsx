@@ -359,7 +359,7 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
         const _asset = multiAsset.get(policyId)
         _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
           const assetName = _asset.keys().get(i)
-          const assetNameHex = Buffer.from(assetName.name()).toString('hex')
+          const assetNameHex = toHex(assetName.name())
           const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
           const id = policyIdHex + assetNameHex
           assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
