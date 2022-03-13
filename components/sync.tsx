@@ -17,14 +17,14 @@ const SyncToggle: NextPage<{
   useEffect(() => {
     if (toggled) {
       console.log("activated")
-      var signatures: string[] = [];
+      var signatures: string[] = [...loadedSignatures];
       gun.get(props.txHash).map().on((data) => {
         console.log("changed")
         //console.log(data)
         let sig: string = data.sig
         if (!signatures.includes(sig)) {
-          props.signHandle([sig])
           signatures.push(sig)
+          props.signHandle(signatures)
           setLoadedSignatures(signatures)
         }
       })
