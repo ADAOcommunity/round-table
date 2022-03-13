@@ -16,9 +16,10 @@ const SyncToggle: NextPage<{
 
   useEffect(() => {
     if (toggled) {
-      var signatures: string[] = []
+      console.log("activated")
+      var signatures: string[] = [...loadedSignatures];
       gun.get(props.txHash).map().on((data) => {
-        signatures = [...loadedSignatures];
+        console.log("changed")
         //console.log(data)
         let sig: string = data.sig
         if (!signatures.includes(sig)) {
@@ -27,6 +28,7 @@ const SyncToggle: NextPage<{
           setLoadedSignatures(signatures)
         }
       })
+      console.log("here", signatures)
       props.signHandle(signatures)
     } else {
       console.log("deactivated")
@@ -34,6 +36,7 @@ const SyncToggle: NextPage<{
   }, [toggled])
 
   useEffect(() => {
+    console.log("sig map:", props.signatureMap)
     props.signatureMap.forEach((sig, hex) => {
       if (!loadedSignatures.includes(sig)) {
         gun.get(props.txHash).get(hex).put({ sig: sig })
