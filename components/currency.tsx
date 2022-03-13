@@ -1,14 +1,7 @@
+import { NextPage } from "next"
 import { ChangeEvent, useContext } from "react"
 import NumberFormat from "react-number-format"
 import { Config, ConfigContext } from "../cardano/config"
-
-type Props = {
-  value: bigint
-  onChange: (_: bigint) => void
-  decimals: number
-  className?: string
-  placeholder?: string
-}
 
 const toDecimal = (value: bigint, decimals: number): string => {
   const text = value.toString()
@@ -20,7 +13,13 @@ const toDecimal = (value: bigint, decimals: number): string => {
   }
 }
 
-const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
+const CurrencyInput: NextPage<{
+  value: bigint
+  onChange: (_: bigint) => void
+  decimals: number
+  className?: string
+  placeholder?: string
+}> = ({ value, onChange, decimals, ...props }) => {
   const inputValue = toDecimal(value, decimals)
 
   const changeHandle = (event: ChangeEvent<HTMLInputElement>) => {
@@ -47,14 +46,12 @@ const CurrencyInput = ({ value, onChange, decimals, ...props }: Props) => {
 
 const getADASymbol = (config: Config) => config.isMainnet ? '₳' : 't₳'
 
-type AssetAmountProps = {
+const AssetAmount: NextPage<{
   quantity: bigint
   decimals: number
   symbol: string
   className?: string
-}
-
-const AssetAmount = ({ quantity, decimals, symbol, className }: AssetAmountProps) => (
+}> = ({ quantity, decimals, symbol, className }) => (
   <NumberFormat
     className={className}
     value={toDecimal(quantity, decimals)}
@@ -67,12 +64,10 @@ const AssetAmount = ({ quantity, decimals, symbol, className }: AssetAmountProps
     displayType='text' />
 )
 
-type ADAAmountProps = {
+const ADAAmount: NextPage<{
   lovelace: bigint
   className?: string
-}
-
-const ADAAmount = ({ lovelace, className }: ADAAmountProps) => {
+}> = ({ lovelace, className }) => {
   const [config, _] = useContext(ConfigContext)
   return <AssetAmount quantity={lovelace} decimals={6} symbol={getADASymbol(config)} className={className} />
 }

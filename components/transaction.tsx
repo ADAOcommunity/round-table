@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano, getResult, mapCardanoSet, toHex } from '../cardano/serialization-lib'
+import { Cardano, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
@@ -34,16 +34,14 @@ const decodeASCII = (assetName: string): string => {
   return Buffer.from(assetName, 'hex').toString('ascii')
 }
 
-type LabeledCurrencyInputProps = {
+const LabeledCurrencyInput: NextPage<{
   symbol: string
   decimal: number
   value: bigint
   max: bigint
   onChange: (_: bigint) => void
   placeholder?: string
-}
-
-const LabeledCurrencyInput = (props: LabeledCurrencyInputProps) => {
+}> = (props) => {
   const { decimal, value, onChange, max, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
@@ -361,7 +359,7 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
         const _asset = multiAsset.get(policyId)
         _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
           const assetName = _asset.keys().get(i)
-          const assetNameHex = Buffer.from(assetName.name()).toString('hex')
+          const assetNameHex = toHex(assetName.name())
           const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
           const id = policyIdHex + assetNameHex
           assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
@@ -426,7 +424,7 @@ const SignTxButton: NextPage<{
   partialSign: boolean,
   signHandle: (_: string) => void,
   wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
-}> = (props) => {
+}> = ({ wallet, transaction, partialSign, signHandle, className, children }) => {
 
   type WalletAPI = {
     signTx(tx: string, partialSign: boolean): Promise<string>
@@ -439,7 +437,7 @@ const SignTxButton: NextPage<{
 
     const chooseWallet = () => {
       const cardano = (window as any).cardano
-      switch (props.wallet) {
+      switch (wallet) {
         case 'ccvault': return cardano?.ccvault
         case 'nami': return cardano?.nami
         case 'gero': return cardano?.gerowallet
@@ -450,11 +448,10 @@ const SignTxButton: NextPage<{
 
     run && enableWallet()
       .then((walletAPI: WalletAPI) => {
-        const hex = toHex(props.transaction)
-        console.log(hex)
+        const hex = toHex(transaction)
         walletAPI
-          .signTx(hex, props.partialSign)
-          .then(props.signHandle)
+          .signTx(hex, partialSign)
+          .then(signHandle)
           .catch((error) => console.error(error))
       })
       .catch((error) => console.error(error))
@@ -462,9 +459,9 @@ const SignTxButton: NextPage<{
     return () => {
       isMounted = false
     }
-  }, [run])
+  })
 
-  return <button className={props.className} onClick={() => setRun(true)}>{props.children}</button>
+  return <button className={className} onClick={() => setRun(true)}>{children}</button>
 }
 
 const CopyToClipboardButton: NextPage<{
@@ -500,7 +497,7 @@ const NativeScriptViewer: NextPage<{
         <h3 className='mb-2'>{address.to_bech32()}</h3>
         <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
         <ul className='text-gray-500'>
-          {mapCardanoSet(script.get_required_signers(), (keyHash, index) => {
+          {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
             const signature = signatures?.get(toHex(keyHash))
             const hex = signature && cardano.buildSingleSignatureHex(signature)
             return (
@@ -517,4 +514,43 @@ const NativeScriptViewer: NextPage<{
   )
 }
 
-export { SignTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
+const SubmitTxButton: NextPage<{
+  className?: string
+  transaction: Transaction
+}> = ({ className, children, transaction }) => {
+  type WalletAPI = {
+    submitTx(tx: string): Promise<string>
+  }
+
+  const [run, setRun] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (run) {
+      const cardano = (window as any).cardano
+      const wallet = cardano?.nami || cardano?.ccvault || cardano?.gerowallet
+
+      if (!wallet) throw new Error('No wallet was found')
+
+      const walletAPI: Promise<WalletAPI> = wallet.enable()
+      walletAPI.then((api) => {
+        api.submitTx(toHex(transaction))
+          .then((response) => console.log(response))
+          .catch((reason) => console.log(reason))
+      })
+        .catch((reason) => console.log(reason))
+        .finally(() => setRun(false))
+    }
+
+    return () => {
+      isMounted = false
+    }
+  })
+
+  return (
+    <button onClick={() => setRun(true)} className={className}>{children}</button>
+  )
+}
+
+export { SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }

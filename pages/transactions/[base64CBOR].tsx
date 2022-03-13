@@ -1,11 +1,11 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import { CardanoSet, toHex } from '../../cardano/serialization-lib'
-import { getResult, mapCardanoSet, useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { toHex, toIter } from '../../cardano/serialization-lib'
+import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { NativeScriptViewer, SignTxButton, TransactionBodyViewer } from '../../components/transaction'
-import type { NativeScript, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
+import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
+import type { Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useState } from 'react'
 
 import { SyncToggle } from '../../components/sync'
@@ -25,13 +25,12 @@ const GetTransaction: NextPage = () => {
   if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
 
   const transaction = txResult.data
-  const txHashHex = toHex(cardano.lib.hash_transaction(transaction.body()))
   const txHash = cardano.lib.hash_transaction(transaction.body()).to_bytes()
   const witnessSet = transaction.witness_set()
-  const nativeScriptSet: CardanoSet<NativeScript> | undefined = witnessSet.native_scripts()
+  const nativeScriptSet = witnessSet.native_scripts()
   const signerRegistry = new Set<string>()
-  nativeScriptSet && mapCardanoSet(nativeScriptSet, (script) => {
-    mapCardanoSet(script.get_required_signers(), (signer) => signerRegistry.add(toHex(signer)))
+  nativeScriptSet && Array.from(toIter(nativeScriptSet), (script) => {
+    Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
   })
 
   const signHandle = (content: string) => {
@@ -41,8 +40,8 @@ const GetTransaction: NextPage = () => {
     })
     if (!result.isOk) return
     const witnessSet = result.data
-    const vkeyWitnessSet: CardanoSet<Vkeywitness> | undefined = witnessSet.vkeys()
-    vkeyWitnessSet && mapCardanoSet(vkeyWitnessSet, (vkeyWitness) => {
+    const vkeyWitnessSet = witnessSet.vkeys()
+    vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
       const vkey = vkeyWitness.vkey()
       const signature = vkeyWitness.signature()
       const publicKey = vkey.public_key()
@@ -66,11 +65,13 @@ const GetTransaction: NextPage = () => {
     setInputSignature('')
   }
 
+  const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
+
   return (
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer txBody={transaction.body()} />
-        {nativeScriptSet && mapCardanoSet(nativeScriptSet, (script, index) =>
+        {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
         <Panel title='Signature'>
@@ -122,10 +123,17 @@ const GetTransaction: NextPage = () => {
             <SyncToggle
               signHandle={signHandle}
               signatureMap={serializedSignatureMap}
-              txHash={txHashHex} >
+              txHash={toHex(txHash)} >
             </SyncToggle>
           </footer>
         </Panel>
+        <div className='text-center'>
+          <SubmitTxButton
+            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow'
+            transaction={signedTransaction}>
+            Submit Transaction
+          </SubmitTxButton>
+        </div>
       </div>
     </Layout>
   )
