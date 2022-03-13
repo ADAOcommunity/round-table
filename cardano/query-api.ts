@@ -117,6 +117,7 @@ const useAddressUTxOsQuery = (address: string, config: Config) => {
         .then(({ data }) => {
           type Info = {
             balance: string
+            script_address: boolean
             stake_address: string
             utxo_set: {
               tx_hash: string

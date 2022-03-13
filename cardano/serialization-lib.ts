@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
@@ -23,21 +23,33 @@ function getResult<T>(callback: () => T): Result<T> {
   }
 }
 
-interface CardanoSet<T> {
+interface CardanoIterable<T> {
   len: () => number
   get: (index: number) => T
 }
 
-function mapCardanoSet<T, R>(set: CardanoSet<T>, callback: (_: T, index?: number) => R): R[] {
-  return Array.from({ length: set.len() }, (_, i) => callback(set.get(i), i))
+function toIter<T>(set: CardanoIterable<T>): IterableIterator<T> {
+  let index = 0
+  return {
+    next: () => {
+      return index < set.len() ? {
+        done: false,
+        value: set.get(index++)
+      } : { done: true, value: null }
+    },
+    [Symbol.iterator]: function() { return this }
+  }
 }
 
-interface ToBytes<T> {
+interface ToBytes {
   to_bytes: () => Uint8Array
 }
 
-function toHex<T>(data: ToBytes<T>): string {
-  return Buffer.from(data.to_bytes()).toString('hex')
+function toHex(data: ToBytes | Uint8Array): string {
+  if ('to_bytes' in data) {
+    return Buffer.from(data.to_bytes()).toString('hex')
+  }
+  return Buffer.from(data).toString('hex')
 }
 
 class Cardano {
@@ -49,6 +61,15 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public signTransaction(transaction: Transaction, vkeyIter: IterableIterator<Vkeywitness>): Transaction {
+    const { Transaction, Vkeywitnesses } = this.lib
+    const witnessSet = transaction.witness_set()
+    const vkeyWitnessSet = Vkeywitnesses.new()
+    Array.from(vkeyIter, (vkey) => vkeyWitnessSet.add(vkey))
+    witnessSet.set_vkeys(vkeyWitnessSet)
+    return Transaction.new(transaction.body(), witnessSet)
   }
 
   public buildSingleSignatureHex(vkey: Vkeywitness): string {
@@ -90,6 +111,14 @@ class Cardano {
       const keyHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_keyhash()
       if (!keyHash) throw new Error('failed to get keyhash from address')
       return keyHash
+    })
+  }
+
+  public getAddressScriptHash(address: Address): Result<ScriptHash> {
+    return getResult(() => {
+      const scriptHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_scripthash()
+      if (!scriptHash) throw new Error('failed to get script hash from address')
+      return scriptHash
     })
   }
 
@@ -224,5 +253,5 @@ const useCardanoSerializationLib = () => {
   return cardano
 }
 
-export type { Cardano, CardanoSet, Result, MultiSigType }
-export { getResult, mapCardanoSet, toHex, useCardanoSerializationLib }
+export type { Cardano, CardanoIterable, Result, MultiSigType }
+export { getResult, toIter, toHex, useCardanoSerializationLib }
