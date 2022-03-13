@@ -40,19 +40,6 @@ const Notification: NextPage<{
   const [progress, setProgress] = useState(100)
   const [intervalID, setIntervalID] = useState<NodeJS.Timer | undefined>(undefined)
 
-  useEffect(() => {
-    let isMounted = true
-
-    if (isMounted && progress <= 0) {
-      pauseTimerHandle()
-      dismissHandle(id)
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [progress])
-
   const startTimerHandle = () => {
     const id = setInterval(() => {
       setProgress((prev) => {
@@ -77,8 +64,22 @@ const Notification: NextPage<{
 
     return () => {
       isMounted = false
+      pauseTimerHandle()
     }
   }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (isMounted && progress <= 0) {
+      pauseTimerHandle()
+      dismissHandle(id)
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [progress])
 
   const getClassName = (): string => {
     const base = 'rounded-md shadow overflow-hidden relative'
