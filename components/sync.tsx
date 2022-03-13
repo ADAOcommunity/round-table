@@ -17,8 +17,8 @@ const SyncToggle: NextPage<{
   useEffect(() => {
     if (toggled) {
       console.log("activated")
-      var signatures: string[] = [...loadedSignatures];
       gun.get(props.txHash).map().on((data) => {
+        var signatures: string[] = [...loadedSignatures];
         console.log("changed")
         //console.log(data)
         let sig: string = data.sig
