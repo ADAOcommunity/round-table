@@ -2,6 +2,7 @@ import { NextPage } from "next"
 import { CheckCircleIcon, XCircleIcon, XIcon } from '@heroicons/react/solid'
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { ProgressBar } from "./status"
+import { nanoid } from 'nanoid'
 
 type NotificationType = 'success' | 'error'
 
@@ -130,5 +131,19 @@ const NotificationCenter: NextPage<{
   )
 }
 
+const useNotification = () => {
+  const [notifications, setNotificaitons] = useState<Notification[]>([])
+
+  const notify = (type: NotificationType, message: string) => {
+    setNotificaitons(notifications.concat({ id: nanoid(), type, message }))
+  }
+
+  const dismissHandle = (id: string) => {
+    setNotificaitons(notifications.filter((notification) => notification.id !== id))
+  }
+
+  return { notifications, notify, dismissHandle }
+}
+
 export type { Notification, NotificationType }
-export { NotificationCenter, NotificationContext }
+export { NotificationCenter, NotificationContext, useNotification }

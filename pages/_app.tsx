@@ -2,24 +2,14 @@ import '../styles/globals.css'
 import type { AppProps } from 'next/app'
 import { ConfigContext, config } from '../cardano/config'
 import Head from 'next/head'
-import { useState } from 'react'
-import { Notification, NotificationContext, NotificationType } from '../components/notification'
-import { nanoid } from 'nanoid'
+import { NotificationContext, useNotification } from '../components/notification'
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const [notifications, setNotificaitons] = useState<Notification[]>([])
-
-  const notify = (type: NotificationType, message: string) => {
-    setNotificaitons(notifications.concat({ id: nanoid(), type, message }))
-  }
-
-  const dismissHandle = (id: string) => {
-    setNotificaitons(notifications.filter((notification) => notification.id !== id))
-  }
+  const notification = useNotification()
 
   return (
     <ConfigContext.Provider value={[config, () => { }]}>
-      <NotificationContext.Provider value={{ notifications, notify, dismissHandle }}>
+      <NotificationContext.Provider value={notification}>
         <Head>
           <title>{config.isMainnet ? 'MultiSig (Mainnet)' : 'MultiSig (Testnet)'}</title>
         </Head>
