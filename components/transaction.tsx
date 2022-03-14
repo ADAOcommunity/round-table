@@ -482,16 +482,21 @@ type Wallet = {
   icon: string
 }
 
-const WalletInfo: NextPage<{
+const WalletIcon: NextPage<{
+  height?: number
+  width?: number
   className?: string
   wallet: Wallet
-}> = ({ wallet, className }) => {
+}> = ({ height, width, wallet, className }) => {
   const { name, icon } = wallet
   return (
-    <>
-      <Image className={className} alt={name} src={icon} />
-      <span>{name}</span>
-    </>
+    <Image
+      height={height || 25}
+      width={width || 25}
+      className={className}
+      alt={name}
+      src={icon}
+    />
   )
 }
 
@@ -545,7 +550,13 @@ const SignTxButton: NextPage<{
 
   return (
     <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>
-      {_wallet ? <WalletInfo wallet={_wallet} className='object-contain h-6' /> : `${wallet} not installed`}
+      {_wallet &&
+        <>
+          <WalletIcon wallet={_wallet} className='object-contain' />
+          <span>{_wallet.name}</span>
+        </>
+      }
+      {!_wallet && `${wallet} not installed`}
     </button>
   )
 }
