@@ -5,7 +5,7 @@ import { toHex, toIter } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
-import type { Vkeywitness } from '../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'
+import type { Vkeywitness } from '@zqlsg/cardano-serialization-lib-browser'
 import { useState } from 'react'
 
 import { SyncToggle } from '../../components/sync'

@@ -1,4 +1,4 @@
-import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@zqlsg/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { NextPage } from 'next'
 import GUN from "gun";

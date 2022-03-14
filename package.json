@@ -10,8 +10,8 @@
   "dependencies": {
     "@apollo/client": "^3.5.9",
     "@cardano-graphql/client-ts": "^6.2.0",
-    "@emurgo/cardano-serialization-lib-browser": "file:../csl/cardano-serialization-lib/publish",
     "@heroicons/react": "^1.0.6",
+    "@zqlsg/cardano-serialization-lib-browser": "^10.0.4",
     "axios": "^0.26.0",
     "buffer": "^6.0.3",
     "graphql": "^16.3.0",
