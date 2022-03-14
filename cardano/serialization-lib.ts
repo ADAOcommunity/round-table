@@ -1,9 +1,9 @@
 
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '../../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
-type CardanoWASM = typeof import('../../csl/cardano-serialization-lib/publish')
+type CardanoWASM = typeof import('../../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js')
 type MultiSigType = 'all' | 'any' | 'atLeast'
 
 type Result<T> =
@@ -229,7 +229,7 @@ class Factory {
 
   public async load() {
     if (!this.instance)
-      this._instance = new Cardano(await import('../../csl/cardano-serialization-lib/publish'))
+      this._instance = new Cardano(await import('../../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'))
     return this.instance
   }
 }
