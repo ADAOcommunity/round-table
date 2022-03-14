@@ -525,7 +525,7 @@ const SignTxButton: NextPage<{
     return () => {
       isMounted = false
     }
-  })
+  }, [wallet])
 
   useEffect(() => {
     if (run && _wallet) {
@@ -569,7 +569,7 @@ const SubmitTxButton: NextPage<{
     return () => {
       isMounted = false
     }
-  })
+  }, [wallet])
 
   useEffect(() => {
     if (run && wallet) {
