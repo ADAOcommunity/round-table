@@ -6,7 +6,7 @@ import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
 import { ConfigContext } from '../../cardano/config'
 import { Loading } from '../../components/status'
-import type { Ed25519KeyHash } from '@emurgo/cardano-serialization-lib-browser'
+import type { Ed25519KeyHash } from '@zqlsg/cardano-serialization-lib-browser'
 import { XIcon } from '@heroicons/react/solid'
 
 const NewTreasury: NextPage = () => {
