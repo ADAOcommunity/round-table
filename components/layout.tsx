@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { CogIcon } from '@heroicons/react/solid'
 import { useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
+import { NotificationCenter } from './notification'
 
 const Panel: NextPage<{ title: string }> = ({ title, children }) => (
   <div className='bg-white rounded-md shadow overflow-hidden'>
@@ -43,6 +44,9 @@ const Layout: NextPage = ({ children }) => {
         </div>
       </header>
       <div>
+        <div className='max-w-7xl mx-auto flex flex-row-reverse'>
+          <NotificationCenter className='fixed space-y-2 w-1/5' />
+        </div>
         <div className='max-w-7xl mx-auto'>
           {children}
         </div>
