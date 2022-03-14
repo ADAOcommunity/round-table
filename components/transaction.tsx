@@ -419,6 +419,57 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
   )
 }
 
+const CopyToClipboardButton: NextPage<{
+  className?: string
+  content: string
+}> = ({ className, content, children }) => {
+
+  const clickHandle = () => {
+    navigator.clipboard.writeText(content)
+  }
+
+  return (
+    <button
+      onClick={clickHandle}
+      className={className}>
+      {children}
+    </button>
+  )
+}
+
+const NativeScriptViewer: NextPage<{
+  cardano: Cardano
+  script: NativeScript
+  signatures?: Map<string, Vkeywitness>
+}> = ({ cardano, script, signatures }) => {
+
+  const [config, _] = useContext(ConfigContext)
+  const address = cardano.getScriptAddress(script, config.isMainnet)
+  const requireSignatures = cardano.getRequiredSignatures(script)
+
+  return (
+    <Panel title='Native Script'>
+      <div className='p-4 text-center font-mono'>
+        <h3 className='mb-2'>{address.to_bech32()}</h3>
+        <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
+        <ul className='text-gray-500'>
+          {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
+            const signature = signatures?.get(toHex(keyHash))
+            const hex = signature && cardano.buildSingleSignatureHex(signature)
+            return (
+              <li key={index} className={signature ? 'text-green-500' : ''}>
+                <span>{toHex(keyHash)}</span>
+                {signature && <span><CheckIcon className='h-6 w-6 inline' /></span>}
+                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='h-6 w-6 inline' /></CopyToClipboardButton>}
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </Panel>
+  )
+}
+
 const SignTxButton: NextPage<{
   className?: string,
   transaction: Transaction,
@@ -475,57 +526,6 @@ const SignTxButton: NextPage<{
   })
 
   return <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>{children}</button>
-}
-
-const CopyToClipboardButton: NextPage<{
-  className?: string
-  content: string
-}> = ({ className, content, children }) => {
-
-  const clickHandle = () => {
-    navigator.clipboard.writeText(content)
-  }
-
-  return (
-    <button
-      onClick={clickHandle}
-      className={className}>
-      {children}
-    </button>
-  )
-}
-
-const NativeScriptViewer: NextPage<{
-  cardano: Cardano
-  script: NativeScript
-  signatures?: Map<string, Vkeywitness>
-}> = ({ cardano, script, signatures }) => {
-
-  const [config, _] = useContext(ConfigContext)
-  const address = cardano.getScriptAddress(script, config.isMainnet)
-  const requireSignatures = cardano.getRequiredSignatures(script)
-
-  return (
-    <Panel title='Native Script'>
-      <div className='p-4 text-center font-mono'>
-        <h3 className='mb-2'>{address.to_bech32()}</h3>
-        <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
-        <ul className='text-gray-500'>
-          {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
-            const signature = signatures?.get(toHex(keyHash))
-            const hex = signature && cardano.buildSingleSignatureHex(signature)
-            return (
-              <li key={index} className={signature ? 'text-green-500' : ''}>
-                <span>{toHex(keyHash)}</span>
-                {signature && <span><CheckIcon className='h-6 w-6 inline' /></span>}
-                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='h-6 w-6 inline' /></CopyToClipboardButton>}
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    </Panel>
-  )
 }
 
 const SubmitTxButton: NextPage<{
