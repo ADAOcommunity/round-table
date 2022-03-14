@@ -64,27 +64,41 @@ const GetTransaction: NextPage = () => {
     Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
   })
 
-  const signHandle = (content: string) => {
-    const result = getResult(() => {
-      const bytes = Buffer.from(content, 'hex')
-      return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+  const signHandle = (signatures: string[] | string) => {
+    const newMap = new Map(signatureMap)
+
+    function getSignatures(): string[] {
+      if (typeof signatures === 'string') return [signatures]
+      return signatures
+    }
+
+    getSignatures().forEach((signature) => {
+      const result = getResult(() => {
+        const bytes = Buffer.from(signature, 'hex')
+        return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+      })
+
+      if (!result.isOk) return
+
+      const witnessSet = result.data
+      const vkeyWitnessSet = witnessSet.vkeys()
+
+      if (!vkeyWitnessSet) return
+
+      Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
+        const vkey = vkeyWitness.vkey()
+        const signature = vkeyWitness.signature()
+        const publicKey = vkey.public_key()
+        const keyHash = publicKey.hash()
+        const isValid = publicKey.verify(txHash, signature)
+        const hex = toHex(keyHash)
+        if (isValid && signerRegistry.has(hex)) {
+          newMap.set(hex, vkeyWitness)
+        }
+      })
     })
-    if (!result.isOk) return
-    const witnessSet = result.data
-    const vkeyWitnessSet = witnessSet.vkeys()
-    vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
-      const vkey = vkeyWitness.vkey()
-      const signature = vkeyWitness.signature()
-      const publicKey = vkey.public_key()
-      const keyHash = publicKey.hash()
-      const isValid = publicKey.verify(txHash, signature)
-      const hex = toHex(keyHash)
-      if (isValid && signerRegistry.has(hex)) {
-        const newMap = new Map(signatureMap)
-        newMap.set(hex, vkeyWitness)
-        setSignatureMap(newMap)
-      }
-    })
+
+    setSignatureMap(newMap)
   }
 
   const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
