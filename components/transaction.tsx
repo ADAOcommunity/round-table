@@ -470,20 +470,37 @@ const NativeScriptViewer: NextPage<{
   )
 }
 
+type WalletAPI = {
+  signTx(tx: string, partialSign: boolean): Promise<string>
+  submitTx(tx: string): Promise<string>
+}
+
+type Wallet = {
+  enable(): Promise<WalletAPI>
+  name: string
+  icon: string
+}
+
+const WalletInfo: NextPage<{
+  className?: string
+  wallet: Wallet
+}> = ({ wallet, className }) => {
+  const { name, icon } = wallet
+  return (
+    <>
+      <img className={className} alt={name} src={icon} />
+      <span>{name}</span>
+    </>
+  )
+}
+
 const SignTxButton: NextPage<{
   className?: string,
   transaction: Transaction,
   partialSign: boolean,
   signHandle: (_: string) => void,
   wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
-}> = ({ wallet, transaction, partialSign, signHandle, className, children }) => {
-
-  type WalletAPI = {
-    signTx(tx: string, partialSign: boolean): Promise<string>
-  }
-  type Wallet = {
-    enable(): Promise<WalletAPI>
-  }
+}> = ({ wallet, transaction, partialSign, signHandle, className }) => {
 
   const [run, setRun] = useState(false)
   const [_wallet, setWallet] = useState<Wallet | undefined>(undefined)
@@ -525,19 +542,17 @@ const SignTxButton: NextPage<{
     }
   })
 
-  return <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>{children}</button>
+  return (
+    <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>
+      {_wallet ? <WalletInfo wallet={_wallet} className='object-contain h-6' /> : `${wallet} not installed`}
+    </button>
+  )
 }
 
 const SubmitTxButton: NextPage<{
   className?: string
   transaction: Transaction
 }> = ({ className, children, transaction }) => {
-  type WalletAPI = {
-    submitTx(tx: string): Promise<string>
-  }
-  type Wallet = {
-    enable(): Promise<WalletAPI>
-  }
 
   const [run, setRun] = useState(false)
   const { notify } = useContext(NotificationContext)

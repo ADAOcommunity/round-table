@@ -7,6 +7,7 @@ import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useState } from 'react'
+import { PencilAltIcon } from '@heroicons/react/solid'
 
 const ManualSign: NextPage<{
   signHandle: (_: string) => void
@@ -20,7 +21,7 @@ const ManualSign: NextPage<{
   }
 
   return (
-    <Panel title='Signature'>
+    <Panel title='Sign'>
       <textarea
         className='block w-full p-2 outline-none'
         rows={4}
@@ -33,8 +34,9 @@ const ManualSign: NextPage<{
         <button
           onClick={manualSignHandle}
           disabled={isDisabled}
-          className='p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
-          Manual Sign
+          className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
+          <PencilAltIcon className='h-6' />
+          <span>Manual Sign</span>
         </button>
       </footer>
     </Panel>
@@ -100,17 +102,13 @@ const GetTransaction: NextPage = () => {
             partialSign={true}
             signHandle={signHandle}
             wallet='nami'
-            className='p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
-            Sign with nami
-          </SignTxButton>
+            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='gero'
-            className='p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
-            Sign with gero
-          </SignTxButton>
+            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
         </ManualSign>
         <div className='text-center'>
           <SubmitTxButton
