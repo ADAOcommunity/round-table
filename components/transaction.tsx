@@ -10,6 +10,8 @@ import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
 import { Panel } from './layout'
 import { NextPage } from 'next'
+import { NotificationContext } from './notification'
+import Image from 'next/image'
 
 type Recipient = {
   id: string
@@ -418,52 +420,6 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
   )
 }
 
-const SignTxButton: NextPage<{
-  className?: string,
-  transaction: Transaction,
-  partialSign: boolean,
-  signHandle: (_: string) => void,
-  wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
-}> = ({ wallet, transaction, partialSign, signHandle, className, children }) => {
-
-  type WalletAPI = {
-    signTx(tx: string, partialSign: boolean): Promise<string>
-  }
-
-  const [run, setRun] = useState(false)
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const chooseWallet = () => {
-      const cardano = (window as any).cardano
-      switch (wallet) {
-        case 'ccvault': return cardano?.ccvault
-        case 'nami': return cardano?.nami
-        case 'gero': return cardano?.gerowallet
-        case 'flint': return cardano?.flint
-      }
-    }
-    const enableWallet = (): Promise<WalletAPI> => chooseWallet()?.enable()
-
-    run && enableWallet()
-      .then((walletAPI: WalletAPI) => {
-        const hex = toHex(transaction)
-        walletAPI
-          .signTx(hex, partialSign)
-          .then(signHandle)
-          .catch((error) => console.error(error))
-      })
-      .catch((error) => console.error(error))
-      .finally(() => setRun(false))
-    return () => {
-      isMounted = false
-    }
-  })
-
-  return <button className={className} onClick={() => setRun(true)}>{children}</button>
-}
-
 const CopyToClipboardButton: NextPage<{
   className?: string
   content: string
@@ -514,42 +470,138 @@ const NativeScriptViewer: NextPage<{
   )
 }
 
-const SubmitTxButton: NextPage<{
+type WalletAPI = {
+  signTx(tx: string, partialSign: boolean): Promise<string>
+  submitTx(tx: string): Promise<string>
+}
+
+type Wallet = {
+  enable(): Promise<WalletAPI>
+  name: string
+  icon: string
+}
+
+const WalletIcon: NextPage<{
+  height?: number
+  width?: number
   className?: string
-  transaction: Transaction
-}> = ({ className, children, transaction }) => {
-  type WalletAPI = {
-    submitTx(tx: string): Promise<string>
-  }
+  wallet: Wallet
+}> = ({ height, width, wallet, className }) => {
+  const { name, icon } = wallet
+  return (
+    <Image
+      height={height || 25}
+      width={width || 25}
+      className={className}
+      alt={name}
+      src={icon}
+    />
+  )
+}
+
+const SignTxButton: NextPage<{
+  className?: string,
+  transaction: Transaction,
+  partialSign: boolean,
+  signHandle: (_: string) => void,
+  wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
+}> = ({ wallet, transaction, partialSign, signHandle, className }) => {
 
   const [run, setRun] = useState(false)
+  const [_wallet, setWallet] = useState<Wallet | undefined>(undefined)
+  const isDisabled = !_wallet
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
-    if (run) {
+    const chooseWallet = () => {
       const cardano = (window as any).cardano
-      const wallet = cardano?.nami || cardano?.ccvault || cardano?.gerowallet
-
-      if (!wallet) throw new Error('No wallet was found')
-
-      const walletAPI: Promise<WalletAPI> = wallet.enable()
-      walletAPI.then((api) => {
-        api.submitTx(toHex(transaction))
-          .then((response) => console.log(response))
-          .catch((reason) => console.log(reason))
-      })
-        .catch((reason) => console.log(reason))
-        .finally(() => setRun(false))
+      switch (wallet) {
+        case 'ccvault': return cardano?.ccvault
+        case 'nami': return cardano?.nami
+        case 'gero': return cardano?.gerowallet
+        case 'flint': return cardano?.flint
+      }
     }
+
+    isMounted && setWallet(chooseWallet())
 
     return () => {
       isMounted = false
     }
+  }, [wallet])
+
+  useEffect(() => {
+    if (run && _wallet) {
+      _wallet
+        .enable()
+        .then((walletAPI: WalletAPI) => {
+          const hex = toHex(transaction)
+          walletAPI
+            .signTx(hex, partialSign)
+            .then(signHandle)
+            .catch((error) => console.error(error))
+        })
+        .catch((error) => console.error(error))
+        .finally(() => setRun(false))
+    }
   })
 
   return (
-    <button onClick={() => setRun(true)} className={className}>{children}</button>
+    <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>
+      {_wallet &&
+        <>
+          <WalletIcon wallet={_wallet} className='object-contain' />
+          <span>{_wallet.name}</span>
+        </>
+      }
+      {!_wallet && `${wallet} not installed`}
+    </button>
+  )
+}
+
+const SubmitTxButton: NextPage<{
+  className?: string
+  transaction: Transaction
+}> = ({ className, children, transaction }) => {
+
+  const [run, setRun] = useState(false)
+  const { notify } = useContext(NotificationContext)
+  const [wallet, setWallet] = useState<Wallet | undefined>()
+  const isDisabled = !wallet
+
+  useEffect(() => {
+    let isMounted = true
+
+    const cardano = (window as any).cardano
+    isMounted && setWallet(cardano?.nami || cardano?.ccvault || cardano?.gerowallet)
+
+    return () => {
+      isMounted = false
+    }
+  }, [wallet])
+
+  useEffect(() => {
+    if (run && wallet) {
+      const walletAPI: Promise<WalletAPI> = wallet.enable()
+      walletAPI.then((api) => {
+        api.submitTx(toHex(transaction))
+          .then((response) => {
+            notify('success', response)
+          })
+          .catch((reason) => {
+            notify('error', reason.info)
+          })
+      })
+        .catch((reason) => console.error(reason))
+        .finally(() => setRun(false))
+    }
+  })
+
+  return (
+    <button onClick={() => setRun(true)} className={className} disabled={isDisabled}>
+      {isDisabled ? 'No wallet to submit' : children}
+    </button>
   )
 }
 

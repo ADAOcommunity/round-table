@@ -101,14 +101,17 @@ const NewTreasury: NextPage = () => {
           </Panel>}
         {addresses.size > 0 &&
           <Panel title='Generated Address'>
-            <div>
-              {!scriptAddress && <p className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</p>}
-              {script && scriptAddress &&
-                <p className='border-b border-gray-100 font-bold text-center p-4'>
-                  <Link href={`/treasuries/${encodeURIComponent(base64Script)}`}><a>{scriptAddress.to_bech32()}</a></Link>
+            {!scriptAddress && <p className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</p>}
+            {script && scriptAddress &&
+              <div className='text-center p-4 space-y-8 min-h-40'>
+                <h2 className='font-bold font-mono'>{scriptAddress.to_bech32()}</h2>
+                <p>
+                  <Link href={`/treasuries/${encodeURIComponent(base64Script)}`}>
+                    <a className='p-2 bg-green-100 text-green-500 rounded-md'>Create Transaction</a>
+                  </Link>
                 </p>
-              }
-            </div>
+              </div>
+            }
           </Panel>}
       </div>
     </Layout>

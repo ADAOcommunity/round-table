@@ -16,4 +16,17 @@ const ErrorMessage: NextPage = ({ children }) => (
 
 const Loading = () => <StatusPage><p className='p-8 text-lg text-gray-900'>Loading...</p></StatusPage>;
 
-export { ErrorMessage, Loading }
+const ProgressBar: NextPage<{
+  className?: string
+  max: number
+  value: number
+}> = ({ max, value, className }) => {
+  const progress = value / max * 100
+  const style = { width: `${progress}%` }
+
+  return (
+    <div className={className} style={style}></div>
+  )
+}
+
+export { ErrorMessage, Loading, ProgressBar }

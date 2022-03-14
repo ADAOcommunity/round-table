@@ -7,6 +7,41 @@ import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@zqlsg/cardano-serialization-lib-browser'
 import { useState } from 'react'
+import { PencilAltIcon } from '@heroicons/react/solid'
+
+const ManualSign: NextPage<{
+  signHandle: (_: string) => void
+}> = ({ children, signHandle }) => {
+  const [signature, setSignature] = useState('')
+  const isDisabled = !signature
+
+  const manualSignHandle = () => {
+    signHandle(signature)
+    setSignature('')
+  }
+
+  return (
+    <Panel title='Sign'>
+      <textarea
+        className='block w-full p-2 outline-none'
+        rows={4}
+        value={signature}
+        onChange={(e) => setSignature(e.target.value)}
+        placeholder="Signature">
+      </textarea>
+      <footer className='flex px-4 py-2 bg-gray-100 space-x-2'>
+        {children}
+        <button
+          onClick={manualSignHandle}
+          disabled={isDisabled}
+          className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
+          <PencilAltIcon className='h-6' />
+          <span>Manual Sign</span>
+        </button>
+      </footer>
+    </Panel>
+  )
+}
 
 import { SyncToggle } from '../../components/sync'
 
@@ -16,7 +51,6 @@ const GetTransaction: NextPage = () => {
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [serializedSignatureMap, setSerializedSignatureMap] = useState<Map<string, string>>(new Map())
-  const [inputSignature, setInputSignature] = useState('')
 
   if (!cardano) return <Loading />;
 
@@ -33,44 +67,28 @@ const GetTransaction: NextPage = () => {
     Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
   })
 
-  const signHandle = (content: string) => {
-    const result = getResult(() => {
-      const bytes = Buffer.from(content, 'hex')
-      return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
-    })
-    if (!result.isOk) return
-    const witnessSet = result.data
-    const vkeyWitnessSet = witnessSet.vkeys()
-    vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
-      const vkey = vkeyWitness.vkey()
-      const signature = vkeyWitness.signature()
-      const publicKey = vkey.public_key()
-      const keyHash = publicKey.hash()
-      const isValid = publicKey.verify(txHash, signature)
-      const hex = toHex(keyHash)
-      if (isValid && signerRegistry.has(hex)) {
-        const newMap = new Map(signatureMap)
-        const newSerializedMap = new Map(serializedSignatureMap)
-        newMap.set(hex, vkeyWitness)
-        let sig = cardano.buildSingleSignatureHex(vkeyWitness)
-        newSerializedMap.set(hex, sig)
-        setSignatureMap(newMap)
-        setSerializedSignatureMap(newSerializedMap)
-      }
-    })
-  }
-  const signHandleFromArray = (content: string[]) => {
+  const signHandle = (signatures: string[] | string) => {
     const newMap = new Map(signatureMap)
     const newSerializedMap = new Map(serializedSignatureMap)
-    for (let signer of content) {
+
+    function getSignatures(): string[] {
+      if (typeof signatures === 'string') return [signatures]
+      return signatures
+    }
+
+    getSignatures().forEach((signature) => {
       const result = getResult(() => {
-        const bytes = Buffer.from(signer, 'hex')
+        const bytes = Buffer.from(signature, 'hex')
         return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
       })
+
       if (!result.isOk) return
       const witnessSet = result.data
       const vkeyWitnessSet = witnessSet.vkeys()
-      vkeyWitnessSet && Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
+
+      if (!vkeyWitnessSet) return
+
+      Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
         const vkey = vkeyWitness.vkey()
         const signature = vkeyWitness.signature()
         const publicKey = vkey.public_key()
@@ -83,14 +101,9 @@ const GetTransaction: NextPage = () => {
           newSerializedMap.set(hex, sig)
         }
       })
-    }
+    })
     setSignatureMap(newMap)
     setSerializedSignatureMap(newSerializedMap)
-  }
-
-  const manualSignHandle = () => {
-    signHandle(inputSignature)
-    setInputSignature('')
   }
 
   const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
@@ -102,62 +115,27 @@ const GetTransaction: NextPage = () => {
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
-        <Panel title='Signature'>
-          <div className='p-4'>
-            <textarea
-              className='block w-full border rounded-md p-2'
-              rows={4}
-              value={inputSignature}
-              onChange={(e) => setInputSignature(e.target.value)}
-              placeholder="Signature">
-            </textarea>
-          </div>
-          <footer className='flex px-4 py-2 bg-gray-100 space-x-2'>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
+        <ManualSign signHandle={signHandle}>
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            wallet='nami'
+            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            wallet='gero'
+            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+        </ManualSign>
+        <SyncToggle
               signHandle={signHandle}
-              wallet='ccvault'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with ccvault
-            </SignTxButton>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='nami'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with nami
-            </SignTxButton>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='gero'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with gero
-            </SignTxButton>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='flint'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with flint
-            </SignTxButton>
-            <button onClick={manualSignHandle} className='p-2 border rounded-md bg-blue-300'>
-              Manual Sign
-            </button>
-            <SyncToggle
-              signHandle={signHandleFromArray}
               signatureMap={serializedSignatureMap}
               txHash={toHex(txHash)} >
-            </SyncToggle>
-          </footer>
-        </Panel>
-        <div className='text-center'>
+            </SyncToggle>        <div className='text-center'>
           <SubmitTxButton
-            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow'
+            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'
             transaction={signedTransaction}>
             Submit Transaction
           </SubmitTxButton>
