@@ -23,7 +23,7 @@ const ManualSign: NextPage<{
   return (
     <Panel title='Sign'>
       <textarea
-        className='block w-full p-2 outline-none'
+        className='block w-full p-4 outline-none'
         rows={4}
         value={signature}
         onChange={(e) => setSignature(e.target.value)}
