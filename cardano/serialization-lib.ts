@@ -229,7 +229,7 @@ class Factory {
 
   public async load() {
     if (!this.instance)
-      this._instance = new Cardano(await import('../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'))
+      this._instance = new Cardano(await import('../../csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'))
     return this.instance
   }
 }
