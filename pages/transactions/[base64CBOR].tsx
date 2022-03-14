@@ -117,7 +117,7 @@ const GetTransaction: NextPage = () => {
         </Panel>
         <div className='text-center'>
           <SubmitTxButton
-            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow'
+            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'
             transaction={signedTransaction}>
             Submit Transaction
           </SubmitTxButton>

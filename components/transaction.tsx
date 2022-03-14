@@ -524,19 +524,28 @@ const SubmitTxButton: NextPage<{
   type WalletAPI = {
     submitTx(tx: string): Promise<string>
   }
+  type Wallet = {
+    enable(): Promise<WalletAPI>
+  }
 
   const [run, setRun] = useState(false)
   const { notify } = useContext(NotificationContext)
+  const [wallet, setWallet] = useState<Wallet | undefined>()
+  const isDisabled = !wallet
 
   useEffect(() => {
     let isMounted = true
 
-    if (run) {
-      const cardano = (window as any).cardano
-      const wallet = cardano?.nami || cardano?.ccvault || cardano?.gerowallet
+    const cardano = (window as any).cardano
+    isMounted && setWallet(cardano?.nami || cardano?.ccvault || cardano?.gerowallet)
 
-      if (!wallet) throw new Error('No wallet was found')
+    return () => {
+      isMounted = false
+    }
+  })
 
+  useEffect(() => {
+    if (run && wallet) {
       const walletAPI: Promise<WalletAPI> = wallet.enable()
       walletAPI.then((api) => {
         api.submitTx(toHex(transaction))
@@ -550,14 +559,12 @@ const SubmitTxButton: NextPage<{
         .catch((reason) => console.error(reason))
         .finally(() => setRun(false))
     }
-
-    return () => {
-      isMounted = false
-    }
   })
 
   return (
-    <button onClick={() => setRun(true)} className={className}>{children}</button>
+    <button onClick={() => setRun(true)} className={className} disabled={isDisabled}>
+      {isDisabled ? 'No wallet to submit' : children}
+    </button>
   )
 }
 
