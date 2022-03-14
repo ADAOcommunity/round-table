@@ -11,6 +11,7 @@ import { ConfigContext } from '../cardano/config'
 import { Panel } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
+import Image from 'next/image'
 
 type Recipient = {
   id: string
@@ -488,7 +489,7 @@ const WalletInfo: NextPage<{
   const { name, icon } = wallet
   return (
     <>
-      <img className={className} alt={name} src={icon} />
+      <Image className={className} alt={name} src={icon} />
       <span>{name}</span>
     </>
   )
