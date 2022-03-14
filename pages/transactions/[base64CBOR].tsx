@@ -106,7 +106,7 @@ const GetTransaction: NextPage = () => {
   return (
     <Layout>
       <div className='space-y-2'>
-        <TransactionBodyViewer txBody={transaction.body()} />
+        <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
