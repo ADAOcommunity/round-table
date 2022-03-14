@@ -256,21 +256,21 @@ const NewTransaction: NextPage<{
 
   const transactionResult = getResult(() => {
     const txBuilder = cardano.createTxBuilder(protocolParameters)
-    const { Address, Transaction, TransactionWitnessSet } = cardano.lib
+    const { Address } = cardano.lib
 
     txOutputResults.forEach((txOutputResult) => {
       if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
       txBuilder.add_output(txOutputResult.data)
     })
 
+    if (nativeScriptSet) {
+      txBuilder.set_native_scripts(nativeScriptSet)
+    }
+
     const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
     cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
 
-    const txBody = txBuilder.build()
-    const witnessSet = TransactionWitnessSet.new()
-    nativeScriptSet && witnessSet.set_native_scripts(nativeScriptSet)
-
-    return Transaction.new(txBody, witnessSet)
+    return txBuilder.build_tx()
   })
 
   const handleRecipientChange = (recipient: Recipient) => {
