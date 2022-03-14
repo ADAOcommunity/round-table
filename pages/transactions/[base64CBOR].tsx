@@ -8,12 +8,44 @@ import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer
 import type { Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
 import { useState } from 'react'
 
+const ManualSign: NextPage<{
+  signHandle: (_: string) => void
+}> = ({ children, signHandle }) => {
+  const [signature, setSignature] = useState('')
+  const isDisabled = !signature
+
+  const manualSignHandle = () => {
+    signHandle(signature)
+    setSignature('')
+  }
+
+  return (
+    <Panel title='Signature'>
+      <textarea
+        className='block w-full p-2 outline-none'
+        rows={4}
+        value={signature}
+        onChange={(e) => setSignature(e.target.value)}
+        placeholder="Signature">
+      </textarea>
+      <footer className='flex px-4 py-2 bg-gray-100 space-x-2'>
+        {children}
+        <button
+          onClick={manualSignHandle}
+          disabled={isDisabled}
+          className='p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
+          Manual Sign
+        </button>
+      </footer>
+    </Panel>
+  )
+}
+
 const GetTransaction: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
-  const [inputSignature, setInputSignature] = useState('')
 
   if (!cardano) return <Loading />;
 
@@ -53,11 +85,6 @@ const GetTransaction: NextPage = () => {
     })
   }
 
-  const manualSignHandle = () => {
-    signHandle(inputSignature)
-    setInputSignature('')
-  }
-
   const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
 
   return (
@@ -67,54 +94,24 @@ const GetTransaction: NextPage = () => {
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
-        <Panel title='Signature'>
-          <div className='p-4'>
-            <textarea
-              className='block w-full border rounded-md p-2'
-              rows={4}
-              value={inputSignature}
-              onChange={(e) => setInputSignature(e.target.value)}
-              placeholder="Signature">
-            </textarea>
-          </div>
-          <footer className='flex px-4 py-2 bg-gray-100 space-x-2'>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='ccvault'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with ccvault
-            </SignTxButton>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='nami'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with nami
-            </SignTxButton>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='gero'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with gero
-            </SignTxButton>
-            <SignTxButton
-              transaction={transaction}
-              partialSign={true}
-              signHandle={signHandle}
-              wallet='flint'
-              className='p-2 border rounded-md bg-blue-300'>
-              Sign with flint
-            </SignTxButton>
-            <button onClick={manualSignHandle} className='p-2 border rounded-md bg-blue-300'>
-              Manual Sign
-            </button>
-          </footer>
-        </Panel>
+        <ManualSign signHandle={signHandle}>
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            wallet='nami'
+            className='p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
+            Sign with nami
+          </SignTxButton>
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            wallet='gero'
+            className='p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
+            Sign with gero
+          </SignTxButton>
+        </ManualSign>
         <div className='text-center'>
           <SubmitTxButton
             className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'

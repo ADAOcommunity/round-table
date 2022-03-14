@@ -430,11 +430,16 @@ const SignTxButton: NextPage<{
   type WalletAPI = {
     signTx(tx: string, partialSign: boolean): Promise<string>
   }
+  type Wallet = {
+    enable(): Promise<WalletAPI>
+  }
 
   const [run, setRun] = useState(false)
+  const [_wallet, setWallet] = useState<Wallet | undefined>(undefined)
+  const isDisabled = !_wallet
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
 
     const chooseWallet = () => {
       const cardano = (window as any).cardano
@@ -445,25 +450,31 @@ const SignTxButton: NextPage<{
         case 'flint': return cardano?.flint
       }
     }
-    const enableWallet = (): Promise<WalletAPI> => chooseWallet()?.enable()
 
-    run && enableWallet()
-      .then((walletAPI: WalletAPI) => {
-        const hex = toHex(transaction)
-        walletAPI
-          .signTx(hex, partialSign)
-          .then(signHandle)
-          .catch((error) => console.error(error))
-      })
-      .catch((error) => console.error(error))
-      .finally(() => setRun(false))
+    isMounted && setWallet(chooseWallet())
 
     return () => {
       isMounted = false
     }
   })
 
-  return <button className={className} onClick={() => setRun(true)}>{children}</button>
+  useEffect(() => {
+    if (run && _wallet) {
+      _wallet
+        .enable()
+        .then((walletAPI: WalletAPI) => {
+          const hex = toHex(transaction)
+          walletAPI
+            .signTx(hex, partialSign)
+            .then(signHandle)
+            .catch((error) => console.error(error))
+        })
+        .catch((error) => console.error(error))
+        .finally(() => setRun(false))
+    }
+  })
+
+  return <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>{children}</button>
 }
 
 const CopyToClipboardButton: NextPage<{
