@@ -1,5 +1,5 @@
 
-import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '../../csl/cardano-serialization-lib/publish'
+import type { Address, BaseAddress, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '/csl/cardano-serialization-lib/publish/cardano_serialization_lib_bg.js'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
