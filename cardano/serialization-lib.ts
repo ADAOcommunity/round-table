@@ -55,15 +55,6 @@ function encodeCardanoData(data: ToBytes | Uint8Array, encoding: BufferEncoding)
   return getBuffer().toString(encoding)
 }
 
-interface FromBytes {
-  from_bytes: (bytes: Uint8Array) => FromBytes
-}
-
-function decodeCardanoData(data: FromBytes, content: string, encoding: BufferEncoding): FromBytes {
-  const bytes = Buffer.from(content, encoding)
-  return data.from_bytes(bytes)
-}
-
 function toHex(data: ToBytes | Uint8Array): string {
   return encodeCardanoData(data, 'hex')
 }
@@ -270,4 +261,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { decodeCardanoData, encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib }
