@@ -8,6 +8,7 @@ import { ConfigContext } from '../../cardano/config'
 import { Loading } from '../../components/status'
 import type { Address, Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
 import { PlusIcon, XIcon } from '@heroicons/react/solid'
+import { SaveTreasury } from '../../components/transaction'
 
 const KeyHashLabel: NextPage<{
   cardano: Cardano
@@ -162,9 +163,11 @@ const NewTreasury: NextPage = () => {
 
   return (
     <Layout>
-      <h1 className='my-8 font-bold text-2xl text-center'>Create Multi-Sig Address</h1>
+      <h1 className='my-8 font-bold text-2xl text-center'>New Treasury</h1>
       <div className='space-y-2'>
-        <Panel title='Address Setting'>
+        <Panel title='Native Script'>
+          {scriptAddress && <h2 className='text-center mt-4 font-bold font-mono'>{scriptAddress.to_bech32()}</h2>}
+          {addresses.size === 1 && <p className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</p>}
           {addresses.size > 1 &&
             <div className='flex justify-center border-b'>
               <div className='flex p-2 space-x-2 items-center'>
@@ -205,20 +208,17 @@ const NewTreasury: NextPage = () => {
             </ul>}
           <AddAddress cardano={cardano} onAdd={addAddress} />
         </Panel>
-        {addresses.size > 0 &&
-          <Panel title='Generated Address'>
-            {!scriptAddress && <p className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</p>}
-            {script && scriptAddress &&
-              <div className='text-center p-4 space-y-8 min-h-40'>
-                <h2 className='font-bold font-mono'>{scriptAddress.to_bech32()}</h2>
-                <p>
-                  <Link href={`/treasuries/${encodeURIComponent(base64Script)}`}>
-                    <a className='p-2 bg-green-100 text-green-500 rounded-md'>Create Transaction</a>
-                  </Link>
-                </p>
-              </div>
-            }
-          </Panel>}
+        {script && <SaveTreasury cardano={cardano} script={script} />}
+        {base64Script &&
+          <div className='flex justify-center'>
+            <Link href={`/treasuries/${encodeURIComponent(base64Script)}`}>
+              <a
+                className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'>
+                Create Transaction
+              </a>
+            </Link>
+          </div>
+        }
       </div>
     </Layout>
   )
