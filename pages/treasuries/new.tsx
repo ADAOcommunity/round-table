@@ -8,7 +8,6 @@ import { ConfigContext } from '../../cardano/config'
 import { Loading } from '../../components/status'
 import type { Address, Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
 import { PlusIcon, XIcon } from '@heroicons/react/solid'
-import { SaveTreasury } from '../../components/transaction'
 
 const KeyHashLabel: NextPage<{
   cardano: Cardano
@@ -97,21 +96,24 @@ const AddAddress: NextPage<{
   }
 
   return (
-    <div className='flex items-center overflow-hidden'>
-      <AddressInput
-        cardano={cardano}
-        onChange={setAddress}
-        onEnterPress={submitHandle}
-        address={address} />
-      <div className='p-2'>
+    <div>
+      <div className='flex'>
+        <AddressInput
+          cardano={cardano}
+          onChange={setAddress}
+          onEnterPress={submitHandle}
+          address={address} />
+      </div>
+      <footer className='flex px-4 py-2 bg-gray-100 justify-center'>
         <AddAddressButton
-          className='flex items-center space-x-1 p-2 text-green-500 disabled:text-gray-500'
+          className='flex items-center space-x-1 p-2 rounded-md bg-green-100 text-green-500 disabled:bg-gray-100 disabled:text-gray-500'
           address={address}
           onClick={submitHandle}
           cardano={cardano}>
           <PlusIcon className='h-5 w-5' />
+          <span>Add Address</span>
         </AddAddressButton>
-      </div>
+      </footer>
     </div>
   )
 }
@@ -163,6 +165,26 @@ const NewTreasury: NextPage = () => {
       <h1 className='my-8 font-bold text-2xl text-center'>Create Multi-Sig Address</h1>
       <div className='space-y-2'>
         <Panel title='Address Setting'>
+          {addresses.size > 1 &&
+            <div className='flex justify-center border-b'>
+              <div className='flex p-2 space-x-2 items-center'>
+                <select className='rounded-md p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
+                  <option value="all">All</option>
+                  <option value="any">Any</option>
+                  <option value="atLeast">At least</option>
+                </select>
+                {scriptType == 'atLeast' &&
+                  <input type='number'
+                    className='border rounded-md p-1'
+                    value={required}
+                    step={1}
+                    min={1}
+                    max={addresses.size}
+                    onChange={(e) => setRequired(parseInt(e.target.value))} />
+                }
+                <div className='p-2'>of&nbsp;{addresses.size}</div>
+              </div>
+            </div>}
           {addresses.size > 0 &&
             <ul className='divide-y border-b'>
               {Array.from(addresses).map((address) => {
@@ -184,26 +206,6 @@ const NewTreasury: NextPage = () => {
           <AddAddress cardano={cardano} onAdd={addAddress} />
         </Panel>
         {addresses.size > 0 &&
-          <Panel title='Policy Setting'>
-            <div className='flex p-4 space-x-2 items-center'>
-              <select className='rounded-md p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
-                <option value="all">All</option>
-                <option value="any">Any</option>
-                <option value="atLeast">At least</option>
-              </select>
-              {scriptType == 'atLeast' &&
-                <input type='number'
-                  className='border rounded-md p-1'
-                  value={required}
-                  step={1}
-                  min={1}
-                  max={addresses.size}
-                  onChange={(e) => setRequired(parseInt(e.target.value))} />
-              }
-              <div className='p-2'>of&nbsp;{addresses.size}</div>
-            </div>
-          </Panel>}
-        {addresses.size > 0 &&
           <Panel title='Generated Address'>
             {!scriptAddress && <p className='border-b border-gray-100 text-center p-4 text-gray-400'>Need more than 1 addresses</p>}
             {script && scriptAddress &&
@@ -217,7 +219,6 @@ const NewTreasury: NextPage = () => {
               </div>
             }
           </Panel>}
-        {script && <SaveTreasury cardano={cardano} script={script} />}
       </div>
     </Layout>
   )
