@@ -10,6 +10,57 @@ import type { Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-br
 import { XIcon } from '@heroicons/react/solid'
 import { SaveTreasury } from '../../components/transaction'
 
+const AddAddress: NextPage<{
+  cardano: Cardano
+  onAdd: (address: string) => void
+}> = ({ cardano, onAdd, children }) => {
+  const [value, setValue] = useState('')
+  const [isChanged, setChanged] = useState(false)
+
+  const parseResult = cardano.parseAddress(value)
+  const keyHashResult =
+    parseResult.isOk ? cardano.getAddressKeyHash(parseResult.data) : parseResult
+
+  const submitHandle = () => {
+    if (parseResult.isOk) {
+      onAdd(value)
+    }
+    setValue('')
+    setChanged(false)
+  }
+
+  const changeHandle = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setChanged(true)
+    setValue(event.target.value)
+  }
+
+  return (
+    <div>
+      <div className='p-4'>
+        <textarea
+          className='block w-full border rounded-md p-2'
+          onChange={changeHandle}
+          rows={4}
+          value={value}
+          placeholder="Address">
+        </textarea>
+        {isChanged && !parseResult.isOk && <p className='text-sm py-1 text-red-400'>{parseResult.message}</p>}
+        {keyHashResult.isOk && <p className='text-sm py-1 text-gray-400'>
+          {toHex(keyHashResult.data)}
+        </p>}
+      </div>
+      <footer className='flex flex-row-reverse px-4 py-3 bg-gray-100'>
+        {children}
+        <button className='py-2 px-4 border bg-blue-600 rounded-md text-white bg-blue-600 disabled:bg-gray-400'
+          onClick={submitHandle}
+          disabled={!keyHashResult.isOk}>
+          Add Address
+        </button>
+      </footer>
+    </div>
+  )
+}
+
 const NewTreasury: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
@@ -117,58 +168,6 @@ const NewTreasury: NextPage = () => {
         {script && <SaveTreasury cardano={cardano} script={script} />}
       </div>
     </Layout>
-  )
-}
-
-type AddAddressProps = {
-  cardano: Cardano
-  onAdd: (address: string) => void
-}
-
-function AddAddress({ cardano, onAdd }: AddAddressProps) {
-  const [value, setValue] = useState('')
-  const [isChanged, setChanged] = useState(false)
-
-  const parseResult = cardano.parseAddress(value)
-  const keyHashResult =
-    parseResult.isOk ? cardano.getAddressKeyHash(parseResult.data) : parseResult
-
-  const submitHandle = () => {
-    if (parseResult.isOk) {
-      onAdd(value)
-    }
-    setValue('')
-    setChanged(false)
-  }
-
-  const changeHandle = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setChanged(true)
-    setValue(event.target.value)
-  }
-
-  return (
-    <div>
-      <div className='p-4'>
-        <textarea
-          className='block w-full border rounded-md p-2'
-          onChange={changeHandle}
-          rows={4}
-          value={value}
-          placeholder="Address">
-        </textarea>
-        {isChanged && !parseResult.isOk && <p className='text-sm py-1 text-red-400'>{parseResult.message}</p>}
-        {keyHashResult.isOk && <p className='text-sm py-1 text-gray-400'>
-          {toHex(keyHashResult.data)}
-        </p>}
-      </div>
-      <footer className='flex flex-row-reverse px-4 py-3 bg-gray-100'>
-        <button className='py-2 px-4 border bg-blue-600 rounded-md text-white bg-blue-600 disabled:bg-gray-400'
-          onClick={submitHandle}
-          disabled={!keyHashResult.isOk}>
-          Add Address
-        </button>
-      </footer>
-    </div>
   )
 }
 
