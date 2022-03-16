@@ -61,11 +61,6 @@
   resolved "https://registry.yarnpkg.com/@cardano-graphql/client-ts/-/client-ts-6.2.0.tgz#e28de304320596b24b17887ae28701f812e0fdf0"
   integrity sha512-xuvHz5nT19Lh2P0SK8rb2YxUWhNqaflYFPj/jGOXdfOYI3Pkt2W2jT4nxb6OaEgq1EgPvWbZu+vy2nABsSpPCA==
 
-"@emurgo/cardano-serialization-lib-browser@^10.0.3":
-  version "10.0.3"
-  resolved "https://registry.yarnpkg.com/@emurgo/cardano-serialization-lib-browser/-/cardano-serialization-lib-browser-10.0.3.tgz#bc3aa7c8da5129a15f5d0ed1c108d49a24b5cbca"
-  integrity sha512-FRl6S90Mxc7LyvHGmD40k0HkTIG3kOckWso/0Y8bj+L5L4Z8K01fuTfjPB+gF6ZwsfxRy1Bdll256l2uoQ7AbQ==
-
 "@eslint/eslintrc@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@eslint/eslintrc/-/eslintrc-1.1.0.tgz#583d12dbec5d4f22f333f9669f7d0b7c7815b4d3"
@@ -296,6 +291,11 @@
   integrity sha512-WwB53ikYudh9pIorgxrkHKrQZcCqNM/Q/bDzZBffEaGUKGuHrRb3zZUT9Sh2qw9yogC7SsdRmQ1ER0pqvd3bfw==
   dependencies:
     tslib "^2.3.0"
+
+"@zqlsg/cardano-serialization-lib-browser@^10.0.3":
+  version "10.0.4"
+  resolved "https://registry.yarnpkg.com/@zqlsg/cardano-serialization-lib-browser/-/cardano-serialization-lib-browser-10.0.4.tgz#ba43b421195571cd3699a67b336551ce45a791a7"
+  integrity sha512-6Av7Rgowlra3GJ44y9oVwUu5r6H2rcH2Hn5Y8IFW/RVfEgwZtx3VLkpqTkfXTdU/0fUcORlhtqdfmo+1yLrVFw==
 
 acorn-jsx@^5.3.1:
   version "5.3.2"

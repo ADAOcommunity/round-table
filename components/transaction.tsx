@@ -3,7 +3,7 @@ import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from '
 import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@emurgo/cardano-serialization-lib-browser'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@zqlsg/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { ArrowRightIcon, CheckIcon, DuplicateIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -258,21 +258,21 @@ const NewTransaction: NextPage<{
 
   const transactionResult = getResult(() => {
     const txBuilder = cardano.createTxBuilder(protocolParameters)
-    const { Address, Transaction, TransactionWitnessSet } = cardano.lib
+    const { Address } = cardano.lib
 
     txOutputResults.forEach((txOutputResult) => {
       if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
       txBuilder.add_output(txOutputResult.data)
     })
 
+    if (nativeScriptSet) {
+      txBuilder.set_native_scripts(nativeScriptSet)
+    }
+
     const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
     cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
 
-    const txBody = txBuilder.build()
-    const witnessSet = TransactionWitnessSet.new()
-    nativeScriptSet && witnessSet.set_native_scripts(nativeScriptSet)
-
-    return Transaction.new(txBody, witnessSet)
+    return txBuilder.build_tx()
   })
 
   const handleRecipientChange = (recipient: Recipient) => {
@@ -333,7 +333,12 @@ const NewTransaction: NextPage<{
   )
 }
 
-const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }) => {
+const TransactionBodyViewer: NextPage<{
+  txBody: TransactionBody
+  cardano: Cardano
+}> = ({ cardano, txBody }) => {
+  const txHash = cardano.lib.hash_transaction(txBody)
+
   const fee = BigInt(txBody.fee().to_str())
   type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
   const txInputs: TxInputSet = {
@@ -381,6 +386,10 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
   return (
     <Panel title='Proposal'>
       <div className='p-4'>
+        <h2 className='text-center text-bg mb-4 space-x-2'>
+          <span className='font-bold'>TxHash:</span>
+          <span>{toHex(txHash)}</span>
+        </h2>
         <div className='flex items-center'>
           <ul className='basis-[47.5%] space-y-1'>
             {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
