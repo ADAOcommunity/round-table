@@ -1,62 +1,117 @@
 import type { NextPage } from 'next'
-import { useState, useContext, ChangeEvent } from 'react'
+import { useState, useContext, KeyboardEventHandler, ChangeEventHandler } from 'react'
 import { Layout, Panel } from '../../components/layout'
 import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
 import { ConfigContext } from '../../cardano/config'
 import { Loading } from '../../components/status'
-import type { Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
-import { XIcon } from '@heroicons/react/solid'
+import type { Address, Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
+import { PlusIcon, XIcon } from '@heroicons/react/solid'
 import { SaveTreasury } from '../../components/transaction'
+
+const KeyHashLabel: NextPage<{
+  cardano: Cardano
+  address: string
+}> = ({ address, cardano }) => {
+  const parsedAddress = cardano.parseAddress(address)
+  const result = parsedAddress.isOk ? cardano.getAddressKeyHash(parsedAddress.data) : parsedAddress
+
+  const textColor = result.isOk ? 'text-gray-500' : 'text-red-500'
+  const className = `font-mono ${textColor}`
+
+  if (!address) return <p className='h-4'></p>
+
+  return (
+    <p className={className}>{result.isOk ? toHex(result.data) : 'Invalid Address'}</p>
+  )
+}
+
+const AddAddressButton: NextPage<{
+  address: string
+  cardano: Cardano
+  className?: string
+  onClick: (address: Address) => void
+}> = ({ address, cardano, className, children, onClick }) => {
+  const parseResult = cardano.parseAddress(address)
+  const isDisabled = !parseResult.isOk
+
+  const submitHandle = () => {
+    parseResult.isOk && onClick(parseResult.data)
+  }
+
+  return (
+    <button
+      disabled={isDisabled}
+      onClick={submitHandle}
+      className={className}>
+      {children}
+    </button>
+  )
+}
+
+const AddressInput: NextPage<{
+  cardano: Cardano
+  address: string
+  onEnterPress?: (address: Address) => void
+  onChange: (address: string) => void
+}> = ({ address, cardano, onChange, onEnterPress }) => {
+  const parsedAddress = cardano.parseAddress(address)
+
+  const changeHandle: ChangeEventHandler<HTMLTextAreaElement> = (event) => {
+    onChange(event.target.value)
+  }
+
+  const enterPressHandle: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
+    if (event.shiftKey == false && event.key === 'Enter') {
+      event.preventDefault()
+      parsedAddress.isOk && onEnterPress && onEnterPress(parsedAddress.data)
+    }
+  }
+
+  const base = 'block grow p-4 outline-none font-mono'
+  const textColor = parsedAddress.isOk || (!address) ? '' : 'text-red-500'
+  const className = [base, textColor].join(' ')
+
+  return (
+    <textarea
+      className={className}
+      onChange={changeHandle}
+      onKeyDown={enterPressHandle}
+      rows={1}
+      value={address}
+      placeholder="Add receiving address">
+    </textarea>
+  )
+}
 
 const AddAddress: NextPage<{
   cardano: Cardano
   onAdd: (address: string) => void
-}> = ({ cardano, onAdd, children }) => {
-  const [value, setValue] = useState('')
-  const [isChanged, setChanged] = useState(false)
+}> = ({ cardano, onAdd }) => {
+  const [address, setAddress] = useState('')
 
-  const parseResult = cardano.parseAddress(value)
-  const keyHashResult =
-    parseResult.isOk ? cardano.getAddressKeyHash(parseResult.data) : parseResult
-
-  const submitHandle = () => {
-    if (parseResult.isOk) {
-      onAdd(value)
-    }
-    setValue('')
-    setChanged(false)
-  }
-
-  const changeHandle = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setChanged(true)
-    setValue(event.target.value)
+  const submitHandle = (address: Address) => {
+    onAdd(address.to_bech32())
+    setAddress('')
   }
 
   return (
-    <div>
-      <div className='p-4'>
-        <textarea
-          className='block w-full border rounded-md p-2'
-          onChange={changeHandle}
-          rows={4}
-          value={value}
-          placeholder="Address">
-        </textarea>
-        {isChanged && !parseResult.isOk && <p className='text-sm py-1 text-red-400'>{parseResult.message}</p>}
-        {keyHashResult.isOk && <p className='text-sm py-1 text-gray-400'>
-          {toHex(keyHashResult.data)}
-        </p>}
-      </div>
-      <footer className='flex flex-row-reverse px-4 py-3 bg-gray-100'>
-        {children}
-        <button className='py-2 px-4 border bg-blue-600 rounded-md text-white bg-blue-600 disabled:bg-gray-400'
+    <div className='flex items-center overflow-hidden'>
+      <AddressInput
+        cardano={cardano}
+        onChange={setAddress}
+        onEnterPress={submitHandle}
+        address={address} />
+      <div className='p-2'>
+        <AddAddressButton
+          className='flex items-center space-x-1 p-2 text-green-500 disabled:text-gray-500'
+          address={address}
           onClick={submitHandle}
-          disabled={!keyHashResult.isOk}>
-          Add Address
-        </button>
-      </footer>
+          cardano={cardano}>
+          <PlusIcon className='h-5 w-5' />
+        </AddAddressButton>
+      </div>
     </div>
   )
 }
@@ -111,14 +166,11 @@ const NewTreasury: NextPage = () => {
           {addresses.size > 0 &&
             <ul className='divide-y border-b'>
               {Array.from(addresses).map((address) => {
-                const result = cardano.parseAddress(address)
-                const keyHash = result.isOk ? cardano.getAddressKeyHash(result.data) : result
                 return (
                   <li key={address} className='flex p-4 items-center'>
                     <div className='grow font-mono'>
                       <p>{address}</p>
-                      {keyHash.isOk && <p className='text-gray-500'>{toHex(keyHash.data)}</p>}
-                      {!keyHash.isOk && <p className='text-red-500'>Invalid Address</p>}
+                      <KeyHashLabel cardano={cardano} address={address} />
                     </div>
                     <nav className='flex items-center'>
                       <button>
