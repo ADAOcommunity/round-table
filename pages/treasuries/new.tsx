@@ -8,6 +8,7 @@ import { ConfigContext } from '../../cardano/config'
 import { Loading } from '../../components/status'
 import type { Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
 import { XIcon } from '@heroicons/react/solid'
+import { SaveTreasury } from '../../components/transaction'
 
 const NewTreasury: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
@@ -113,6 +114,7 @@ const NewTreasury: NextPage = () => {
               </div>
             }
           </Panel>}
+        {script && <SaveTreasury cardano={cardano} script={script} />}
       </div>
     </Layout>
   )
