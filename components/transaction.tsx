@@ -13,7 +13,6 @@ import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import { db } from '../db'
-import { useLiveQuery } from 'dexie-react-hooks'
 
 type Recipient = {
   id: string
@@ -646,56 +645,4 @@ const SaveTreasuryButton: NextPage<{
   )
 }
 
-const SaveTreasury: NextPage<{
-  cardano: Cardano
-  script: NativeScript
-}> = ({ cardano, script }) => {
-
-  const [config, _] = useContext(ConfigContext)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  const treasury = useLiveQuery(() => db.treasuries.get(address))
-
-  useEffect(() => {
-    if (treasury) {
-      const { title, description } = treasury
-      setTitle(title)
-      setDescription(description)
-    }
-  }, [treasury])
-
-  return (
-    <Panel title='Save Treasury'>
-      <div className='p-4 space-y-2'>
-        <label>
-          <div>Title</div>
-          <input
-            className='block w-full p-1 border rounded-md outline-none'
-            value={title}
-            onChange={(e) => setTitle(e.target.value)} />
-        </label>
-        <label>
-          <div>Description</div>
-          <textarea
-            className='block w-full p-1 border rounded-md outline-none'
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}>
-          </textarea>
-        </label>
-      </div>
-      <footer className='flex px-4 py-3 bg-gray-100'>
-        <SaveTreasuryButton
-          className='p-2 bg-blue-100 text-blue-500 rounded-md'
-          cardano={cardano}
-          title={title}
-          description={description}
-          script={script}>
-          Save
-        </SaveTreasuryButton>
-      </footer>
-    </Panel>
-  )
-}
-
-export { SaveTreasury, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
