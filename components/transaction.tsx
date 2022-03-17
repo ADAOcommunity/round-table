@@ -333,7 +333,12 @@ const NewTransaction: NextPage<{
   )
 }
 
-const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }) => {
+const TransactionBodyViewer: NextPage<{
+  txBody: TransactionBody
+  cardano: Cardano
+}> = ({ cardano, txBody }) => {
+  const txHash = cardano.lib.hash_transaction(txBody)
+
   const fee = BigInt(txBody.fee().to_str())
   type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
   const txInputs: TxInputSet = {
@@ -381,6 +386,10 @@ const TransactionBodyViewer: NextPage<{ txBody: TransactionBody }> = ({ txBody }
   return (
     <Panel title='Proposal'>
       <div className='p-4'>
+        <h2 className='text-center text-bg mb-4 space-x-2'>
+          <span className='font-bold'>TxHash:</span>
+          <span>{toHex(txHash)}</span>
+        </h2>
         <div className='flex items-center'>
           <ul className='basis-[47.5%] space-y-1'>
             {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>

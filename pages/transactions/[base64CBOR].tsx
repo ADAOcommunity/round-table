@@ -23,7 +23,7 @@ const ManualSign: NextPage<{
   return (
     <Panel title='Sign'>
       <textarea
-        className='block w-full p-2 outline-none'
+        className='block w-full p-4 outline-none'
         rows={4}
         value={signature}
         onChange={(e) => setSignature(e.target.value)}
@@ -111,7 +111,7 @@ const GetTransaction: NextPage = () => {
   return (
     <Layout>
       <div className='space-y-2'>
-        <TransactionBodyViewer txBody={transaction.body()} />
+        <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}
