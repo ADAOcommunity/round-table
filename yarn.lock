@@ -2,6 +2,11 @@
 # yarn lockfile v1
 
 
+"@adaocommunity/cardano-serialization-lib-browser@^10.0.5":
+  version "10.0.5"
+  resolved "https://registry.yarnpkg.com/@adaocommunity/cardano-serialization-lib-browser/-/cardano-serialization-lib-browser-10.0.5.tgz#c4583de800a885f7f440de68825b26ca0214ebcb"
+  integrity sha512-FCWZJNepRHhL0aQh+/XxRwSNZpt+H+aC9meFkCKnSbn7I1C8QQrsrO9sM3Melw0/Z9kux3wUnR1IMllnJyt2mQ==
+
 "@apollo/client@^3.5.9":
   version "3.5.9"
   resolved "https://registry.yarnpkg.com/@apollo/client/-/client-3.5.9.tgz#306c1f8453d56dbb4ff1afaaaf16b3b719db696c"
@@ -291,11 +296,6 @@
   integrity sha512-WwB53ikYudh9pIorgxrkHKrQZcCqNM/Q/bDzZBffEaGUKGuHrRb3zZUT9Sh2qw9yogC7SsdRmQ1ER0pqvd3bfw==
   dependencies:
     tslib "^2.3.0"
-
-"@zqlsg/cardano-serialization-lib-browser@^10.0.3":
-  version "10.0.4"
-  resolved "https://registry.yarnpkg.com/@zqlsg/cardano-serialization-lib-browser/-/cardano-serialization-lib-browser-10.0.4.tgz#ba43b421195571cd3699a67b336551ce45a791a7"
-  integrity sha512-6Av7Rgowlra3GJ44y9oVwUu5r6H2rcH2Hn5Y8IFW/RVfEgwZtx3VLkpqTkfXTdU/0fUcORlhtqdfmo+1yLrVFw==
 
 acorn-jsx@^5.3.1:
   version "5.3.2"
