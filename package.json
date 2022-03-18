@@ -12,7 +12,6 @@
     "@apollo/client": "^3.5.9",
     "@cardano-graphql/client-ts": "^6.2.0",
     "@heroicons/react": "^1.0.6",
-    "@zqlsg/cardano-serialization-lib-browser": "^10.0.3",
     "axios": "^0.26.0",
     "buffer": "^6.0.3",
     "dexie": "^3.2.1",
