@@ -5,6 +5,7 @@ interface Treasury {
   title: string
   description: string
   script: Uint8Array
+  updatedAt: Date
 }
 
 class LocalDatabase extends Dexie {

@@ -631,7 +631,7 @@ const SaveTreasuryButton: NextPage<{
   const submitHandle = () => {
     db
       .treasuries
-      .put({ address, title, description, script: script.to_bytes() }, address)
+      .put({ address, title, description, script: script.to_bytes(), updatedAt: new Date() }, address)
       .then(() => notify('success', 'Treasury is saved'))
       .catch(() => notify('error', 'Failed to save'))
   }
