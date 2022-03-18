@@ -5,7 +5,7 @@ import { toHex, toIter } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
-import type { Vkeywitness } from '@zqlsg/cardano-serialization-lib-browser'
+import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useState } from 'react'
 import { PencilAltIcon } from '@heroicons/react/solid'
 
