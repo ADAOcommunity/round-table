@@ -12,7 +12,7 @@ class LocalDatabase extends Dexie {
   treasuries!: Table<Treasury>
 
   constructor() {
-    super('localDatabase')
+    super('roundTable')
 
     this.version(1).stores({
       treasuries: '&address'
