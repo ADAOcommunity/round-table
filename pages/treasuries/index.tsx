@@ -31,7 +31,7 @@ const TreasuryListing: NextPage<{
 
   return (
     <li
-      className='p-4 bg-white rounded-md'
+      className='p-4 bg-white rounded-md shadow'
       key={address}>
       {title && <h2 className='font-bold text-lg'>{title}</h2>}
       <p className='font-mono break-all'>{address}</p>
@@ -63,11 +63,18 @@ const Treasuries: NextPage = () => {
   return (
     <Layout>
       <h1 className='my-8 font-bold text-2xl text-center'>My Treasuries</h1>
-      <ul className='space-y-2'>
-        {treasuries && treasuries.map((treasury) =>
-          <TreasuryListing key={treasury.address} cardano={cardano} treasury={treasury} />
-        )}
-      </ul>
+      <div className='space-y-2'>
+        <nav className='flex'>
+          <Link href='/treasuries/new'>
+            <a className='p-2 bg-blue-100 text-blue-500 rounded-md shadow'>New Treasury</a>
+          </Link>
+        </nav>
+        <ul className='space-y-2'>
+          {treasuries && treasuries.map((treasury) =>
+            <TreasuryListing key={treasury.address} cardano={cardano} treasury={treasury} />
+          )}
+        </ul>
+      </div>
     </Layout>
   )
 }
