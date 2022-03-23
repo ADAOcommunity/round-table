@@ -12,6 +12,7 @@ import { Panel } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
+import { db } from '../db'
 
 type Recipient = {
   id: string
@@ -615,4 +616,33 @@ const SubmitTxButton: NextPage<{
   )
 }
 
-export { SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
+const SaveTreasuryButton: NextPage<{
+  cardano: Cardano
+  className?: string
+  title: string
+  description: string
+  script: NativeScript
+}> = ({ cardano, title, description, script, className, children }) => {
+
+  const [config, _] = useContext(ConfigContext)
+  const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
+  const { notify } = useContext(NotificationContext)
+
+  const submitHandle = () => {
+    db
+      .treasuries
+      .put({ address, title, description, script: script.to_bytes(), updatedAt: new Date() }, address)
+      .then(() => notify('success', 'Treasury is saved'))
+      .catch(() => notify('error', 'Failed to save'))
+  }
+
+  return (
+    <button
+      className={className}
+      onClick={submitHandle}>
+      {children}
+    </button>
+  )
+}
+
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }

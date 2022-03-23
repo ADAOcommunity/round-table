@@ -45,11 +45,18 @@ interface ToBytes {
   to_bytes: () => Uint8Array
 }
 
-function toHex(data: ToBytes | Uint8Array): string {
-  if ('to_bytes' in data) {
-    return Buffer.from(data.to_bytes()).toString('hex')
+function encodeCardanoData(data: ToBytes | Uint8Array, encoding: BufferEncoding): string {
+  const getBuffer = () => {
+    if ('to_bytes' in data) {
+      return Buffer.from(data.to_bytes())
+    }
+    return Buffer.from(data)
   }
-  return Buffer.from(data).toString('hex')
+  return getBuffer().toString(encoding)
+}
+
+function toHex(data: ToBytes | Uint8Array): string {
+  return encodeCardanoData(data, 'hex')
 }
 
 class Cardano {
@@ -254,4 +261,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { getResult, toIter, toHex, useCardanoSerializationLib }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib }
