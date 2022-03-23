@@ -1,5 +1,5 @@
 {
-  "name": "cardano-multi-sig-app",
+  "name": "round-table",
   "private": true,
   "scripts": {
     "dev": "next dev",
