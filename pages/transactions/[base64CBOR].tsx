@@ -64,6 +64,8 @@ const GetTransaction: NextPage = () => {
     Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
   })
 
+  const txMessage = cardano.getTxMessage(transaction)
+
   const signHandle = (signatures: string[] | string) => {
     const newMap = new Map(signatureMap)
 
@@ -107,6 +109,9 @@ const GetTransaction: NextPage = () => {
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
+        {txMessage && <Panel title='Message'>
+          <div className='p-4'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+        </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
         )}

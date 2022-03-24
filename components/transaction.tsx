@@ -271,6 +271,13 @@ const NewTransaction: NextPage<{
       txBuilder.set_native_scripts(nativeScriptSet)
     }
 
+    if (message) {
+      const value = JSON.stringify({
+        msg: message.split(/\r?\n/g)
+      })
+      txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
+    }
+
     const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
     cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
 
