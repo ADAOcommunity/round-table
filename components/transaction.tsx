@@ -178,6 +178,7 @@ const NewTransaction: NextPage<{
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
 
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
+  const [message, setMessage] = useState('')
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
     const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
@@ -270,6 +271,13 @@ const NewTransaction: NextPage<{
       txBuilder.set_native_scripts(nativeScriptSet)
     }
 
+    if (message) {
+      const value = JSON.stringify({
+        msg: message.split(/\r?\n/g)
+      })
+      txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
+    }
+
     const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
     cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
 
@@ -308,6 +316,17 @@ const NewTransaction: NextPage<{
           </li>
         )}
       </ul>
+      <div>
+        <header className='flex px-4 py-2 bg-gray-100'>
+          <h2 className='grow font-bold'>Message</h2>
+        </header>
+        <textarea
+          className='p-4 block w-full outline-none'
+          rows={4}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}>
+        </textarea>
+      </div>
       <footer className='flex px-4 py-2 bg-gray-100 items-center'>
         <div className='grow'>
           {transactionResult.isOk &&

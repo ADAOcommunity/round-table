@@ -70,13 +70,23 @@ class Cardano {
     return this._wasm
   }
 
+  public getMessageLabel(): BigNum {
+    return this.lib.BigNum.from_str('674')
+  }
+
+  public getTxMessage(transaction: Transaction): string[] | undefined {
+    const label = this.getMessageLabel()
+    const metadatum = transaction.auxiliary_data()?.metadata()?.get(label)?.as_map().get_str('msg').as_list()
+    return metadatum && Array.from(toIter(metadatum), (metadata) => metadata.as_text())
+  }
+
   public signTransaction(transaction: Transaction, vkeyIter: IterableIterator<Vkeywitness>): Transaction {
     const { Transaction, Vkeywitnesses } = this.lib
     const witnessSet = transaction.witness_set()
     const vkeyWitnessSet = Vkeywitnesses.new()
     Array.from(vkeyIter, (vkey) => vkeyWitnessSet.add(vkey))
     witnessSet.set_vkeys(vkeyWitnessSet)
-    return Transaction.new(transaction.body(), witnessSet)
+    return Transaction.new(transaction.body(), witnessSet, transaction.auxiliary_data())
   }
 
   public buildSingleSignatureHex(vkey: Vkeywitness): string {
