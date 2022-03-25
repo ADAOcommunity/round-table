@@ -616,8 +616,8 @@ const SubmitTxButton: NextPage<{
       const walletAPI: Promise<WalletAPI> = wallet.enable()
       walletAPI.then((api) => {
         api.submitTx(toHex(transaction))
-          .then((response) => {
-            notify('success', response)
+          .then(() => {
+            notify('success', 'Transaction is submitted.')
           })
           .catch((reason) => {
             notify('error', reason.info)
