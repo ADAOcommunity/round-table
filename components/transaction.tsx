@@ -534,7 +534,7 @@ const SignTxButton: NextPage<{
   transaction: Transaction,
   partialSign: boolean,
   signHandle: (_: string) => void,
-  wallet: 'ccvault' | 'nami' | 'gero' | 'flint'
+  wallet: 'eternl' | 'nami' | 'gero' | 'flint'
 }> = ({ wallet, transaction, partialSign, signHandle, className }) => {
 
   const [run, setRun] = useState(false)
@@ -547,7 +547,7 @@ const SignTxButton: NextPage<{
     const chooseWallet = () => {
       const cardano = (window as any).cardano
       switch (wallet) {
-        case 'ccvault': return cardano?.ccvault
+        case 'eternl': return cardano?.eternl
         case 'nami': return cardano?.nami
         case 'gero': return cardano?.gerowallet
         case 'flint': return cardano?.flint
@@ -604,7 +604,7 @@ const SubmitTxButton: NextPage<{
     let isMounted = true
 
     const cardano = (window as any).cardano
-    isMounted && setWallet(cardano?.nami || cardano?.ccvault || cardano?.gerowallet)
+    isMounted && setWallet(cardano?.nami || cardano?.eternl || cardano?.gerowallet)
 
     return () => {
       isMounted = false
@@ -616,8 +616,8 @@ const SubmitTxButton: NextPage<{
       const walletAPI: Promise<WalletAPI> = wallet.enable()
       walletAPI.then((api) => {
         api.submitTx(toHex(transaction))
-          .then((response) => {
-            notify('success', response)
+          .then(() => {
+            notify('success', 'The transaction is submitted.')
           })
           .catch((reason) => {
             notify('error', reason.info)
@@ -651,7 +651,7 @@ const SaveTreasuryButton: NextPage<{
     db
       .treasuries
       .put({ address, title, description, script: script.to_bytes(), updatedAt: new Date() }, address)
-      .then(() => notify('success', 'Treasury is saved'))
+      .then(() => notify('success', 'The treasury is saved'))
       .catch(() => notify('error', 'Failed to save'))
   }
 

@@ -128,6 +128,18 @@ const GetTransaction: NextPage = () => {
             signHandle={signHandle}
             wallet='gero'
             className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            wallet='eternl'
+            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            wallet='flint'
+            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
         </ManualSign>
         <div className='text-center'>
           <SubmitTxButton
