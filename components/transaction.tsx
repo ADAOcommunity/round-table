@@ -617,7 +617,7 @@ const SubmitTxButton: NextPage<{
       walletAPI.then((api) => {
         api.submitTx(toHex(transaction))
           .then(() => {
-            notify('success', 'Transaction is submitted.')
+            notify('success', 'The transaction is submitted.')
           })
           .catch((reason) => {
             notify('error', reason.info)
@@ -651,7 +651,7 @@ const SaveTreasuryButton: NextPage<{
     db
       .treasuries
       .put({ address, title, description, script: script.to_bytes(), updatedAt: new Date() }, address)
-      .then(() => notify('success', 'Treasury is saved'))
+      .then(() => notify('success', 'The treasury is saved'))
       .catch(() => notify('error', 'Failed to save'))
   }
 
