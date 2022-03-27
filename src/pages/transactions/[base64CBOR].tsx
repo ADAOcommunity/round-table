@@ -68,7 +68,6 @@ const GetTransaction: NextPage = () => {
 
   const signHandle = (signatures: string[] | string) => {
     const newMap = new Map(signatureMap)
-    console.log('signHandle was fired')
 
     function getSignatures(): string[] {
       if (typeof signatures === 'string') return [signatures]

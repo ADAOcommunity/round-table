@@ -13,7 +13,8 @@ import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import { db } from '../db'
-import Gun, { IGunChain, IGunInstance } from 'gun'
+import Gun from 'gun'
+import type { IGunInstance } from 'gun'
 
 type Recipient = {
   id: string
@@ -686,10 +687,8 @@ const SignatureSync: NextPage<{
   }, [])
 
   useEffect(() => {
-    let nodes: IGunChain<any>[] | undefined
-
     if (isOn && gun) {
-      nodes = Array.from(signers).map((keyHashHex) => {
+      const nodes = Array.from(signers).map((keyHashHex) => {
         const vkeywitness = signatures.get(keyHashHex)
         const node = gun
           .get('transactions')
