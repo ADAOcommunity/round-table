@@ -1,4 +1,4 @@
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionUnspentOutputs, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
@@ -57,6 +57,12 @@ function encodeCardanoData(data: ToBytes | Uint8Array, encoding: BufferEncoding)
 
 function toHex(data: ToBytes | Uint8Array): string {
   return encodeCardanoData(data, 'hex')
+}
+
+function verifySignature(txHash: TransactionHash, vkeywitness: Vkeywitness): boolean {
+  const publicKey = vkeywitness.vkey().public_key()
+  const signature = vkeywitness.signature()
+  return publicKey.verify(txHash.to_bytes(), signature)
 }
 
 class Cardano {
@@ -271,4 +277,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib, verifySignature }

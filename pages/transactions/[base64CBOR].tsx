@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import { toHex, toIter } from '../../cardano/serialization-lib'
+import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
@@ -56,7 +56,7 @@ const GetTransaction: NextPage = () => {
   if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
 
   const transaction = txResult.data
-  const txHash = cardano.lib.hash_transaction(transaction.body()).to_bytes()
+  const txHash = cardano.lib.hash_transaction(transaction.body())
   const witnessSet = transaction.witness_set()
   const nativeScriptSet = witnessSet.native_scripts()
   const signerRegistry = new Set<string>()
@@ -88,13 +88,10 @@ const GetTransaction: NextPage = () => {
       if (!vkeyWitnessSet) return
 
       Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
-        const vkey = vkeyWitness.vkey()
-        const signature = vkeyWitness.signature()
-        const publicKey = vkey.public_key()
+        const publicKey = vkeyWitness.vkey().public_key()
         const keyHash = publicKey.hash()
-        const isValid = publicKey.verify(txHash, signature)
         const hex = toHex(keyHash)
-        if (isValid && signerRegistry.has(hex)) {
+        if (signerRegistry.has(hex) && verifySignature(txHash, vkeyWitness)) {
           newMap.set(hex, vkeyWitness)
         }
       })
