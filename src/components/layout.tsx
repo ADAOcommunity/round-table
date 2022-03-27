@@ -1,9 +1,23 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
 import { CogIcon } from '@heroicons/react/solid'
-import { useContext } from 'react'
+import { ChangeEventHandler, useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
+
+const Toggle: NextPage<{
+  isOn: boolean
+  onChange: ChangeEventHandler<HTMLInputElement>
+}> = ({ isOn, onChange }) => {
+  return (
+    <label>
+      <input className='hidden peer' type='checkbox' checked={isOn} onChange={onChange} />
+      <div className='flex flex-row-reverse border w-12 rounded-full border-gray-500 bg-gray-500 peer-checked:bg-green-500 peer-checked:border-green-500 peer-checked:flex-row'>
+        <div className='h-6 w-6 rounded-full bg-white'></div>
+      </div>
+    </label>
+  )
+}
 
 const Panel: NextPage<{ title: string }> = ({ title, children }) => (
   <div className='bg-white rounded-md shadow overflow-hidden'>
@@ -55,4 +69,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export { Layout, Panel }
+export { Layout, Panel, Toggle }
