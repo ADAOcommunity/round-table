@@ -709,7 +709,7 @@ const SignatureSync: NextPage<{
       })
 
       return () => {
-        nodes && nodes.forEach((node) => node.off())
+        nodes.forEach((node) => node.off())
       }
     }
   })
