@@ -3,16 +3,17 @@ import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from '
 import { getAssetName, getBalance, getPolicyId, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
 import { ArrowRightIcon, CheckIcon, DuplicateIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { ConfigContext } from '../cardano/config'
-import { Panel } from './layout'
+import { Panel, Toggle } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import { db } from '../db'
+import Gun, { IGunChain, IGunInstance } from 'gun'
 
 type Recipient = {
   id: string
@@ -662,4 +663,64 @@ const SaveTreasuryButton: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction }
+const SignatureSync: NextPage<{
+  cardano: Cardano
+  txHash: TransactionHash
+  signatures: Map<string, Vkeywitness>
+  signHandle: (_: string) => void
+  signers: Set<string>
+}> = ({ cardano, txHash, signatures, signers, signHandle }) => {
+  const [isOn, setIsOn] = useState(false)
+  const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
+  const hosts = ['https://dao-gunjs.herokuapp.com/gun']
+
+  useEffect(() => {
+    let isMounted = true
+
+    const gun = new Gun(hosts)
+    isMounted && setGUN(gun)
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let nodes: IGunChain<any>[] | undefined
+
+    if (isOn && gun) {
+      nodes = Array.from(signers).map((keyHashHex) => {
+        const vkeywitness = signatures.get(keyHashHex)
+        const node = gun
+          .get('transactions')
+          .get(toHex(txHash))
+          .get(keyHashHex)
+
+        if (vkeywitness) {
+          const hex = cardano.buildSingleSignatureHex(vkeywitness)
+          node.put(hex)
+          node.on((data) => {
+            if (data !== hex) node.put(hex)
+          })
+        } else {
+          node.on(signHandle, true)
+        }
+
+        return node
+      })
+
+      return () => {
+        nodes && nodes.forEach((node) => node.off())
+      }
+    }
+  })
+
+  return (
+    <div className='flex items-center space-x-1'>
+      <span>Sync</span>
+      <Toggle isOn={isOn} onChange={() => setIsOn(!isOn)} />
+    </div>
+  )
+}
+
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction, SignatureSync }
