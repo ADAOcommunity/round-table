@@ -700,9 +700,9 @@ const SignatureSync: NextPage<{
           node.put(hex)
           node.on((data) => {
             if (data !== hex) node.put(hex)
-          }, true)
+          })
         } else {
-          node.on(signHandle, true)
+          node.on(signHandle)
         }
 
         return node
