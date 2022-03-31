@@ -4,6 +4,8 @@ import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { Config } from './config'
 
+const getPolicyId = (assetId: string) => assetId.slice(0, 56)
+const getAssetName = (assetId: string) => assetId.slice(56)
 const getKoiosHost = ({ isMainnet }: Config) => isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
 const createKoios = (config: Config) => axios.create({ baseURL: `https://${getKoiosHost(config)}` })
 
@@ -279,4 +281,4 @@ const useProtocolParametersQuery = (config: Config) => {
 }
 
 export type { Value, ProtocolParameters, UTxO }
-export { getBalance, useAddressUTxOsQuery, useProtocolParametersQuery }
+export { getBalance, getPolicyId, getAssetName, useAddressUTxOsQuery, useProtocolParametersQuery }

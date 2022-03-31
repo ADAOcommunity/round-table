@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
-import { getBalance, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
+import { getAssetName, getBalance, getPolicyId, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
@@ -31,8 +31,6 @@ const newRecipient = (): Recipient => {
   }
 }
 
-const getPolicyId = (assetId: string) => assetId.slice(0, 56)
-const getAssetName = (assetId: string) => assetId.slice(56)
 const decodeASCII = (assetName: string): string => {
   return Buffer.from(assetName, 'hex').toString('ascii')
 }
