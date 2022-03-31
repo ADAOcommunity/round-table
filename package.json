@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest",
+    "cypress": "cypress open"
   },
   "dependencies": {
     "@adaocommunity/cardano-serialization-lib-browser": "^10.0.5",
