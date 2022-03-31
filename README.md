@@ -18,10 +18,15 @@ You can start editing the page by modifying `pages/index.tsx`. The page auto-upd
 
 The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-### Environment Variable
+## Environment Variable
 
 * To use it on Cardano Testnet, set `NEXT_PUBLIC_TESTNET=y`. Leave it unset to use the Mainnet.
 * To connect it to a GraphQL node, set `NEXT_PUBLIC_GRAPHQL` to the URI of the node. The default Query API is [Koios](https://www.koios.rest/).
+
+## Testing
+
+* To run Unit Tests, use `yarn test` command.
+* To run UI/UX Tests, use `yarn cypress` command. Make sure your dev server `http://localhost:3000/` is on. Or use `yarn cypress:headless` to run it in headless mode.
 
 ## Learn More
 
