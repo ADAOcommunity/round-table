@@ -29,4 +29,3 @@ jobs:
     - run: yarn
     - run: yarn run build
     - run: yarn test
-    - run: yarn cypress:headless
