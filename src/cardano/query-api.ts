@@ -1,13 +1,20 @@
-import { gql, ApolloClient, InMemoryCache } from '@apollo/client'
+import { gql, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
 import { Cardano, TransactionOutput } from '@cardano-graphql/client-ts'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { Config } from './config'
+import fetch from 'cross-fetch'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
 const getKoiosHost = ({ isMainnet }: Config) => isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
 const createKoios = (config: Config) => axios.create({ baseURL: `https://${getKoiosHost(config)}` })
+const createApolloClient = (uri: string) => {
+  return new ApolloClient({
+    link: new HttpLink({ uri, fetch }),
+    cache: new InMemoryCache()
+  })
+}
 
 type Assets = Map<string, bigint>
 
@@ -74,10 +81,7 @@ const useAddressUTxOsQuery = (address: string, config: Config) => {
     let isMounted = true
 
     if (config.queryAPI.type === 'graphql') {
-      const apollo = new ApolloClient({
-        uri: config.queryAPI.URI,
-        cache: new InMemoryCache()
-      })
+      const apollo = createApolloClient(config.queryAPI.URI)
 
       type QueryVars = {
         address: string
@@ -199,10 +203,7 @@ const useProtocolParametersQuery = (config: Config) => {
     let isMounted = true
 
     if (config.queryAPI.type === 'graphql') {
-      const apollo = new ApolloClient({
-        uri: config.queryAPI.URI,
-        cache: new InMemoryCache()
-      })
+      const apollo = createApolloClient(config.queryAPI.URI)
 
       apollo.query<{ cardano: Cardano }>({ query: ProtocolParametersQuery }).then(({ data }) => {
         const params = data?.cardano.currentEpoch.protocolParams

@@ -3,5 +3,3 @@ describe('List all my treasuries', () => {
     cy.visit('http://localhost:3000/treasuries')
   })
 })
-
-export {}

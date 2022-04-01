@@ -1,0 +1,98 @@
+{
+    meta: {
+        createdAt: '2022-04-01T21:48:58.483Z',
+        host: 'https://graphql-api.testnet.dandelion.link',
+        reqHumanReadable: true,
+        resHumanReadable: true,
+        resUncompressed: true,
+    },
+    req: {
+        headers: {
+            accept: '*/*',
+            'content-type': 'application/json',
+            'user-agent': 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)',
+            'accept-encoding': 'gzip,deflate',
+            connection: 'close',
+        },
+        url: '/',
+        method: 'POST',
+        body: {
+            operationName: 'getProtocolParameters',
+            variables: {},
+            query: 'query getProtocolParameters {\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+        },
+    },
+    res: {
+        status: 200,
+        headers: {
+            date: [
+                'Fri, 01 Apr 2022 21:48:59 GMT',
+            ],
+            'content-type': [
+                'application/json; charset=utf-8',
+            ],
+            'transfer-encoding': [
+                'chunked',
+            ],
+            connection: [
+                'close',
+            ],
+            'cf-ray': [
+                '6f5488365f4d893c-SIN',
+            ],
+            'cache-control': [
+                'max-age=20, public',
+            ],
+            etag: [
+                'W/"116-Vh3QMEcrCTIivvWKwmIxMgU0hto"',
+            ],
+            vary: [
+                'Origin, Accept-Encoding',
+            ],
+            'cf-cache-status': [
+                'DYNAMIC',
+            ],
+            'expect-ct': [
+                'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
+            ],
+            'x-powered-by': [
+                'Express',
+            ],
+            'report-to': [
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=CxcBiHWAWtySTrIPrUgAu0fS82X6wz1MqOgkMa%2FgGAejQL5mVLBXgyGwJNeu%2F7r7jleIck1RbFOv9My99ngO%2BhWLkvC7CnMyw6wgoz87318A8SG0lQIyDuwoGcfsUxCU9MCWwtsSdTGklu99flAiHKHq6k08"}],"group":"cf-nel","max_age":604800}',
+            ],
+            nel: [
+                '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
+            ],
+            server: [
+                'cloudflare',
+            ],
+            'content-encoding': [
+                'gzip',
+            ],
+            'alt-svc': [
+                'h3=":443"; ma=86400, h3-29=":443"; ma=86400',
+            ],
+        },
+        body: {
+            data: {
+                cardano: {
+                    currentEpoch: {
+                        protocolParams: {
+                            minFeeA: 44,
+                            minFeeB: 155381,
+                            poolDeposit: 500000000,
+                            keyDeposit: 2000000,
+                            coinsPerUtxoWord: 34482,
+                            maxValSize: '5000',
+                            maxTxSize: 16384,
+                            __typename: 'ShelleyProtocolParams',
+                        },
+                        __typename: 'Epoch',
+                    },
+                    __typename: 'Cardano',
+                },
+            },
+        },
+    },
+}
