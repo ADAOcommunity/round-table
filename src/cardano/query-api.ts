@@ -9,9 +9,9 @@ const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
 const getKoiosHost = ({ isMainnet }: Config) => isMainnet ? 'api.koios.rest' : 'testnet.koios.rest'
 const createKoios = (config: Config) => axios.create({ baseURL: `https://${getKoiosHost(config)}` })
-const createApolloClient = (URI: string) => {
+const createApolloClient = (uri: string) => {
   return new ApolloClient({
-    link: new HttpLink({ uri: URI, fetch }),
+    link: new HttpLink({ uri, fetch }),
     cache: new InMemoryCache()
   })
 }
