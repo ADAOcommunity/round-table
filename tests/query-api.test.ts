@@ -8,6 +8,6 @@ test('getAssetName', () => {
   expect(getAssetName(assetId)).toBe(assetName)
 })
 
-test('getPolicyID', () => {
+test('getPolicyId', () => {
   expect(getPolicyId(assetId)).toBe(policyId)
 })
