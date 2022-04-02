@@ -24,6 +24,12 @@ const Configure: NextPage = () => {
               <span>{config.queryAPI.URI}</span>
             </p>
           }
+          {config.gunPeers && <div>
+            <span>GUN Peers:</span>
+            <ul>
+              {config.gunPeers.map((peer, index) => <li key={index}>{peer}</li>)}
+            </ul>
+          </div>}
         </div>
       </Panel>
     </Layout>

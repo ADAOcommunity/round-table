@@ -7,7 +7,7 @@ import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody
 import { nanoid } from 'nanoid'
 import { ArrowRightIcon, CheckIcon, DuplicateIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
-import { ConfigContext } from '../cardano/config'
+import { Config, ConfigContext } from '../cardano/config'
 import { Panel, Toggle } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
@@ -670,15 +670,17 @@ const SignatureSync: NextPage<{
   signatures: Map<string, Vkeywitness>
   signHandle: (_: string) => void
   signers: Set<string>
-}> = ({ cardano, txHash, signatures, signers, signHandle }) => {
+  config: Config
+}> = ({ cardano, txHash, signatures, signers, signHandle, config }) => {
   const [isOn, setIsOn] = useState(false)
   const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
-  const hosts = ['https://dao-gunjs.herokuapp.com/gun']
+  const peers = config.gunPeers
+  const network = config.isMainnet ? 'mainnet' : 'testnet'
 
   useEffect(() => {
     let isMounted = true
 
-    const gun = new Gun(hosts)
+    const gun = new Gun({ peers })
     isMounted && setGUN(gun)
 
     return () => {
@@ -691,6 +693,8 @@ const SignatureSync: NextPage<{
       const nodes = Array.from(signers).map((keyHashHex) => {
         const vkeywitness = signatures.get(keyHashHex)
         const node = gun
+          .get('cardano')
+          .get(network)
           .get('transactions')
           .get(toHex(txHash))
           .get(keyHashHex)
