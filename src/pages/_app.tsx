@@ -11,7 +11,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     <ConfigContext.Provider value={[config, () => { }]}>
       <NotificationContext.Provider value={notification}>
         <Head>
-          <title>{config.isMainnet ? 'MultiSig (Mainnet)' : 'MultiSig (Testnet)'}</title>
+          <title>{config.isMainnet ? 'RoundTable (Mainnet)' : 'RoundTable (Testnet)'}</title>
         </Head>
         <Component {...pageProps} />
       </NotificationContext.Provider>
