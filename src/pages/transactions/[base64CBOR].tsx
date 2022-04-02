@@ -4,10 +4,11 @@ import { Layout, Panel } from '../../components/layout'
 import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { NativeScriptViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { PencilAltIcon } from '@heroicons/react/solid'
+import { ConfigContext } from '../../cardano/config'
 
 const ManualSign: NextPage<{
   signHandle: (_: string) => void
@@ -48,6 +49,7 @@ const GetTransaction: NextPage = () => {
   const { base64CBOR } = router.query
   const cardano = useCardanoSerializationLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
+  const [config, _] = useContext(ConfigContext)
 
   if (!cardano) return <Loading />;
 
@@ -138,7 +140,14 @@ const GetTransaction: NextPage = () => {
             wallet='flint'
             className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
         </ManualSign>
-        <div className='text-center'>
+        <div className='flex justify-center items-center space-x-4'>
+          <SignatureSync
+            cardano={cardano}
+            txHash={txHash}
+            signatures={signatureMap}
+            signHandle={signHandle}
+            signers={signerRegistry}
+            config={config} />
           <SubmitTxButton
             className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'
             transaction={signedTransaction}>
