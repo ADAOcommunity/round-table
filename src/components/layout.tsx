@@ -1,9 +1,12 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
-import { CogIcon } from '@heroicons/react/solid'
+import { CogIcon, HomeIcon, PlusIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db, Treasury } from '../db'
+import { encodeCardanoData } from '../cardano/serialization-lib'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -28,37 +31,83 @@ const Panel: NextPage<{ title: string }> = ({ title, children }) => (
   </div>
 )
 
+const NavLink: NextPage<{
+  className?: string
+  href: string
+  onPageClassName: string
+}> = ({ children, className, href, onPageClassName }) => {
+  const isOnPage = document.location.pathname === href
+  return (
+    <Link href={href}>
+      <a className={[className, isOnPage ? onPageClassName : ''].join(' ')}>
+        {children}
+      </a>
+    </Link>
+  )
+}
+
+const PrimaryBar: NextPage = () => {
+  return (
+    <aside className='flex flex-col basis-20 bg-blue-900 items-center text-white'>
+      <Link href='/'>
+        <a className='p-4 hover:bg-blue-700'>
+          <HomeIcon className='w-12' />
+        </a>
+      </Link>
+      <NavLink
+        href='/config'
+        onPageClassName='bg-blue-700'
+        className='p-4 hover:bg-blue-700'>
+        <CogIcon className='w-12' />
+      </NavLink>
+    </aside>
+  )
+}
+
+const TreasuryListing: NextPage<{
+  treasury: Treasury
+}> = ({ treasury }) => {
+  const { title, script } = treasury
+  const base64CBOR = encodeCardanoData(script, 'base64')
+  return (
+    <NavLink
+      href={`/treasuries/${encodeURIComponent(base64CBOR)}`}
+      onPageClassName='bg-indigo-700 font-semibold'
+      className='flex w-full p-4 items-center space-x-1 truncate hover:bg-indigo-700'>
+      {title}
+    </NavLink>
+  )
+}
+
+const SecondaryBar: NextPage = () => {
+  const treasuries = useLiveQuery(async () => db.treasuries.toArray())
+
+  return (
+    <aside className='flex flex-col basis-60 bg-indigo-900 items-center text-white overflow-y-scroll'>
+      <div className='w-full bg-indigo-800 font-semibold'>
+        <NavLink
+          href='/treasuries/new'
+          onPageClassName='bg-indigo-700'
+          className='flex w-full p-4 items-center space-x-1 justify-center hover:bg-indigo-700'>
+          <PlusIcon className='w-4' />
+          <span>New Treasury</span>
+        </NavLink>
+      </div>
+      {treasuries && treasuries.map((treasury, index) => <TreasuryListing key={index} treasury={treasury} />)}
+    </aside>
+  )
+}
+
 const Layout: NextPage = ({ children }) => {
   const [config, _] = useContext(ConfigContext)
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-100 to-blue-100'>
-      <header className='bg-white border-b border-gray-100 mb-2 shadow'>
-        <div className='flex max-w-7xl mx-auto'>
-          <div className='flex grow items-center'>
-            <div>
-              {config.isMainnet && <span className='text-green-600'>MAINNET</span>}
-              {!config.isMainnet && <span className='text-red-600'>TESTNET</span>}
-            </div>
-          </div>
-          <nav className='flex divide-x font-medium items-center'>
-            <div className='p-4'>
-              <Link href='/treasuries'>
-                <a className='text-base text-gray-500 hover:text-gray-900'>My Treasuries</a>
-              </Link>
-            </div>
-            <div className='p-4'>
-              <Link href='/config'>
-                <a className='flex text-base text-gray-500 hover:text-gray-900 space-x-1'>
-                  <CogIcon className='h-5 w-5' />
-                </a>
-              </Link>
-            </div>
-          </nav>
-        </div>
-      </header>
-      <div>
-        <div className='max-w-7xl mx-auto flex flex-row-reverse'>
+    <div className='flex h-screen'>
+      <PrimaryBar />
+      <SecondaryBar />
+      <div className='grow'>
+        {!config.isMainnet && <div className='p-1 bg-red-700 text-white text-center'>You are using testnet</div>}
+        <div className='mx-auto flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />
         </div>
         <div className='max-w-7xl mx-auto'>
