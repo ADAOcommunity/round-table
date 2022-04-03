@@ -15,6 +15,7 @@ import Image from 'next/image'
 import { db } from '../db'
 import Gun from 'gun'
 import type { IGunInstance } from 'gun'
+import { useRouter } from 'next/router'
 
 type Recipient = {
   id: string
@@ -639,8 +640,11 @@ const SaveTreasuryButton: NextPage<{
   className?: string
   name: string
   description: string
-  script: NativeScript
+  script?: NativeScript
 }> = ({ name, description, script, className, children }) => {
+  if (!script) return <button className={className} disabled={true}>{children}</button>;
+
+  const router = useRouter()
   const { notify } = useContext(NotificationContext)
   const base64CBOR = encodeCardanoData(script, 'base64')
 
@@ -648,7 +652,7 @@ const SaveTreasuryButton: NextPage<{
     db
       .treasuries
       .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
-      .then(() => notify('success', 'The treasury is saved'))
+      .then(() => router.push(`/treasuries/${encodeURIComponent(base64CBOR)}`))
       .catch(() => notify('error', 'Failed to save'))
   }
 

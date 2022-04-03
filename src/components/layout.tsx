@@ -6,7 +6,6 @@ import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Treasury } from '../db'
-import { encodeCardanoData } from '../cardano/serialization-lib'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -22,14 +21,13 @@ const Toggle: NextPage<{
   )
 }
 
-const Panel: NextPage<{ title: string }> = ({ title, children }) => (
-  <div className='bg-white rounded-md shadow overflow-hidden'>
-    <header className='border-b'>
-      <h2 className='p-2 font-bold bg-gray-100 text-lg text-center'>{title}</h2>
-    </header>
-    <div>{children}</div>
-  </div>
-)
+const Panel: NextPage<{className?: string}> = ({ children, className }) => {
+  return (
+    <div className={'border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden ' + className}>
+      {children}
+    </div>
+  )
+}
 
 const NavLink: NextPage<{
   className?: string
@@ -97,8 +95,8 @@ const SecondaryBar: NextPage = () => {
   )
 }
 
-const Hero: NextPage = ({ children }) => {
-  return <div className='rounded p-4 bg-sky-700 text-white shadow space-y-4'>{ children }</div>;
+const Hero: NextPage<{ className?: string }> = ({ className, children }) => {
+  return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{ children }</div>;
 }
 
 const Layout: NextPage = ({ children }) => {
@@ -108,7 +106,7 @@ const Layout: NextPage = ({ children }) => {
     <div className='flex h-screen'>
       <PrimaryBar />
       <SecondaryBar />
-      <div className='grow'>
+      <div className='grow bg-sky-100 overflow-y-scroll'>
         {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
         <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />
