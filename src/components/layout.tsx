@@ -107,10 +107,10 @@ const Layout: NextPage = ({ children }) => {
       <SecondaryBar />
       <div className='grow'>
         {!config.isMainnet && <div className='p-1 bg-red-700 text-white text-center'>You are using testnet</div>}
-        <div className='mx-auto flex flex-row-reverse'>
+        <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />
         </div>
-        <div className='max-w-7xl mx-auto'>
+        <div>
           {children}
         </div>
       </div>
