@@ -48,16 +48,16 @@ const NavLink: NextPage<{
 
 const PrimaryBar: NextPage = () => {
   return (
-    <aside className='flex flex-col basis-20 bg-indigo-900 items-center text-white'>
+    <aside className='flex flex-col basis-20 bg-blue-900 items-center text-white'>
       <Link href='/'>
-        <a className='p-4 hover:bg-indigo-700'>
+        <a className='p-4 hover:bg-blue-700'>
           <HomeIcon className='w-12' />
         </a>
       </Link>
       <NavLink
         href='/config'
-        onPageClassName='bg-indigo-700'
-        className='p-4 hover:bg-indigo-700'>
+        onPageClassName='bg-blue-700'
+        className='p-4 hover:bg-blue-700'>
         <CogIcon className='w-12' />
       </NavLink>
     </aside>
@@ -83,8 +83,8 @@ const SecondaryBar: NextPage = () => {
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
 
   return (
-    <aside className='flex flex-col basis-60 bg-blue-900 items-center text-white overflow-y-scroll'>
-      <div className='w-full bg-blue-800 font-semibold'>
+    <aside className='flex flex-col basis-60 bg-blue-800 items-center text-white overflow-y-scroll'>
+      <div className='w-full bg-blue-900 font-semibold'>
         <NavLink
           href='/treasuries/new'
           onPageClassName='bg-blue-700'
