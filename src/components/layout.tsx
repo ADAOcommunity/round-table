@@ -73,7 +73,7 @@ const TreasuryListing: NextPage<{
     <NavLink
       href={`/treasuries/${encodeURIComponent(base64CBOR)}`}
       onPageClassName='bg-blue-700 font-semibold'
-      className='flex w-full p-4 items-center space-x-1 truncate hover:bg-blue-700'>
+      className='block w-full p-4 truncate hover:bg-blue-700'>
       {title}
     </NavLink>
   )
@@ -106,7 +106,7 @@ const Layout: NextPage = ({ children }) => {
       <PrimaryBar />
       <SecondaryBar />
       <div className='grow'>
-        {!config.isMainnet && <div className='p-1 bg-red-700 text-white text-center'>You are using testnet</div>}
+        {!config.isMainnet && <div className='p-1 bg-orange-700 text-white text-center'>You are using testnet</div>}
         <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />
         </div>
