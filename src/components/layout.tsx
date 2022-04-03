@@ -97,6 +97,10 @@ const SecondaryBar: NextPage = () => {
   )
 }
 
+const Hero: NextPage = ({ children }) => {
+  return <div className='rounded p-4 bg-blue-700 text-white shadow space-y-4'>{ children }</div>;
+}
+
 const Layout: NextPage = ({ children }) => {
   const [config, _] = useContext(ConfigContext)
 
@@ -109,7 +113,7 @@ const Layout: NextPage = ({ children }) => {
         <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />
         </div>
-        <div>
+        <div className='p-2 h-screen'>
           {children}
         </div>
       </div>
@@ -117,4 +121,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export { Layout, Panel, Toggle }
+export { Layout, Panel, Toggle, Hero }

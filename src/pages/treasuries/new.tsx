@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import { useState, useContext, KeyboardEventHandler, ChangeEventHandler } from 'react'
-import { Layout, Panel } from '../../components/layout'
+import { Hero, Layout, Panel } from '../../components/layout'
 import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import Link from 'next/link'
@@ -165,8 +165,11 @@ const NewTreasury: NextPage = () => {
 
   return (
     <Layout>
-      <h1 className='my-8 font-bold text-2xl text-center'>New Treasury</h1>
       <div className='space-y-2'>
+        <Hero>
+          <h1 className='font-semibold text-lg'>New Treasury</h1>
+          <p>Start to create a treasury protected by Multi-Sig native scripts from here.</p>
+        </Hero>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
