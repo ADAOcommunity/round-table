@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getAssetName, getBalance, getPolicyId, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano, getResult, toHex, toIter } from '../cardano/serialization-lib'
+import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
@@ -636,21 +636,18 @@ const SubmitTxButton: NextPage<{
 }
 
 const SaveTreasuryButton: NextPage<{
-  cardano: Cardano
   className?: string
-  title: string
+  name: string
   description: string
   script: NativeScript
-}> = ({ cardano, title, description, script, className, children }) => {
-
-  const [config, _] = useContext(ConfigContext)
-  const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
+}> = ({ name, description, script, className, children }) => {
   const { notify } = useContext(NotificationContext)
+  const base64CBOR = encodeCardanoData(script, 'base64')
 
   const submitHandle = () => {
     db
       .treasuries
-      .put({ address, title, description, script: script.to_bytes(), updatedAt: new Date() }, address)
+      .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
       .then(() => notify('success', 'The treasury is saved'))
       .catch(() => notify('error', 'Failed to save'))
   }

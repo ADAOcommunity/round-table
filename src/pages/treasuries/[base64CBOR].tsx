@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Panel } from '../../components/layout'
-import { Cardano } from '../../cardano/serialization-lib'
+import { Cardano, encodeCardanoData } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { useContext } from 'react'
@@ -22,7 +22,7 @@ const NewMultiSigTransaction: NextPage<{
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
 
-  const treasury = useLiveQuery(async () => db.treasuries.get(address.to_bech32()))
+  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')))
 
   const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
   if (utxos.type === 'loading') return <Loading />;
@@ -34,12 +34,12 @@ const NewMultiSigTransaction: NextPage<{
   return (
     <Layout>
       <div className='space-y-2'>
-        <h1 className='my-8 font-bold text-2xl text-center'>{treasury?.title || 'No title'}</h1>
-        {treasury?.description && <Panel title='description'>
-          <div className='p-4'>
+        <h1 className='my-8 font-bold'>{treasury?.name || 'No name'}</h1>
+        {treasury?.description &&
+          <article className='p-4'>
             {treasury?.description}
-          </div>
-        </Panel>}
+          </article>
+        }
         <NativeScriptViewer cardano={cardano} script={script} />
         <NewTransaction
           changeAddress={address}

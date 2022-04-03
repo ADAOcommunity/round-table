@@ -124,7 +124,7 @@ const NewTreasury: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [scriptType, setScriptType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
-  const [title, setTitle] = useState('')
+  const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const cardano = useCardanoSerializationLib()
   if (!cardano) return <Loading />;
@@ -168,10 +168,10 @@ const NewTreasury: NextPage = () => {
       <h1 className='my-8 font-bold text-2xl text-center'>New Treasury</h1>
       <div className='space-y-2'>
         <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className='p-4 block w-full rounded-md text-center font-bold shadow outline-none'
-          placeholder='Write Title' />
+          placeholder='Write Name' />
         <Panel title='Description'>
           <textarea
             className='p-4 block w-full outline-none'
@@ -228,8 +228,7 @@ const NewTreasury: NextPage = () => {
           {script &&
             <SaveTreasuryButton
               className='py-3 px-4 font-bold text-lg bg-blue-100 text-blue-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'
-              cardano={cardano}
-              title={title}
+              name={name}
               description={description}
               script={script}>
               Save Treasury

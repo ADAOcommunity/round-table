@@ -67,14 +67,13 @@ const PrimaryBar: NextPage = () => {
 const TreasuryListing: NextPage<{
   treasury: Treasury
 }> = ({ treasury }) => {
-  const { title, script } = treasury
-  const base64CBOR = encodeCardanoData(script, 'base64')
+  const { name, script } = treasury
   return (
     <NavLink
-      href={`/treasuries/${encodeURIComponent(base64CBOR)}`}
+      href={`/treasuries/${encodeURIComponent(script)}`}
       onPageClassName='bg-blue-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-blue-700'>
-      {title}
+      {name}
     </NavLink>
   )
 }
