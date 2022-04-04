@@ -731,7 +731,7 @@ const SignatureSync: NextPage<{
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [peers])
 
   useEffect(() => {
     if (isOn && gun) {
