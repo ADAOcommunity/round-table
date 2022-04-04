@@ -7,6 +7,7 @@ import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
+import Image from 'next/image'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -81,6 +82,12 @@ const PrimaryBar: NextPage = () => {
         className='p-4 hover:bg-sky-700'>
         <CogIcon className='w-12' />
       </NavLink>
+      <a className='p-4 hover:bg-sky-700' target='_blank' href='https://discord.gg/SDnm4GzY'>
+        <Image src='/Discord-Logo-White.svg' width={48} height={48}></Image>
+      </a>
+      <a className='p-4 hover:bg-sky-700' target='_blank' href='https://github.com/ADAOcommunity/round-table'>
+        <Image src='/GitHub-Mark-Light-120px-plus.png' width={48} height={48}></Image>
+      </a>
     </aside>
   )
 }
