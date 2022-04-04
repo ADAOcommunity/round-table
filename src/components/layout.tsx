@@ -15,7 +15,7 @@ const Toggle: NextPage<{
   return (
     <label className='cursor-pointer'>
       <input className='hidden peer' type='checkbox' checked={isOn} onChange={onChange} />
-      <div className='flex flex-row-reverse border w-12 rounded-full border-gray-500 bg-gray-500 peer-checked:bg-green-500 peer-checked:border-green-500 peer-checked:flex-row'>
+      <div className='flex border w-12 rounded-full border-gray-500 bg-gray-500 peer-checked:bg-green-500 peer-checked:border-green-500 peer-checked:justify-end'>
         <div className='h-6 w-6 rounded-full bg-white'></div>
       </div>
     </label>
