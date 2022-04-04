@@ -112,8 +112,20 @@ const GetTransaction: NextPage = () => {
           <div className='p-4'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
-          <Panel className='p-4'>
-            <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
+          <Panel>
+            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} key={index} />
+            <footer className='p-4 bg-gray-100 space-x-2'>
+              <div className='flex space-x-1 items-center'>
+                <SignatureSync
+                  cardano={cardano}
+                  txHash={txHash}
+                  signatures={signatureMap}
+                  signHandle={signHandle}
+                  signers={signerRegistry}
+                  config={config} />
+                <div className='text-sm'>Auto sync the signatures with other signers</div>
+              </div>
+            </footer>
           </Panel>
         )}
         <ManualSign signHandle={signHandle}>
@@ -142,15 +154,8 @@ const GetTransaction: NextPage = () => {
             wallet='flint'
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
           <div className='flex grow justify-end items-center space-x-4'>
-            <SignatureSync
-              cardano={cardano}
-              txHash={txHash}
-              signatures={signatureMap}
-              signHandle={signHandle}
-              signers={signerRegistry}
-              config={config} />
             <SubmitTxButton
-              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:bg-gray-100 disabled:text-gray-400'
+              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
               transaction={signedTransaction}>
               Submit Transaction
             </SubmitTxButton>

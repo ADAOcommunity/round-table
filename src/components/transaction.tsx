@@ -764,10 +764,7 @@ const SignatureSync: NextPage<{
   })
 
   return (
-    <div className='flex items-center space-x-1'>
-      <span>Sync</span>
-      <Toggle isOn={isOn} onChange={() => setIsOn(!isOn)} />
-    </div>
+    <Toggle isOn={isOn} onChange={() => setIsOn(!isOn)} />
   )
 }
 
