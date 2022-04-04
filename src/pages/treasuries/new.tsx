@@ -5,7 +5,7 @@ import { Result, toHex, useCardanoSerializationLib } from '../../cardano/seriali
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import { Loading } from '../../components/status'
 import type { Address, Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
-import { PlusIcon, XIcon } from '@heroicons/react/solid'
+import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { SaveTreasuryButton } from '../../components/transaction'
 
 const KeyHashLabel: NextPage<{
@@ -191,7 +191,7 @@ const NewTreasury: NextPage = () => {
                           <KeyHashLabel cardano={cardano} address={address} />
                         </div>
                         <button className='p-2'>
-                          <XIcon className='w-4' onClick={() => deleteAddress(address)} />
+                          <TrashIcon className='w-4' onClick={() => deleteAddress(address)} />
                         </button>
                       </li>
                     )
