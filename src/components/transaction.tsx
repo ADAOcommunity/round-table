@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import { ArrowRightIcon, CheckIcon, DuplicateIcon, PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
-import { Panel, Toggle } from './layout'
+import { BackButton, Panel, Toggle } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -137,7 +137,7 @@ const Recipient: NextPage<{
                 value={quantity}
                 max={quantity + assetBudget}
                 onChange={onChange} />
-              <button className='px-2' onClick={() => deleteAsset(id)}>
+              <button className='p-2' onClick={() => deleteAsset(id)}>
                 <TrashIcon className='w-4' />
               </button>
             </li>
@@ -337,7 +337,8 @@ const NewTransaction: NextPage<{
             </p>
           }
         </div>
-        <nav className='flex space-x-2'>
+        <nav className='space-x-2'>
+          <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
           <button
             className='p-2 rounded text-sky-700 border'
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
