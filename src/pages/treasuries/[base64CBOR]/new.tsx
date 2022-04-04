@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Hero, Layout } from '../../../components/layout'
+import { Hero, Layout, Panel } from '../../../components/layout'
 import { Cardano, encodeCardanoData } from '../../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../../components/status'
@@ -34,15 +34,14 @@ const NewMultiSigTransaction: NextPage<{
   return (
     <Layout>
       <div className='space-y-2'>
-        <Hero>
+        <Panel className='p-4 space-y-1'>
           <h1 className='font-semibold text-lg'>{treasury?.name || 'No name'}</h1>
           {treasury?.description &&
             <article className='whitespace-pre-line'>
               {treasury?.description}
             </article>
           }
-        </Hero>
-        <NativeScriptViewer cardano={cardano} script={script} />
+        </Panel>
         <NewTransaction
           changeAddress={address}
           cardano={cardano}
@@ -54,7 +53,7 @@ const NewMultiSigTransaction: NextPage<{
   )
 }
 
-const Treasury: NextPage = () => {
+const GetTreasury: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
   const router = useRouter()
   const { base64CBOR } = router.query
@@ -75,4 +74,4 @@ const Treasury: NextPage = () => {
     script={script} />
 }
 
-export default Treasury
+export default GetTreasury
