@@ -34,7 +34,7 @@ const ManualSign: NextPage<{
         <button
           onClick={manualSignHandle}
           disabled={isDisabled}
-          className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500'>
+          className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
           <PencilAltIcon className='h-6' />
           <span>Manual Sign</span>
         </button>
@@ -129,7 +129,7 @@ const GetTransaction: NextPage = () => {
               <CopyVkeysButton
                 cardano={cardano}
                 vkeys={Array.from(signatureMap.values())}
-                className='px-4 py-2 border text-sky-700 rounded disabled:text-gray-500'>
+                className='px-4 py-2 border text-sky-700 rounded disabled:text-gray-400'>
                 Copy all signatures
               </CopyVkeysButton>
             </footer>
@@ -141,25 +141,25 @@ const GetTransaction: NextPage = () => {
             partialSign={true}
             signHandle={signHandle}
             wallet='nami'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='gero'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='eternl'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='flint'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <div className='flex grow justify-end items-center space-x-4'>
             <SubmitTxButton
               className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
