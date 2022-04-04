@@ -491,14 +491,18 @@ const NativeScriptInfoViewer: NextPage<{
 }> = ({ className, script }) => {
   const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
 
+  if (!treasury) return (
+    <div className='p-4 text-white bg-sky-700 rounded'>
+      This is an unknown treasury. You can save it by editing its info.
+    </div>
+  )
+
   return (
     <div className={className}>
-      <h1 className='font-semibold text-lg'>{treasury?.name || 'No name'}</h1>
-      {treasury?.description &&
-        <article>
-          {treasury?.description}
-        </article>
-      }
+      <h1 className='font-semibold text-lg'>{treasury.name}</h1>
+      <article>
+        {treasury.description}
+      </article>
     </div>
   )
 }
