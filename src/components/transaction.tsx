@@ -531,10 +531,10 @@ const NativeScriptViewer: NextPage<{
             const signature = signatures?.get(toHex(keyHash))
             const hex = signature && cardano.buildSingleSignatureHex(signature)
             return (
-              <li key={index} className={signature ? 'text-green-500' : ''}>
+              <li key={index} className={'flex items-center ' + (signature ? 'text-green-500' : '')}>
                 <span>{toHex(keyHash)}</span>
-                {signature && <span><CheckIcon className='h-6 w-6 inline' /></span>}
-                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='h-6 w-6 inline' /></CopyToClipboardButton>}
+                {signature && <span><CheckIcon className='w-4' /></span>}
+                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='w-4' /></CopyToClipboardButton>}
               </li>
             )
           })}
