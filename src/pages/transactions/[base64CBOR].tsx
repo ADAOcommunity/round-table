@@ -122,25 +122,25 @@ const GetTransaction: NextPage = () => {
             partialSign={true}
             signHandle={signHandle}
             wallet='nami'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-transparent disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='gero'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-transparent disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='eternl'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-transparent disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='flint'
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-transparent disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-500' />
           <div className='flex grow justify-end items-center space-x-4'>
             <SignatureSync
               cardano={cardano}
@@ -150,7 +150,7 @@ const GetTransaction: NextPage = () => {
               signers={signerRegistry}
               config={config} />
             <SubmitTxButton
-              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:bg-gray-100 disabled:text-gray-500'
+              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:bg-gray-100 disabled:text-gray-400'
               transaction={signedTransaction}>
               Submit Transaction
             </SubmitTxButton>
