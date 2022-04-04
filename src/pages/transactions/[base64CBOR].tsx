@@ -108,8 +108,9 @@ const GetTransaction: NextPage = () => {
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
-        {txMessage && <Panel>
-          <div className='p-4'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+        {txMessage && <Panel className='space-y-1 p-4'>
+          <div className='font-semibold'>Message</div>
+          <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <Panel>
