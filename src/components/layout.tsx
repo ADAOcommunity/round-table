@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
 import { CogIcon, HomeIcon, PlusIcon } from '@heroicons/react/solid'
-import { ChangeEventHandler, useContext } from 'react'
+import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -42,9 +42,22 @@ const NavLink: NextPage<{
   href: string
   onPageClassName: string
 }> = ({ children, className, href, onPageClassName }) => {
-  const currentPaths = document.location.pathname.split('/')
+  const [isOnPage, setIsOnPage] = useState(false)
   const parentPaths = href.split('/')
-  const isOnPage = parentPaths.every((name, index) => name === currentPaths[index])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const currentPaths = document.location.pathname.split('/')
+    const isOnPage = parentPaths.every((name, index) => name === currentPaths[index])
+
+    if (isMounted) setIsOnPage(isOnPage)
+
+    return () => {
+      isMounted = false
+    }
+  })
+
   return (
     <Link href={href}>
       <a className={[className, isOnPage ? onPageClassName : ''].join(' ')}>
