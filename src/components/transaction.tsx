@@ -454,7 +454,8 @@ const TransactionBodyViewer: NextPage<{
 const CopyToClipboardButton: NextPage<{
   className?: string
   content: string
-}> = ({ className, content, children }) => {
+  disabled?: boolean
+}> = ({ className, content, children, disabled }) => {
 
   const clickHandle = () => {
     navigator.clipboard.writeText(content)
@@ -463,6 +464,7 @@ const CopyToClipboardButton: NextPage<{
   return (
     <button
       onClick={clickHandle}
+      disabled={!!disabled}
       className={className}>
       {children}
     </button>
@@ -529,7 +531,7 @@ const NativeScriptViewer: NextPage<{
         <ul>
           {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
             const signature = signatures?.get(toHex(keyHash))
-            const hex = signature && cardano.buildSingleSignatureHex(signature)
+            const hex = signature && cardano.buildSignatureSetHex([signature])
             return (
               <li key={index} className={'flex items-center ' + (signature ? 'text-green-500' : '')}>
                 <span>{toHex(keyHash)}</span>
@@ -745,7 +747,7 @@ const SignatureSync: NextPage<{
           .get(keyHashHex)
 
         if (vkeywitness) {
-          const hex = cardano.buildSingleSignatureHex(vkeywitness)
+          const hex = cardano.buildSignatureSetHex([vkeywitness])
           node.put(hex)
           node.on((data) => {
             if (data !== hex) node.put(hex)
@@ -768,4 +770,20 @@ const SignatureSync: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync }
+const CopyVkeysButton: NextPage<{
+  cardano: Cardano
+  className?: string
+  vkeys: Vkeywitness[]
+}> = ({ cardano, className, children, vkeys }) => {
+  const content = cardano.buildSignatureSetHex(vkeys)
+  return (
+    <CopyToClipboardButton
+      disabled={vkeys.length === 0}
+      className={className}
+      content={content}>
+      {children}
+    </CopyToClipboardButton>
+  )
+}
+
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton }

@@ -4,7 +4,7 @@ import { Layout, Panel } from '../../components/layout'
 import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useContext, useState } from 'react'
 import { PencilAltIcon } from '@heroicons/react/solid'
@@ -114,7 +114,7 @@ const GetTransaction: NextPage = () => {
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <Panel>
             <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} key={index} />
-            <footer className='p-4 bg-gray-100 space-x-2'>
+            <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
               <div className='flex space-x-1 items-center'>
                 <SignatureSync
                   cardano={cardano}
@@ -125,6 +125,12 @@ const GetTransaction: NextPage = () => {
                   config={config} />
                 <div className='text-sm'>Auto sync the signatures with other signers</div>
               </div>
+              <CopyVkeysButton
+                cardano={cardano}
+                vkeys={Array.from(signatureMap.values())}
+                className='px-4 py-2 border text-sky-700 rounded disabled:text-gray-500'>
+                Copy all signatures
+              </CopyVkeysButton>
             </footer>
           </Panel>
         )}
