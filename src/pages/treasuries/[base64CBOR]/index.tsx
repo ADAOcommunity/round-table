@@ -16,8 +16,10 @@ const ShowTreasury: NextPage<{
 
   return (
     <Panel>
-      <NativeScriptInfoViewer className='space-y-1 px-4 pt-4' script={script} />
-      <NativeScriptViewer className='p-4 space-y-2' cardano={cardano} script={script} />
+      <div className='p-4 space-y-2'>
+        <NativeScriptInfoViewer className='space-y-1' script={script} />
+        <NativeScriptViewer className='space-y-2' cardano={cardano} script={script} />
+      </div>
       <footer className='flex justify-end p-4 bg-gray-100'>
         <Link href={`/treasuries/${encodeURIComponent(base64CBOR)}/edit`}>
           <a className='px-4 py-2 border text-sky-700 rounded'>Edit Info</a>
