@@ -55,6 +55,7 @@ const ShowTreasury: NextPage<{
   script: NativeScript
 }> = ({ cardano, script }) => {
   const base64CBOR = encodeCardanoData(script, 'base64')
+  const path = `/treasuries/${encodeURIComponent(base64CBOR)}`
 
   return (
     <Panel>
@@ -63,9 +64,12 @@ const ShowTreasury: NextPage<{
         <NativeScriptViewer className='space-y-2' cardano={cardano} script={script} />
         <ShowBalance cardano={cardano} script={script} />
       </div>
-      <footer className='flex justify-end p-4 bg-gray-100'>
-        <Link href={`/treasuries/${encodeURIComponent(base64CBOR)}/edit`}>
+      <footer className='flex justify-end p-4 bg-gray-100 space-x-2'>
+        <Link href={`${path}/edit`}>
           <a className='px-4 py-2 border text-sky-700 rounded'>Edit Info</a>
+        </Link>
+        <Link href={`${path}/new`}>
+          <a className='px-4 py-2 border text-white bg-sky-700 rounded'>Create Transaction</a>
         </Link>
       </footer>
     </Panel>
