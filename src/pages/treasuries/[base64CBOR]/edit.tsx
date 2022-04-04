@@ -54,14 +54,14 @@ const EditTreasury: NextPage<{
       </div>
       <footer className='flex justify-between p-4 bg-gray-100'>
         <DeleteTreasuryButton
-          className='px-4 py-2 text-sky-700 disabled:text-gray-500'
+          className='px-4 py-2 text-sky-700 disabled:text-gray-400'
           script={script}>
           Delete
         </DeleteTreasuryButton>
         <div className='space-x-2'>
           <BackButton className='px-4 py-2 border rounded text-sky-700'>Back</BackButton>
           <SaveTreasuryButton
-            className='px-4 py-2 bg-sky-700 text-white rounded shadow disabled:text-gray-500 disabled:bg-gray-100'
+            className='px-4 py-2 bg-sky-700 text-white rounded shadow disabled:text-gray-400 disabled:bg-gray-100'
             name={name}
             description={description}
             script={script}>
