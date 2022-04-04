@@ -46,7 +46,7 @@ const NavLink: NextPage<{
 
 const PrimaryBar: NextPage = () => {
   return (
-    <aside className='flex flex-col basis-20 bg-sky-900 items-center text-white'>
+    <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
       <Link href='/'>
         <a className='p-4 hover:bg-sky-700'>
           <HomeIcon className='w-12' />
@@ -80,7 +80,7 @@ const SecondaryBar: NextPage = () => {
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
 
   return (
-    <aside className='flex flex-col basis-60 bg-sky-800 items-center text-white overflow-y-scroll'>
+    <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-scroll'>
       <div className='w-full bg-sky-900 font-semibold'>
         <NavLink
           href='/treasuries/new'
@@ -106,7 +106,7 @@ const Layout: NextPage = ({ children }) => {
     <div className='flex h-screen'>
       <PrimaryBar />
       <SecondaryBar />
-      <div className='grow bg-sky-100 overflow-y-scroll'>
+      <div className='w-full bg-sky-100 overflow-y-scroll'>
         {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
         <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />

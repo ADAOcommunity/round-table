@@ -140,10 +140,7 @@ const NewTreasury: NextPage = () => {
       }
     }, { isOk: true, data: new Array<Ed25519KeyHash>() })
 
-  const script =
-    addresses.size > 1 &&
-    keyHashesResult.isOk &&
-    cardano.buildMultiSigScript(keyHashesResult.data, scriptType, required)
+  const script = addresses.size > 1 && keyHashesResult.isOk ? cardano.buildMultiSigScript(keyHashesResult.data, scriptType, required) : undefined
 
   const addAddress = (address: string) => {
     setAddresses(new Set(addresses).add(address))

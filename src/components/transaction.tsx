@@ -16,6 +16,7 @@ import { db } from '../db'
 import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 type Recipient = {
   id: string
@@ -296,7 +297,7 @@ const NewTransaction: NextPage<{
   const base64Transaction = transactionResult.isOk && Buffer.from(transactionResult.data.to_bytes()).toString('base64')
 
   return (
-    <Panel title='New Transaction'>
+    <Panel>
       {!transactionResult.isOk && (
         <p className='p-2 text-center text-red-600 bg-red-200'>{transactionResult.message}</p>
       )}
@@ -405,7 +406,7 @@ const TransactionBodyViewer: NextPage<{
   })
 
   return (
-    <Panel title='Proposal'>
+    <Panel>
       <div className='p-4'>
         <h2 className='text-center text-bg mb-4 space-x-2'>
           <span className='font-bold'>TxHash:</span>
@@ -468,22 +469,64 @@ const CopyToClipboardButton: NextPage<{
   )
 }
 
+const AddressViewer: NextPage<{
+  address: Address
+}> = ({ address }) => {
+  const bech32 = address.to_bech32()
+  return (
+    <span className='items-center'>
+      <span>{bech32}</span>
+      <CopyToClipboardButton className='p-2' content={bech32}>
+        <DuplicateIcon className='w-4' />
+      </CopyToClipboardButton>
+    </span>
+  )
+}
+
+const NativeScriptInfoViewer: NextPage<{
+  className?: string
+  script: NativeScript
+}> = ({ className, script }) => {
+  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+
+  return (
+    <div className={className}>
+      <h1 className='font-semibold text-lg'>{treasury?.name || 'No name'}</h1>
+      {treasury?.description &&
+        <article>
+          {treasury?.description}
+        </article>
+      }
+    </div>
+  )
+}
+
 const NativeScriptViewer: NextPage<{
   cardano: Cardano
+  className?: string
   script: NativeScript
   signatures?: Map<string, Vkeywitness>
-}> = ({ cardano, script, signatures }) => {
+}> = ({ cardano, className, script, signatures }) => {
 
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
   const requireSignatures = cardano.getRequiredSignatures(script)
 
   return (
-    <Panel title='Native Script'>
-      <div className='p-4 text-center font-mono'>
-        <h3 className='mb-2'>{address.to_bech32()}</h3>
-        <p className='text-center m-2'>{`${requireSignatures} signatures required`}</p>
-        <ul className='text-gray-500'>
+    <div className={className}>
+      <div className='space-y-1'>
+        <div className='font-semibold'>Address</div>
+        <ul>
+          <li><AddressViewer address={address} /></li>
+        </ul>
+      </div>
+      <div className='space-y-1'>
+        <div className='font-semibold'>Required Signers</div>
+        <div>{requireSignatures}</div>
+      </div>
+      <div className='space-y-1'>
+        <div className='font-semibold'>Key Hash</div>
+        <ul>
           {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
             const signature = signatures?.get(toHex(keyHash))
             const hex = signature && cardano.buildSingleSignatureHex(signature)
@@ -497,7 +540,7 @@ const NativeScriptViewer: NextPage<{
           })}
         </ul>
       </div>
-    </Panel>
+    </div>
   )
 }
 
@@ -727,4 +770,4 @@ const SignatureSync: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptViewer, NewTransaction, SignatureSync }
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync }

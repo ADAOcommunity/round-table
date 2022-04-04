@@ -1,17 +1,17 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Layout, Panel } from '../../components/layout'
-import { Cardano, encodeCardanoData } from '../../cardano/serialization-lib'
-import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
-import { ErrorMessage, Loading } from '../../components/status'
+import { Hero, Layout } from '../../../components/layout'
+import { Cardano, encodeCardanoData } from '../../../cardano/serialization-lib'
+import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
+import { ErrorMessage, Loading } from '../../../components/status'
 import { useContext } from 'react'
-import { ConfigContext } from '../../cardano/config'
-import { NativeScriptViewer, NewTransaction } from '../../components/transaction'
-import type { ProtocolParameters } from '../../cardano/query-api'
-import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
+import { ConfigContext } from '../../../cardano/config'
+import { NativeScriptViewer, NewTransaction } from '../../../components/transaction'
+import type { ProtocolParameters } from '../../../cardano/query-api'
+import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../../cardano/query-api'
 import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../../db'
+import { db } from '../../../db'
 
 const NewMultiSigTransaction: NextPage<{
   cardano: Cardano
@@ -34,12 +34,14 @@ const NewMultiSigTransaction: NextPage<{
   return (
     <Layout>
       <div className='space-y-2'>
-        <h1 className='my-8 font-bold'>{treasury?.name || 'No name'}</h1>
-        {treasury?.description &&
-          <article className='p-4'>
-            {treasury?.description}
-          </article>
-        }
+        <Hero>
+          <h1 className='font-semibold text-lg'>{treasury?.name || 'No name'}</h1>
+          {treasury?.description &&
+            <article className='whitespace-pre-line'>
+              {treasury?.description}
+            </article>
+          }
+        </Hero>
         <NativeScriptViewer cardano={cardano} script={script} />
         <NewTransaction
           changeAddress={address}
