@@ -515,7 +515,7 @@ const NativeScriptViewer: NextPage<{
   return (
     <div className={className}>
       <div className='space-y-1'>
-        <div className='font-semibold'>Address</div>
+        <div className='font-semibold'>Treasury Address</div>
         <ul>
           <li><AddressViewer address={address} /></li>
         </ul>
