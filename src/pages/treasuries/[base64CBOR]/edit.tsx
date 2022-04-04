@@ -1,7 +1,7 @@
 import { NextPage } from 'next'
 import { NextRouter, useRouter } from 'next/router'
 import { encodeCardanoData, getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
-import { Hero, Layout, Panel } from '../../../components/layout'
+import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
 import { NativeScriptViewer, SaveTreasuryButton } from '../../../components/transaction'
@@ -62,7 +62,7 @@ const EditTreasury: NextPage<{
       <footer className='flex justify-between p-4 bg-gray-100'>
         <button onClick={deleteHandle} className='px-4 py-2 text-sky-700'>Delete</button>
         <div className='space-x-2'>
-          <button className='px-4 py-2 border rounded text-sky-700' onClick={() => router.back()}>Back</button>
+          <BackButton className='px-4 py-2 border rounded text-sky-700'>Back</BackButton>
           <SaveTreasuryButton
             className='px-4 py-2 bg-sky-700 text-white rounded shadow disabled:text-gray-400 disabled:bg-transparent'
             name={name}

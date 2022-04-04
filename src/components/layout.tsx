@@ -6,6 +6,7 @@ import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Treasury } from '../db'
+import { useRouter } from 'next/router'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -27,6 +28,13 @@ const Panel: NextPage<{className?: string}> = ({ children, className }) => {
       {children}
     </div>
   )
+}
+
+const BackButton: NextPage<{
+  className?: string
+}> = ({ children, className }) => {
+  const router = useRouter()
+  return <button className={className} onClick={() => router.back()}>{children}</button>;
 }
 
 const NavLink: NextPage<{
@@ -121,4 +129,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export { Layout, Panel, Toggle, Hero }
+export { Layout, Panel, Toggle, Hero, BackButton }
