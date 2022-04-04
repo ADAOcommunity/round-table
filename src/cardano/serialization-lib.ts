@@ -95,12 +95,12 @@ class Cardano {
     return Transaction.new(transaction.body(), witnessSet, transaction.auxiliary_data())
   }
 
-  public buildSingleSignatureHex(vkey: Vkeywitness): string {
+  public buildSignatureSetHex(vkeys: Vkeywitness[]): string {
     const { TransactionWitnessSet, Vkeywitnesses } = this.lib
     const witnessSet = TransactionWitnessSet.new()
-    const vkeys = Vkeywitnesses.new()
-    vkeys.add(vkey)
-    witnessSet.set_vkeys(vkeys)
+    const vkeySet = Vkeywitnesses.new()
+    vkeys.forEach((vkey) => vkeySet.add(vkey))
+    witnessSet.set_vkeys(vkeySet)
     return toHex(witnessSet)
   }
 

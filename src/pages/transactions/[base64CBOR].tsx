@@ -4,7 +4,7 @@ import { Layout, Panel } from '../../components/layout'
 import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useContext, useState } from 'react'
 import { PencilAltIcon } from '@heroicons/react/solid'
@@ -22,7 +22,7 @@ const ManualSign: NextPage<{
   }
 
   return (
-    <Panel title='Sign'>
+    <Panel>
       <textarea
         className='block w-full p-4 outline-none'
         rows={4}
@@ -30,15 +30,15 @@ const ManualSign: NextPage<{
         onChange={(e) => setSignature(e.target.value)}
         placeholder="Signature">
       </textarea>
-      <footer className='flex px-4 py-2 bg-gray-100 space-x-2'>
-        {children}
+      <footer className='flex p-4 bg-gray-100 space-x-2'>
         <button
           onClick={manualSignHandle}
           disabled={isDisabled}
-          className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500'>
+          className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
           <PencilAltIcon className='h-6' />
           <span>Manual Sign</span>
         </button>
+        {children}
       </footer>
     </Panel>
   )
@@ -108,11 +108,32 @@ const GetTransaction: NextPage = () => {
     <Layout>
       <div className='space-y-2'>
         <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
-        {txMessage && <Panel title='Message'>
-          <div className='p-4'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+        {txMessage && <Panel className='space-y-1 p-4'>
+          <div className='font-semibold'>Message</div>
+          <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
-          <NativeScriptViewer cardano={cardano} script={script} signatures={signatureMap} key={index} />
+          <Panel>
+            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} key={index} />
+            <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
+              <div className='flex space-x-1 items-center'>
+                <SignatureSync
+                  cardano={cardano}
+                  txHash={txHash}
+                  signatures={signatureMap}
+                  signHandle={signHandle}
+                  signers={signerRegistry}
+                  config={config} />
+                <div className='text-sm'>Auto sync the signatures with other signers</div>
+              </div>
+              <CopyVkeysButton
+                cardano={cardano}
+                vkeys={Array.from(signatureMap.values())}
+                className='px-4 py-2 border text-sky-700 rounded disabled:text-gray-400'>
+                Copy all signatures
+              </CopyVkeysButton>
+            </footer>
+          </Panel>
         )}
         <ManualSign signHandle={signHandle}>
           <SignTxButton
@@ -120,40 +141,33 @@ const GetTransaction: NextPage = () => {
             partialSign={true}
             signHandle={signHandle}
             wallet='nami'
-            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='gero'
-            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='eternl'
-            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
             wallet='flint'
-            className='flex items-center space-x-1 p-2 border rounded-md bg-blue-100 text-blue-500 disabled:bg-gray-100 disabled:text-gray-500' />
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
+          <div className='flex grow justify-end items-center space-x-4'>
+            <SubmitTxButton
+              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
+              transaction={signedTransaction}>
+              Submit Transaction
+            </SubmitTxButton>
+          </div>
         </ManualSign>
-        <div className='flex justify-center items-center space-x-4'>
-          <SignatureSync
-            cardano={cardano}
-            txHash={txHash}
-            signatures={signatureMap}
-            signHandle={signHandle}
-            signers={signerRegistry}
-            config={config} />
-          <SubmitTxButton
-            className='py-3 px-4 font-bold text-lg bg-green-100 text-green-500 rounded-full shadow disabled:bg-gray-100 disabled:text-gray-500'
-            transaction={signedTransaction}>
-            Submit Transaction
-          </SubmitTxButton>
-        </div>
       </div>
     </Layout>
   )

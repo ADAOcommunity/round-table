@@ -8,7 +8,7 @@ const Configure: NextPage = () => {
 
   return (
     <Layout>
-      <Panel title='Configuration'>
+      <Panel>
         <div className='p-4 space-y-2'>
           <p className='space-x-2'>
             <span>Network:</span>

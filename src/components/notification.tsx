@@ -57,7 +57,7 @@ const Notification: NextPage<{
     const id = timer && setInterval(() => {
       isMounted && setProgress((prev) => {
         if (prev > 0) {
-          return prev - 0.1
+          return prev - 0.5
         }
         return 0
       })

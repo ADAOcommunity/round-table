@@ -1,17 +1,17 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Layout, Panel } from '../../components/layout'
-import { Cardano } from '../../cardano/serialization-lib'
-import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
-import { ErrorMessage, Loading } from '../../components/status'
+import { Layout, Panel } from '../../../components/layout'
+import { Cardano, encodeCardanoData } from '../../../cardano/serialization-lib'
+import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
+import { ErrorMessage, Loading } from '../../../components/status'
 import { useContext } from 'react'
-import { ConfigContext } from '../../cardano/config'
-import { NativeScriptViewer, NewTransaction } from '../../components/transaction'
-import type { ProtocolParameters } from '../../cardano/query-api'
-import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../cardano/query-api'
+import { ConfigContext } from '../../../cardano/config'
+import { NewTransaction } from '../../../components/transaction'
+import type { ProtocolParameters } from '../../../cardano/query-api'
+import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../../cardano/query-api'
 import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../../db'
+import { db } from '../../../db'
 
 const NewMultiSigTransaction: NextPage<{
   cardano: Cardano
@@ -22,7 +22,7 @@ const NewMultiSigTransaction: NextPage<{
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
 
-  const treasury = useLiveQuery(async () => db.treasuries.get(address.to_bech32()))
+  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')))
 
   const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
   if (utxos.type === 'loading') return <Loading />;
@@ -34,13 +34,14 @@ const NewMultiSigTransaction: NextPage<{
   return (
     <Layout>
       <div className='space-y-2'>
-        <h1 className='my-8 font-bold text-2xl text-center'>{treasury?.title || 'No title'}</h1>
-        {treasury?.description && <Panel title='description'>
-          <div className='p-4'>
-            {treasury?.description}
-          </div>
-        </Panel>}
-        <NativeScriptViewer cardano={cardano} script={script} />
+        <Panel className='p-4 space-y-1'>
+          <h1 className='font-semibold text-lg'>{treasury?.name || 'No name'}</h1>
+          {treasury?.description &&
+            <article className='whitespace-pre-line'>
+              {treasury?.description}
+            </article>
+          }
+        </Panel>
         <NewTransaction
           changeAddress={address}
           cardano={cardano}
@@ -52,7 +53,7 @@ const NewMultiSigTransaction: NextPage<{
   )
 }
 
-const Treasury: NextPage = () => {
+const GetTreasury: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
   const router = useRouter()
   const { base64CBOR } = router.query
@@ -73,4 +74,4 @@ const Treasury: NextPage = () => {
     script={script} />
 }
 
-export default Treasury
+export default GetTreasury

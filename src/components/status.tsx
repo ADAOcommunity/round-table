@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 
 const StatusPage: NextPage = ({ children }) => {
   return (
-    <div className='flex min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 justify-center items-center'>
+    <div className='flex min-h-screen bg-sky-100 justify-center items-center'>
       <div className='bg-white rounded-md shadow'>{children}</div>
     </div>
   )
@@ -10,11 +10,15 @@ const StatusPage: NextPage = ({ children }) => {
 
 const ErrorMessage: NextPage = ({ children }) => (
   <StatusPage>
-    <p className='p-8 text-lg text-red-900'>{children}</p>
+    <p className='px-8 py-4 text-lg text-white bg-red-900 rounded'>{children}</p>
   </StatusPage>
 )
 
-const Loading = () => <StatusPage><p className='p-8 text-lg text-gray-900'>Loading...</p></StatusPage>;
+const Loading = () => (
+  <StatusPage>
+    <p className='px-8 py-4 text-lg items-center space-x-2'>Loading...</p>
+  </StatusPage>
+)
 
 const ProgressBar: NextPage<{
   className?: string
