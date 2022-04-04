@@ -685,10 +685,11 @@ const SaveTreasuryButton: NextPage<{
   description: string
   script?: NativeScript
 }> = ({ name, description, script, className, children }) => {
-  if (!script) return <button className={className} disabled={true}>{children}</button>;
-
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
+
+  if (!script) return <button className={className} disabled={true}>{children}</button>;
+
   const base64CBOR = encodeCardanoData(script, 'base64')
 
   const submitHandle = () => {
