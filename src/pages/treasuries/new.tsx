@@ -200,7 +200,7 @@ const NewTreasury: NextPage = () => {
               </div>}
             {addresses.size > 1 &&
               <div className='space-y-1'>
-                <div>Policy</div>
+                <div>Required Signers</div>
                 <div className='flex space-x-2 items-center'>
                   <select className='bg-white border rounded p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
                     <option value="all">All</option>
