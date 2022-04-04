@@ -4,7 +4,7 @@ import { encodeCardanoData, getResult, useCardanoSerializationLib } from '../../
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
-import { NativeScriptViewer, SaveTreasuryButton } from '../../../components/transaction'
+import { DeleteTreasuryButton, NativeScriptViewer, SaveTreasuryButton } from '../../../components/transaction'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../../db'
 import { useEffect, useState } from 'react'
@@ -12,17 +12,10 @@ import { useEffect, useState } from 'react'
 const EditTreasury: NextPage<{
   router: NextRouter
   script: NativeScript
-}> = ({ router, script }) => {
+}> = ({ script }) => {
   const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-
-  const deleteHandle = () => {
-    db
-      .treasuries
-      .delete(encodeCardanoData(script, 'base64'))
-      .then(() => router.push('/treasuries/new'))
-  }
 
   useEffect(() => {
     let isMounted = true
@@ -60,11 +53,15 @@ const EditTreasury: NextPage<{
         </label>
       </div>
       <footer className='flex justify-between p-4 bg-gray-100'>
-        <button onClick={deleteHandle} className='px-4 py-2 text-sky-700'>Delete</button>
+        <DeleteTreasuryButton
+          className='px-4 py-2 text-sky-700 disabled:text-gray-500'
+          script={script}>
+          Delete
+        </DeleteTreasuryButton>
         <div className='space-x-2'>
           <BackButton className='px-4 py-2 border rounded text-sky-700'>Back</BackButton>
           <SaveTreasuryButton
-            className='px-4 py-2 bg-sky-700 text-white rounded shadow disabled:text-gray-400 disabled:bg-transparent'
+            className='px-4 py-2 bg-sky-700 text-white rounded shadow disabled:text-gray-500 disabled:bg-gray-100'
             name={name}
             description={description}
             script={script}>

@@ -508,6 +508,27 @@ const NativeScriptInfoViewer: NextPage<{
   )
 }
 
+const DeleteTreasuryButton: NextPage<{
+  className?: string
+  script: NativeScript
+}> = ({ className, children, script }) => {
+  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+  const router = useRouter()
+
+  const deleteHandle = () => {
+    db
+      .treasuries
+      .delete(encodeCardanoData(script, 'base64'))
+      .then(() => router.push('/treasuries/new'))
+  }
+
+  return (
+    <button onClick={deleteHandle} className={className} disabled={!treasury}>
+      {children}
+    </button>
+  )
+}
+
 const NativeScriptViewer: NextPage<{
   cardano: Cardano
   className?: string
@@ -791,4 +812,4 @@ const CopyVkeysButton: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton }
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton }
