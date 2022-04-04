@@ -34,7 +34,7 @@ const EditTreasury: NextPage<{
     <Panel>
       <div className='p-4 space-y-2'>
         <label className='block space-y-1'>
-          <div>Name</div>
+          <div className="after:content-['*'] after:text-red-500">Name</div>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
