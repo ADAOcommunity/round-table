@@ -61,7 +61,7 @@ const EditTreasury: NextPage<{
         <div className='space-x-2'>
           <BackButton className='px-4 py-2 border rounded text-sky-700'>Back</BackButton>
           <SaveTreasuryButton
-            className='px-4 py-2 bg-sky-700 text-white rounded shadow disabled:text-gray-400 disabled:bg-gray-100'
+            className='px-4 py-2 bg-sky-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
             name={name}
             description={description}
             script={script}>

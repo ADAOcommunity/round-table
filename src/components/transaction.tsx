@@ -728,8 +728,11 @@ const SaveTreasuryButton: NextPage<{
       .catch(() => notify('error', 'Failed to save'))
   }
 
+  const isValid = name.length > 0
+
   return (
     <button
+      disabled={!isValid}
       className={className}
       onClick={submitHandle}>
       {children}
