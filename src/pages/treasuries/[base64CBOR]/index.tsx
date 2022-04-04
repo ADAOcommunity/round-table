@@ -39,7 +39,7 @@ const ShowBalance: NextPage<{
                 decimals={0}
                 symbol={symbol} />
               <div className='space-x-1'>
-                <span>PolicyID:</span>
+                <span>Policy ID:</span>
                 <span>{getPolicyId(id)}</span>
               </div>
             </li>
