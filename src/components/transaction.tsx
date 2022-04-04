@@ -346,7 +346,7 @@ const NewTransaction: NextPage<{
           </button>
           {base64Transaction &&
             <Link href={`/transactions/${encodeURIComponent(base64Transaction)}`}>
-              <a className='px-4 py-2 rounded text-white bg-sky-700'>Review Proposal</a>
+              <a className='px-4 py-2 rounded text-white bg-sky-700'>Review Transaction</a>
             </Link>
           }
         </nav>
