@@ -78,7 +78,7 @@ const AddressInput: NextPage<{
       onKeyDown={enterPressHandle}
       rows={1}
       value={address}
-      placeholder="Add receiving address and press enter">
+      placeholder="Add signer address and press enter">
     </textarea>
   )
 }
