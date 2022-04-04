@@ -22,7 +22,7 @@ const Toggle: NextPage<{
   )
 }
 
-const Panel: NextPage<{className?: string}> = ({ children, className }) => {
+const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
   return (
     <div className={'border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden ' + className}>
       {children}
@@ -56,7 +56,7 @@ const NavLink: NextPage<{
     return () => {
       isMounted = false
     }
-  })
+  }, [parentPaths])
 
   return (
     <Link href={href}>
@@ -119,7 +119,7 @@ const SecondaryBar: NextPage = () => {
 }
 
 const Hero: NextPage<{ className?: string }> = ({ className, children }) => {
-  return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{ children }</div>;
+  return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
 }
 
 const Layout: NextPage = ({ children }) => {
