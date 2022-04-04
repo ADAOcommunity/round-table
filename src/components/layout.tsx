@@ -34,7 +34,9 @@ const NavLink: NextPage<{
   href: string
   onPageClassName: string
 }> = ({ children, className, href, onPageClassName }) => {
-  const isOnPage = document.location.pathname === href
+  const currentPaths = document.location.pathname.split('/')
+  const parentPaths = href.split('/')
+  const isOnPage = parentPaths.every((name, index) => name === currentPaths[index])
   return (
     <Link href={href}>
       <a className={[className, isOnPage ? onPageClassName : ''].join(' ')}>
