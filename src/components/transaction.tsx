@@ -474,26 +474,6 @@ const TransactionBodyViewer: NextPage<{
   )
 }
 
-const CopyToClipboardButton: NextPage<{
-  className?: string
-  content: string
-  disabled?: boolean
-}> = ({ className, content, children, disabled }) => {
-
-  const clickHandle = () => {
-    navigator.clipboard.writeText(content)
-  }
-
-  return (
-    <button
-      onClick={clickHandle}
-      disabled={!!disabled}
-      className={className}>
-      {children}
-    </button>
-  )
-}
-
 const AddressViewer: NextPage<{
   address: Address
 }> = ({ address }) => {
@@ -501,9 +481,9 @@ const AddressViewer: NextPage<{
   return (
     <span className='items-center'>
       <span>{bech32}</span>
-      <CopyToClipboardButton className='p-2' content={bech32}>
+      <CopyButton className='p-2 text-sm' getContent={() => bech32} ms={500}>
         <DuplicateIcon className='w-4' />
-      </CopyToClipboardButton>
+      </CopyButton>
     </span>
   )
 }
