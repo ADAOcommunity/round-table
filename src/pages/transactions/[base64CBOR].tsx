@@ -1,13 +1,13 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Layout, Panel } from '../../components/layout'
+import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/layout'
 import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useContext, useState } from 'react'
-import { PencilAltIcon } from '@heroicons/react/solid'
+import { PencilAltIcon, ShareIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
 
 const ManualSign: NextPage<{
@@ -107,6 +107,17 @@ const GetTransaction: NextPage = () => {
   return (
     <Layout>
       <div className='space-y-2'>
+        <Hero>
+          <h1 className='font-semibold text-lg'>Review Transaction</h1>
+          <p>Share current page URL to other signers so they can sign.</p>
+          <nav>
+            <ShareCurrentURLButton
+              className='flex space-x-1 bg-white text-sky-700 py-1 px-2 rounded shadow w-32 justify-center items-center'>
+              <ShareIcon className='w-4' />
+              <span>Copy URL</span>
+            </ShareCurrentURLButton>
+          </nav>
+        </Hero>
         <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
         {txMessage && <Panel className='space-y-1 p-4'>
           <div className='font-semibold'>Message</div>

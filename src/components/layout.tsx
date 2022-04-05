@@ -32,6 +32,48 @@ const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
   )
 }
 
+const CopyButton: NextPage<{
+  getContent: () => string
+  className?: string
+  ms?: number
+}> = ({ children, className, getContent, ms }) => {
+  const [isCopied, setIsCopied] = useState(false)
+
+  const clickHandle = () => {
+    navigator.clipboard.writeText(getContent())
+    setIsCopied(true)
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    const timer = setTimeout(() => {
+      if (isMounted && isCopied) setIsCopied(false)
+    }, ms)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
+    }
+  }, [isCopied])
+
+  return (
+    <button className={className} disabled={isCopied} onClick={clickHandle}>
+      {isCopied ? 'Copied!' : children}
+    </button>
+  )
+}
+
+const ShareCurrentURLButton: NextPage<{
+  className?: string
+}> = ({ children, className }) => {
+  return (
+    <CopyButton className={className} getContent={() => document.location.href} ms={500}>
+      {children}
+    </CopyButton>
+  )
+}
+
 const BackButton: NextPage<{
   className?: string
 }> = ({ children, className }) => {
@@ -152,4 +194,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton }
+export { Layout, Panel, Toggle, Hero, BackButton, CopyButton, ShareCurrentURLButton }

@@ -428,46 +428,44 @@ const TransactionBodyViewer: NextPage<{
   })
 
   return (
-    <Panel>
-      <div className='p-4'>
-        <h2 className='text-center text-bg mb-4 space-x-2'>
-          <span className='font-semibold'>TxHash:</span>
-          <span>{toHex(txHash)}</span>
-        </h2>
-        <div className='flex items-center'>
-          <ul className='basis-[47.5%] space-y-1'>
-            {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
-              <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
-            )}
-          </ul>
-          <div className='basis-[5%] flex justify-center'>
-            <ArrowRightIcon className='h-10 w-10' />
-          </div>
-          <ul className='basis-[47.5%] space-y-1'>
-            {recipients.map(({ id, address, value }) =>
-              <li key={id} className='p-2 border rounded-md'>
-                <p className='flex space-x-1 break-all'>{address}</p>
-                <p>
-                  <ADAAmount lovelace={value.lovelace} />
-                </p>
-                <ul>
-                  {Array.from(value.assets).map(([id, quantity]) =>
-                    <li key={id}>
-                      <AssetAmount
-                        quantity={quantity}
-                        decimals={0}
-                        symbol={decodeASCII(getAssetName(id))} />
-                    </li>
-                  )}
-                </ul>
-              </li>
-            )}
-            <li className='p-2 border rounded-md space-x-1'>
-              <span>Fee:</span>
-              <ADAAmount lovelace={fee} />
-            </li>
-          </ul>
+    <Panel className='p-4 space-y-2'>
+      <h2 className='text-center text-bg mb-4 space-x-2'>
+        <span className='font-semibold'>TxHash:</span>
+        <span>{toHex(txHash)}</span>
+      </h2>
+      <div className='flex items-center'>
+        <ul className='basis-[47.5%] space-y-1'>
+          {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
+            <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
+          )}
+        </ul>
+        <div className='basis-[5%] flex justify-center'>
+          <ArrowRightIcon className='h-10 w-10' />
         </div>
+        <ul className='basis-[47.5%] space-y-1'>
+          {recipients.map(({ id, address, value }) =>
+            <li key={id} className='p-2 border rounded-md'>
+              <p className='flex space-x-1 break-all'>{address}</p>
+              <p>
+                <ADAAmount lovelace={value.lovelace} />
+              </p>
+              <ul>
+                {Array.from(value.assets).map(([id, quantity]) =>
+                  <li key={id}>
+                    <AssetAmount
+                      quantity={quantity}
+                      decimals={0}
+                      symbol={decodeASCII(getAssetName(id))} />
+                  </li>
+                )}
+              </ul>
+            </li>
+          )}
+          <li className='p-2 border rounded-md space-x-1'>
+            <span>Fee:</span>
+            <ADAAmount lovelace={fee} />
+          </li>
+        </ul>
       </div>
     </Panel>
   )
