@@ -1,7 +1,7 @@
 import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { encodeCardanoData, getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
+import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
 import type { Cardano } from '../../../cardano/serialization-lib'
 import { Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
@@ -11,6 +11,7 @@ import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
 import { getAssetName, getBalance, getPolicyId, useAddressUTxOsQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
+import { getTreasuryPath } from '../../../route'
 
 const ShowBalance: NextPage<{
   cardano: Cardano
@@ -54,9 +55,6 @@ const ShowTreasury: NextPage<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {
-  const base64CBOR = encodeCardanoData(script, 'base64')
-  const path = `/treasuries/${encodeURIComponent(base64CBOR)}`
-
   return (
     <Panel>
       <div className='p-4 space-y-2'>
@@ -65,10 +63,10 @@ const ShowTreasury: NextPage<{
         <ShowBalance cardano={cardano} script={script} />
       </div>
       <footer className='flex justify-end p-4 bg-gray-100 space-x-2'>
-        <Link href={`${path}/edit`}>
+        <Link href={getTreasuryPath(script, 'edit')}>
           <a className='px-4 py-2 border text-sky-700 rounded'>Edit Info</a>
         </Link>
-        <Link href={`${path}/new`}>
+        <Link href={getTreasuryPath(script, 'new')}>
           <a className='px-4 py-2 border text-white bg-sky-700 rounded'>Create Transaction</a>
         </Link>
       </footer>

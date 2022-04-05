@@ -8,6 +8,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
+import { getTreasuriesPath } from '../route'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -100,7 +101,7 @@ const TreasuryListing: NextPage<{
   const { name, script } = treasury
   return (
     <NavLink
-      href={`/treasuries/${encodeURIComponent(script)}`}
+      href={getTreasuriesPath(encodeURIComponent(script))}
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-sky-700'>
       {name}

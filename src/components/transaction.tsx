@@ -17,6 +17,7 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { getTreasuriesPath, getTreasuryPath } from '../route'
 
 type Recipient = {
   id: string
@@ -540,7 +541,7 @@ const DeleteTreasuryButton: NextPage<{
     db
       .treasuries
       .delete(encodeCardanoData(script, 'base64'))
-      .then(() => router.push('/treasuries/new'))
+      .then(() => router.push(getTreasuriesPath('new')))
   }
 
   return (
@@ -745,7 +746,7 @@ const SaveTreasuryButton: NextPage<{
     db
       .treasuries
       .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
-      .then(() => router.push(`/treasuries/${encodeURIComponent(base64CBOR)}`))
+      .then(() => router.push(getTreasuryPath(script)))
       .catch(() => notify('error', 'Failed to save'))
   }
 
