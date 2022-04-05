@@ -40,7 +40,7 @@ describe('Create a new treasury', () => {
     cy.contains('Required Signers').parent().find('select').select('At least')
     cy.contains('Required Signers').parent().find('input').type('{selectall}{backspace}')
     cy.contains('Required Signers').parent().find('input').type('100')
-    cy.contains('Save Treasury').should('be.disabled')
+    cy.contains('Required Signers').parent().find('input').should('have.value',addresses.length.toString())
   })
 
   it('should save treasury', () => {
