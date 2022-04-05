@@ -8,7 +8,7 @@ import { nanoid } from 'nanoid'
 import { ArrowRightIcon, CheckIcon, DuplicateIcon, PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
-import { BackButton, Panel, Toggle } from './layout'
+import { BackButton, CopyButton, Panel, Toggle } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -826,14 +826,14 @@ const CopyVkeysButton: NextPage<{
   className?: string
   vkeys: Vkeywitness[]
 }> = ({ cardano, className, children, vkeys }) => {
-  const content = cardano.buildSignatureSetHex(vkeys)
   return (
-    <CopyToClipboardButton
+    <CopyButton
+      getContent={() => cardano.buildSignatureSetHex(vkeys)}
       disabled={vkeys.length === 0}
-      className={className}
-      content={content}>
+      ms={500}
+      className={className}>
       {children}
-    </CopyToClipboardButton>
+    </CopyButton>
   )
 }
 

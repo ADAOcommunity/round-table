@@ -140,8 +140,9 @@ const GetTransaction: NextPage = () => {
               <CopyVkeysButton
                 cardano={cardano}
                 vkeys={Array.from(signatureMap.values())}
-                className='px-4 py-2 border text-sky-700 rounded disabled:text-gray-400'>
-                Copy all signatures
+                className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+                <ShareIcon className='w-4' />
+                <span>Copy my signatures</span>
               </CopyVkeysButton>
             </footer>
           </Panel>

@@ -33,10 +33,11 @@ const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
 }
 
 const CopyButton: NextPage<{
-  getContent: () => string
+  disabled?: boolean
   className?: string
+  getContent: () => string
   ms?: number
-}> = ({ children, className, getContent, ms }) => {
+}> = ({ children, className, disabled, getContent, ms }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const clickHandle = () => {
@@ -58,7 +59,7 @@ const CopyButton: NextPage<{
   }, [isCopied])
 
   return (
-    <button className={className} disabled={isCopied} onClick={clickHandle}>
+    <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
       {isCopied ? 'Copied!' : children}
     </button>
   )
