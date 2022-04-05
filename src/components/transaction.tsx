@@ -54,17 +54,22 @@ const LabeledCurrencyInput: NextPage<{
   }
 
   return (
-    <label className='flex grow border rounded-md overflow-hidden'>
+    <label className='flex grow border rounded overflow-hidden'>
       <CurrencyInput
         className='p-2 block w-full outline-none'
         decimals={decimal}
         value={value}
         onChange={changeHandle}
         placeholder={placeholder} />
-      <span className='p-2'>{symbol}</span>
-      <button onClick={() => onChange(max)} className='bg-gray-100 px-1 group hover:space-x-1'>
-        <span>Max</span>
-        <span className='hidden group-hover:inline'>{toDecimal(max, decimal)}</span>
+      <div className='p-2 space-x-1'>
+        <span>of</span>
+        <span>{toDecimal(max, decimal)}</span>
+        <span>{symbol}</span>
+      </div>
+      <button
+        onClick={() => onChange(max)}
+        className='bg-gray-100 border-l py-2 px-4 group text-sky-700'>
+        Max
       </button>
     </label>
   )
@@ -147,8 +152,8 @@ const Recipient: NextPage<{
   return (
     <div className='p-4 space-y-2'>
       <div>
-        <label className='flex block border rounded-md overflow-hidden'>
-          <span className='p-2 bg-gray-200'>TO</span>
+        <label className='flex block border rounded overflow-hidden'>
+          <span className='p-2 bg-gray-100 border-r'>To</span>
           <input
             className='p-2 block w-full outline-none'
             value={address}
