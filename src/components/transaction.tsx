@@ -829,7 +829,7 @@ const CopyVkeysButton: NextPage<{
   return (
     <CopyButton
       getContent={() => cardano.buildSignatureSetHex(vkeys)}
-      disabled={vkeys.length === 0}
+      disabled={vkeys.length <= 0}
       ms={500}
       className={className}>
       {children}
