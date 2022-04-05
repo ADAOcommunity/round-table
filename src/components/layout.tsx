@@ -56,7 +56,7 @@ const CopyButton: NextPage<{
       isMounted = false
       clearTimeout(timer)
     }
-  }, [isCopied])
+  }, [isCopied, ms])
 
   return (
     <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
