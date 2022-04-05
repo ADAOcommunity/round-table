@@ -5,10 +5,10 @@ import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { ArrowRightIcon, CheckIcon, DuplicateIcon, PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
+import { CheckIcon, DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
-import { BackButton, Panel, Toggle } from './layout'
+import { BackButton, CardanoScanLink, CopyButton, Panel, Toggle } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -17,6 +17,7 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { getTreasuriesPath, getTreasuryPath } from '../route'
 
 type Recipient = {
   id: string
@@ -54,19 +55,63 @@ const LabeledCurrencyInput: NextPage<{
   }
 
   return (
-    <label className='flex grow border rounded-md overflow-hidden'>
+    <label className='flex grow border rounded overflow-hidden'>
       <CurrencyInput
         className='p-2 block w-full outline-none'
         decimals={decimal}
         value={value}
         onChange={changeHandle}
         placeholder={placeholder} />
-      <span className='p-2'>{symbol}</span>
-      <button onClick={() => onChange(max)} className='bg-gray-100 px-1 group hover:space-x-1'>
-        <span>Max</span>
-        <span className='hidden group-hover:inline'>{toDecimal(max, decimal)}</span>
+      <div className='p-2 space-x-1'>
+        <span>of</span>
+        <span>{toDecimal(max, decimal)}</span>
+        <span>{symbol}</span>
+      </div>
+      <button
+        onClick={() => onChange(max)}
+        className='bg-gray-100 border-l py-2 px-4 group text-sky-700'>
+        Max
       </button>
     </label>
+  )
+}
+
+const AddAssetButton: NextPage<{
+  budget: Value
+  value: Value
+  onSelect: (id: string) => void
+}> = ({ budget, value, onSelect }) => {
+  const assets = Array
+    .from(budget.assets)
+    .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
+  const isDisabled = assets.length <= 0
+
+  return (
+    <div className='relative'>
+      <button
+        className='flex text-sky-700 py-2 space-x-1 peer items-center disabled:text-gray-400'
+        disabled={isDisabled}>
+        <PlusIcon className='w-4' />
+        <span>Add Asset</span>
+      </button>
+      <ul className='absolute divide-y bg-white text-sm max-h-64 border rounded shadow overflow-y-auto scale-0 z-50 peer-focus:scale-100 hover:scale-100'>
+        {assets.map(([id, quantity]) => (
+          <li key={id}>
+            <button
+              onClick={() => onSelect(id)}
+              className='block w-full h-full p-2 hover:bg-sky-700 hover:text-white'>
+              <div className='flex space-x-2'>
+                <span>{decodeASCII(getAssetName(id))}</span>
+                <span className='grow text-right'>{quantity.toString()}</span>
+              </div>
+              <div className='flex space-x-1'>
+                <span className='text-xs'>{id.slice(0, 56)}</span>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
@@ -108,8 +153,8 @@ const Recipient: NextPage<{
   return (
     <div className='p-4 space-y-2'>
       <div>
-        <label className='flex block border rounded-md overflow-hidden'>
-          <span className='p-2 bg-gray-200'>TO</span>
+        <label className='flex block border rounded overflow-hidden'>
+          <span className='p-2 bg-gray-100 border-r'>To</span>
           <input
             className='p-2 block w-full outline-none'
             value={address}
@@ -144,31 +189,7 @@ const Recipient: NextPage<{
           )
         })}
       </ul>
-      <div className='relative'>
-        <button className='flex text-sky-700 py-2 space-x-1 peer items-center'>
-          <PlusIcon className='w-4' />
-          <span>Add Asset</span>
-        </button>
-        <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 border rounded shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
-          {Array.from(budget.assets)
-            .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
-            .map(([id, quantity]) => (
-              <li key={id}>
-                <button
-                  onClick={() => setAsset(id, BigInt(0))}
-                  className='block w-full h-full p-2 hover:bg-sky-700 hover:text-white'>
-                  <div className='flex space-x-2'>
-                    <span>{decodeASCII(getAssetName(id))}</span>
-                    <span className='grow text-right'>{quantity.toString()}</span>
-                  </div>
-                  <div className='flex space-x-1'>
-                    <span className='text-xs'>{id.slice(0, 56)}</span>
-                  </div>
-                </button>
-              </li>
-            ))}
-        </ul>
-      </div>
+      <AddAssetButton budget={budget} value={value} onSelect={(id) => setAsset(id, BigInt(0))} />
     </div>
   )
 }
@@ -323,6 +344,7 @@ const NewTransaction: NextPage<{
         </header>
         <textarea
           className='p-4 block w-full outline-none'
+          placeholder='Optional transaction message'
           rows={4}
           value={message}
           onChange={(e) => setMessage(e.target.value)}>
@@ -406,22 +428,28 @@ const TransactionBodyViewer: NextPage<{
   })
 
   return (
-    <Panel>
-      <div className='p-4'>
-        <h2 className='text-center text-bg mb-4 space-x-2'>
-          <span className='font-semibold'>TxHash:</span>
+    <Panel className='p-4 space-y-2'>
+      <div className='space-y-1'>
+        <div className='font-semibold'>TxHash</div>
+        <div className='flex items-center space-x-1'>
           <span>{toHex(txHash)}</span>
-        </h2>
-        <div className='flex items-center'>
-          <ul className='basis-[47.5%] space-y-1'>
+          <span>
+            <CardanoScanLink className='block text-sky-700 p-2' type='transaction' id={toHex(txHash)}><SearchIcon className='w-4' /></CardanoScanLink>
+          </span>
+        </div>
+      </div>
+      <div className='flex space-x-2'>
+        <div className='basis-1/2 space-y-1'>
+          <div className='font-semibold'>From</div>
+          <ul className='space-y-1'>
             {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
               <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
             )}
           </ul>
-          <div className='basis-[5%] flex justify-center'>
-            <ArrowRightIcon className='h-10 w-10' />
-          </div>
-          <ul className='basis-[47.5%] space-y-1'>
+        </div>
+        <div className='basis-1/2 space-y-1'>
+          <div className='font-semibold'>To</div>
+          <ul className='space-y-1'>
             {recipients.map(({ id, address, value }) =>
               <li key={id} className='p-2 border rounded-md'>
                 <p className='flex space-x-1 break-all'>{address}</p>
@@ -451,26 +479,6 @@ const TransactionBodyViewer: NextPage<{
   )
 }
 
-const CopyToClipboardButton: NextPage<{
-  className?: string
-  content: string
-  disabled?: boolean
-}> = ({ className, content, children, disabled }) => {
-
-  const clickHandle = () => {
-    navigator.clipboard.writeText(content)
-  }
-
-  return (
-    <button
-      onClick={clickHandle}
-      disabled={!!disabled}
-      className={className}>
-      {children}
-    </button>
-  )
-}
-
 const AddressViewer: NextPage<{
   address: Address
 }> = ({ address }) => {
@@ -478,9 +486,9 @@ const AddressViewer: NextPage<{
   return (
     <span className='items-center'>
       <span>{bech32}</span>
-      <CopyToClipboardButton className='p-2' content={bech32}>
+      <CopyButton className='p-2 text-sm' getContent={() => bech32} ms={500}>
         <DuplicateIcon className='w-4' />
-      </CopyToClipboardButton>
+      </CopyButton>
     </span>
   )
 }
@@ -492,9 +500,11 @@ const NativeScriptInfoViewer: NextPage<{
   const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
 
   if (!treasury) return (
-    <div className='p-4 text-white bg-sky-700 rounded space-y-1'>
+    <div className='p-4 text-white bg-sky-700 rounded shadow space-y-1'>
       <div className='font-semibold'>Note</div>
-      <div>This is an unknown treasury. You can save it by editing its info.</div>
+      <div>
+        This is an unknown treasury. You can <Link href={getTreasuryPath(script, 'edit')}><a className='underline'>save it</a></Link> by editing its info.
+      </div>
     </div>
   )
 
@@ -519,7 +529,7 @@ const DeleteTreasuryButton: NextPage<{
     db
       .treasuries
       .delete(encodeCardanoData(script, 'base64'))
-      .then(() => router.push('/treasuries/new'))
+      .then(() => router.push(getTreasuriesPath('new')))
   }
 
   return (
@@ -562,7 +572,7 @@ const NativeScriptViewer: NextPage<{
               <li key={index} className={'flex items-center ' + (signature ? 'text-green-500' : '')}>
                 <span>{toHex(keyHash)}</span>
                 {signature && <span><CheckIcon className='w-4' /></span>}
-                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='w-4' /></CopyToClipboardButton>}
+                {hex && <CopyButton className='text-sm' getContent={() => hex} ms={500}><DuplicateIcon className='w-4' /></CopyButton>}
               </li>
             )
           })}
@@ -724,7 +734,7 @@ const SaveTreasuryButton: NextPage<{
     db
       .treasuries
       .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
-      .then(() => router.push(`/treasuries/${encodeURIComponent(base64CBOR)}`))
+      .then(() => router.push(getTreasuryPath(script)))
       .catch(() => notify('error', 'Failed to save'))
   }
 
@@ -804,14 +814,14 @@ const CopyVkeysButton: NextPage<{
   className?: string
   vkeys: Vkeywitness[]
 }> = ({ cardano, className, children, vkeys }) => {
-  const content = cardano.buildSignatureSetHex(vkeys)
   return (
-    <CopyToClipboardButton
-      disabled={vkeys.length === 0}
-      className={className}
-      content={content}>
+    <CopyButton
+      getContent={() => cardano.buildSignatureSetHex(vkeys)}
+      disabled={vkeys.length <= 0}
+      ms={500}
+      className={className}>
       {children}
-    </CopyToClipboardButton>
+    </CopyButton>
   )
 }
 

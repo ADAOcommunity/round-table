@@ -1,13 +1,13 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Layout, Panel } from '../../components/layout'
+import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/layout'
 import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
 import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { useContext, useState } from 'react'
-import { PencilAltIcon } from '@heroicons/react/solid'
+import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
 
 const ManualSign: NextPage<{
@@ -28,15 +28,15 @@ const ManualSign: NextPage<{
         rows={4}
         value={signature}
         onChange={(e) => setSignature(e.target.value)}
-        placeholder="Signature">
+        placeholder="Input signature here and import">
       </textarea>
       <footer className='flex p-4 bg-gray-100 space-x-2'>
         <button
           onClick={manualSignHandle}
           disabled={isDisabled}
           className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-          <PencilAltIcon className='h-6' />
-          <span>Manual Sign</span>
+          <UploadIcon className='w-4' />
+          <span>Import</span>
         </button>
         {children}
       </footer>
@@ -107,6 +107,17 @@ const GetTransaction: NextPage = () => {
   return (
     <Layout>
       <div className='space-y-2'>
+        <Hero>
+          <h1 className='font-semibold text-lg'>Review Transaction</h1>
+          <p>Share current page URL to other signers so they can sign. After you have signed the transaction, you may copy your signatures to others to import. If the auto sync switch is on, your signatures would be exchanged automatically.</p>
+          <nav>
+            <ShareCurrentURLButton
+              className='flex space-x-1 bg-white text-sky-700 py-1 px-2 rounded shadow w-32 justify-center items-center'>
+              <ShareIcon className='w-4' />
+              <span>Copy URL</span>
+            </ShareCurrentURLButton>
+          </nav>
+        </Hero>
         <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
         {txMessage && <Panel className='space-y-1 p-4'>
           <div className='font-semibold'>Message</div>
@@ -129,8 +140,9 @@ const GetTransaction: NextPage = () => {
               <CopyVkeysButton
                 cardano={cardano}
                 vkeys={Array.from(signatureMap.values())}
-                className='px-4 py-2 border text-sky-700 rounded disabled:text-gray-400'>
-                Copy all signatures
+                className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+                <ShareIcon className='w-4' />
+                <span>Copy my signatures</span>
               </CopyVkeysButton>
             </footer>
           </Panel>

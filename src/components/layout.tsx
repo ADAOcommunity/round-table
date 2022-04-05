@@ -8,6 +8,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
+import { getTreasuriesPath } from '../route'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -28,6 +29,49 @@ const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
     <div className={'border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden ' + className}>
       {children}
     </div>
+  )
+}
+
+const CopyButton: NextPage<{
+  disabled?: boolean
+  className?: string
+  getContent: () => string
+  ms?: number
+}> = ({ children, className, disabled, getContent, ms }) => {
+  const [isCopied, setIsCopied] = useState(false)
+
+  const clickHandle = () => {
+    navigator.clipboard.writeText(getContent())
+    setIsCopied(true)
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    const timer = setTimeout(() => {
+      if (isMounted && isCopied) setIsCopied(false)
+    }, ms)
+
+    return () => {
+      isMounted = false
+      clearTimeout(timer)
+    }
+  }, [isCopied, ms])
+
+  return (
+    <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
+      {isCopied ? 'Copied!' : children}
+    </button>
+  )
+}
+
+const ShareCurrentURLButton: NextPage<{
+  className?: string
+}> = ({ children, className }) => {
+  return (
+    <CopyButton className={className} getContent={() => document.location.href} ms={500}>
+      {children}
+    </CopyButton>
   )
 }
 
@@ -100,7 +144,7 @@ const TreasuryListing: NextPage<{
   const { name, script } = treasury
   return (
     <NavLink
-      href={`/treasuries/${encodeURIComponent(script)}`}
+      href={getTreasuriesPath(encodeURIComponent(script))}
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-sky-700'>
       {name}
@@ -127,6 +171,17 @@ const SecondaryBar: NextPage = () => {
   )
 }
 
+const CardanoScanLink: NextPage<{
+  className?: string
+  type: 'transaction'
+  id: string
+}> = ({ className, children, type, id }) => {
+  const [config, _] = useContext(ConfigContext)
+  const host = config.isMainnet ? 'https://cardanoscan.io' : 'https://testnet.cardanoscan.io'
+  const href = [host, type, id].join('/')
+  return <a className={className} href={href} target='_blank' rel='noreferrer'>{children}</a>;
+}
+
 const Hero: NextPage<{ className?: string }> = ({ className, children }) => {
   return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
 }
@@ -151,4 +206,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton }
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton }
