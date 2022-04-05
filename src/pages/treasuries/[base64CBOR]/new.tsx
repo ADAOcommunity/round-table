@@ -6,12 +6,10 @@ import { getResult, useCardanoSerializationLib } from '../../../cardano/serializ
 import { ErrorMessage, Loading } from '../../../components/status'
 import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
-import { NewTransaction } from '../../../components/transaction'
+import { NativeScriptInfoViewer, NewTransaction } from '../../../components/transaction'
 import type { ProtocolParameters } from '../../../cardano/query-api'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../../cardano/query-api'
 import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../../../db'
 
 const NewMultiSigTransaction: NextPage<{
   cardano: Cardano
@@ -21,8 +19,6 @@ const NewMultiSigTransaction: NextPage<{
 
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
-
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')))
 
   const utxos = useAddressUTxOsQuery(address.to_bech32(), config)
   if (utxos.type === 'loading') return <Loading />;
@@ -34,14 +30,9 @@ const NewMultiSigTransaction: NextPage<{
   return (
     <Layout>
       <div className='space-y-2'>
-        <Panel className='p-4 space-y-1'>
-          <h1 className='font-semibold text-lg'>{treasury?.name || 'No name'}</h1>
-          {treasury?.description &&
-            <article className='whitespace-pre-line'>
-              {treasury?.description}
-            </article>
-          }
-        </Panel>
+        <NativeScriptInfoViewer
+          className='border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden p-4 space-y-1'
+          script={script} />
         <NewTransaction
           changeAddress={address}
           cardano={cardano}
