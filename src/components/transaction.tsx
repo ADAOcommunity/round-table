@@ -430,7 +430,7 @@ const TransactionBodyViewer: NextPage<{
   return (
     <Panel className='p-4 space-y-2'>
       <div className='space-y-1'>
-        <div className='font-semibold'>TxHash</div>
+        <div className='font-semibold'>Transaction Hash</div>
         <div className='flex items-center space-x-1'>
           <span>{toHex(txHash)}</span>
           <span>
@@ -484,9 +484,9 @@ const AddressViewer: NextPage<{
 }> = ({ address }) => {
   const bech32 = address.to_bech32()
   return (
-    <span className='items-center'>
+    <span className='flex items-center'>
       <span>{bech32}</span>
-      <CopyButton className='p-2 text-sm' getContent={() => bech32} ms={500}>
+      <CopyButton className='p-2 text-sm text-sky-700' getContent={() => bech32} ms={500}>
         <DuplicateIcon className='w-4' />
       </CopyButton>
     </span>

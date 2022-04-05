@@ -214,7 +214,7 @@ const NewTreasury: NextPage = () => {
                       step={1}
                       min={1}
                       max={addresses.size}
-                      onChange={(e) => setRequired(parseInt(e.target.value))} />
+                      onChange={(e) => setRequired(parseInt(e.target.value == "" ? "0" : e.target.value) <= addresses.size ? parseInt(e.target.value) : addresses.size)} />
                   }
                   <div className='p-2'>of&nbsp;{addresses.size}</div>
                 </div>

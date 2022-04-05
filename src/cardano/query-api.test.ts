@@ -18,7 +18,8 @@ test('getPolicyId', () => {
 describe('GraphQL API', () => {
   const config: Config = {
     isMainnet: false,
-    queryAPI: { type: 'graphql', URI: 'http://localhost:8080' }
+    queryAPI: { type: 'graphql', URI: 'http://localhost:8080' },
+    gunPeers: []
   }
 
   const talkbackServer = talkback({
