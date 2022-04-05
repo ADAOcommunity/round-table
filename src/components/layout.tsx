@@ -112,7 +112,7 @@ const SecondaryBar: NextPage = () => {
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
 
   return (
-    <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-scroll'>
+    <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
       <div className='w-full bg-sky-900 font-semibold'>
         <NavLink
           href='/treasuries/new'
@@ -138,7 +138,7 @@ const Layout: NextPage = ({ children }) => {
     <div className='flex h-screen'>
       <PrimaryBar />
       <SecondaryBar />
-      <div className='w-full bg-sky-100 overflow-y-scroll'>
+      <div className='w-full bg-sky-100 overflow-y-auto'>
         {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
         <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/5' />
