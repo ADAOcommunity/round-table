@@ -587,7 +587,7 @@ const NativeScriptViewer: NextPage<{
               <li key={index} className={'flex items-center ' + (signature ? 'text-green-500' : '')}>
                 <span>{toHex(keyHash)}</span>
                 {signature && <span><CheckIcon className='w-4' /></span>}
-                {hex && <CopyToClipboardButton content={hex}><DuplicateIcon className='w-4' /></CopyToClipboardButton>}
+                {hex && <CopyButton className='text-sm' getContent={() => hex} ms={500}><DuplicateIcon className='w-4' /></CopyButton>}
               </li>
             )
           })}
