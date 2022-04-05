@@ -338,6 +338,7 @@ const NewTransaction: NextPage<{
         </header>
         <textarea
           className='p-4 block w-full outline-none'
+          placeholder='Optional transaction message'
           rows={4}
           value={message}
           onChange={(e) => setMessage(e.target.value)}>
