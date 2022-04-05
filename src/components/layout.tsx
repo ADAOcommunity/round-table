@@ -171,6 +171,17 @@ const SecondaryBar: NextPage = () => {
   )
 }
 
+const CardanoScanLink: NextPage<{
+  className?: string
+  type: 'transaction'
+  id: string
+}> = ({ className, children, type, id }) => {
+  const [config, _] = useContext(ConfigContext)
+  const host = config.isMainnet ? 'https://cardanoscan.io' : 'https://testnet.cardanoscan.io'
+  const href = [host, type, id].join('/')
+  return <a className={className} href={href} target='_blank' rel='noreferrer'>{children}</a>;
+}
+
 const Hero: NextPage<{ className?: string }> = ({ className, children }) => {
   return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
 }
@@ -195,4 +206,4 @@ const Layout: NextPage = ({ children }) => {
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CopyButton, ShareCurrentURLButton }
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton }

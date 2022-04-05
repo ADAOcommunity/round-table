@@ -5,10 +5,10 @@ import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { CheckIcon, DuplicateIcon, PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
+import { CheckIcon, DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
-import { BackButton, CopyButton, Panel, Toggle } from './layout'
+import { BackButton, CardanoScanLink, CopyButton, Panel, Toggle } from './layout'
 import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -431,7 +431,12 @@ const TransactionBodyViewer: NextPage<{
     <Panel className='p-4 space-y-2'>
       <div className='space-y-1'>
         <div className='font-semibold'>TxHash</div>
-        <div>{toHex(txHash)}</div>
+        <div className='flex items-center space-x-1'>
+          <span>{toHex(txHash)}</span>
+          <span>
+            <CardanoScanLink className='block text-sky-700 p-2' type='transaction' id={toHex(txHash)}><SearchIcon className='w-4' /></CardanoScanLink>
+          </span>
+        </div>
       </div>
       <div className='flex space-x-2'>
         <div className='basis-1/2 space-y-1'>
