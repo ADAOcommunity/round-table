@@ -5,7 +5,7 @@ import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano
 import type { Result } from '../cardano/serialization-lib'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
 import { nanoid } from 'nanoid'
-import { ArrowRightIcon, CheckIcon, DuplicateIcon, PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
+import { CheckIcon, DuplicateIcon, PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
 import { BackButton, CopyButton, Panel, Toggle } from './layout'
@@ -429,43 +429,46 @@ const TransactionBodyViewer: NextPage<{
 
   return (
     <Panel className='p-4 space-y-2'>
-      <h2 className='text-center text-bg mb-4 space-x-2'>
-        <span className='font-semibold'>TxHash:</span>
-        <span>{toHex(txHash)}</span>
-      </h2>
-      <div className='flex items-center'>
-        <ul className='basis-[47.5%] space-y-1'>
-          {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
-            <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
-          )}
-        </ul>
-        <div className='basis-[5%] flex justify-center'>
-          <ArrowRightIcon className='h-10 w-10' />
+      <div className='space-y-1'>
+        <div className='font-semibold'>TxHash</div>
+        <div>{toHex(txHash)}</div>
+      </div>
+      <div className='flex space-x-2'>
+        <div className='basis-1/2 space-y-1'>
+          <div className='font-semibold'>From</div>
+          <ul className='space-y-1'>
+            {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
+              <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
+            )}
+          </ul>
         </div>
-        <ul className='basis-[47.5%] space-y-1'>
-          {recipients.map(({ id, address, value }) =>
-            <li key={id} className='p-2 border rounded-md'>
-              <p className='flex space-x-1 break-all'>{address}</p>
-              <p>
-                <ADAAmount lovelace={value.lovelace} />
-              </p>
-              <ul>
-                {Array.from(value.assets).map(([id, quantity]) =>
-                  <li key={id}>
-                    <AssetAmount
-                      quantity={quantity}
-                      decimals={0}
-                      symbol={decodeASCII(getAssetName(id))} />
-                  </li>
-                )}
-              </ul>
+        <div className='basis-1/2 space-y-1'>
+          <div className='font-semibold'>To</div>
+          <ul className='space-y-1'>
+            {recipients.map(({ id, address, value }) =>
+              <li key={id} className='p-2 border rounded-md'>
+                <p className='flex space-x-1 break-all'>{address}</p>
+                <p>
+                  <ADAAmount lovelace={value.lovelace} />
+                </p>
+                <ul>
+                  {Array.from(value.assets).map(([id, quantity]) =>
+                    <li key={id}>
+                      <AssetAmount
+                        quantity={quantity}
+                        decimals={0}
+                        symbol={decodeASCII(getAssetName(id))} />
+                    </li>
+                  )}
+                </ul>
+              </li>
+            )}
+            <li className='p-2 border rounded-md space-x-1'>
+              <span>Fee:</span>
+              <ADAAmount lovelace={fee} />
             </li>
-          )}
-          <li className='p-2 border rounded-md space-x-1'>
-            <span>Fee:</span>
-            <ADAAmount lovelace={fee} />
-          </li>
-        </ul>
+          </ul>
+        </div>
       </div>
     </Panel>
   )
