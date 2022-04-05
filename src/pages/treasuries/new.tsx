@@ -67,7 +67,7 @@ const AddressInput: NextPage<{
     }
   }
 
-  const base = 'block w-full border px-4 py-2 rounded'
+  const base = 'block w-full border p-2 rounded'
   const textColor = parsedAddress.isOk || (!address) ? '' : 'text-red-500'
   const className = [base, textColor].join(' ')
 
