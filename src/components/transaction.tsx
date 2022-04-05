@@ -70,6 +70,45 @@ const LabeledCurrencyInput: NextPage<{
   )
 }
 
+const AddAssetButton: NextPage<{
+  budget: Value
+  value: Value
+  onSelect: (id: string) => void
+}> = ({ budget, value, onSelect }) => {
+  const assets = Array
+    .from(budget.assets)
+    .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
+  const isDisabled = assets.length <= 0
+
+  return (
+    <div className='relative'>
+      <button
+        className='flex text-sky-700 py-2 space-x-1 peer items-center disabled:text-gray-400'
+        disabled={isDisabled}>
+        <PlusIcon className='w-4' />
+        <span>Add Asset</span>
+      </button>
+      <ul className='absolute divide-y bg-white text-sm max-h-64 border rounded shadow overflow-y-auto scale-0 z-50 peer-focus:scale-100 hover:scale-100'>
+        {assets.map(([id, quantity]) => (
+          <li key={id}>
+            <button
+              onClick={() => onSelect(id)}
+              className='block w-full h-full p-2 hover:bg-sky-700 hover:text-white'>
+              <div className='flex space-x-2'>
+                <span>{decodeASCII(getAssetName(id))}</span>
+                <span className='grow text-right'>{quantity.toString()}</span>
+              </div>
+              <div className='flex space-x-1'>
+                <span className='text-xs'>{id.slice(0, 56)}</span>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 const Recipient: NextPage<{
   recipient: Recipient
   budget: Value
@@ -144,31 +183,7 @@ const Recipient: NextPage<{
           )
         })}
       </ul>
-      <div className='relative'>
-        <button className='flex text-sky-700 py-2 space-x-1 peer items-center'>
-          <PlusIcon className='w-4' />
-          <span>Add Asset</span>
-        </button>
-        <ul className='absolute mt-1 divide-y bg-white text-sm max-h-64 border rounded shadow overflow-y-scroll invisible z-50 peer-focus:visible hover:visible'>
-          {Array.from(budget.assets)
-            .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
-            .map(([id, quantity]) => (
-              <li key={id}>
-                <button
-                  onClick={() => setAsset(id, BigInt(0))}
-                  className='block w-full h-full p-2 hover:bg-sky-700 hover:text-white'>
-                  <div className='flex space-x-2'>
-                    <span>{decodeASCII(getAssetName(id))}</span>
-                    <span className='grow text-right'>{quantity.toString()}</span>
-                  </div>
-                  <div className='flex space-x-1'>
-                    <span className='text-xs'>{id.slice(0, 56)}</span>
-                  </div>
-                </button>
-              </li>
-            ))}
-        </ul>
-      </div>
+      <AddAssetButton budget={budget} value={value} onSelect={(id) => setAsset(id, BigInt(0))} />
     </div>
   )
 }
