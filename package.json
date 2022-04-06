@@ -11,9 +11,9 @@
     "cypress:headless": "cypress run"
   },
   "dependencies": {
-    "@adaocommunity/cardano-serialization-lib-browser": "^10.0.5",
     "@apollo/client": "^3.5.10",
     "@cardano-graphql/client-ts": "^6.2.0",
+    "@dcspark/cardano-multiplatform-lib-browser": "^0.1.0",
     "@heroicons/react": "^1.0.6",
     "axios": "^0.26.1",
     "buffer": "^6.0.3",

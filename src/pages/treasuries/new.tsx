@@ -4,7 +4,7 @@ import { Hero, Layout, Panel } from '../../components/layout'
 import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
 import { Loading } from '../../components/status'
-import type { Address, Ed25519KeyHash } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { Address, Ed25519KeyHash } from '@dcspark/cardano-multiplatform-lib-browser'
 import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { SaveTreasuryButton } from '../../components/transaction'
 

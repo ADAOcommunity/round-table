@@ -1,4 +1,4 @@
-import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'

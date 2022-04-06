@@ -3,7 +3,7 @@ import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from '
 import { getAssetName, getBalance, getPolicyId, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
 import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
-import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { CheckIcon, DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -274,7 +274,7 @@ const NewTransaction: NextPage<{
         value.set_multiasset(multiAsset)
       }
       const txUnspentOutput = TransactionUnspentOutput.new(
-        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), BigNum.from_str(index.toString())),
         TransactionOutput.new(address, value)
       )
       utxosSet.add(txUnspentOutput)
@@ -391,7 +391,7 @@ const TransactionBodyViewer: NextPage<{
       const input = txBody.inputs().get(i)
       return {
         txHash: toHex(input.transaction_id()),
-        index: input.index()
+        index: parseInt(input.index().to_str())
       }
     })
   }
