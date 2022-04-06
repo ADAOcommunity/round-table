@@ -45,10 +45,11 @@ const LabeledCurrencyInput: NextPage<{
   decimal: number
   value: bigint
   max: bigint
+  maxButton?: boolean
   onChange: (_: bigint) => void
   placeholder?: string
 }> = (props) => {
-  const { decimal, value, onChange, max, symbol, placeholder } = props
+  const { decimal, value, onChange, max, maxButton, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
@@ -67,11 +68,13 @@ const LabeledCurrencyInput: NextPage<{
         <span>{toDecimal(max, decimal)}</span>
         <span>{symbol}</span>
       </div>
-      <button
-        onClick={() => onChange(max)}
-        className='bg-gray-100 border-l py-2 px-4 group text-sky-700'>
-        Max
-      </button>
+      {maxButton &&
+        <button
+          onClick={() => onChange(max)}
+          className='bg-gray-100 border-l py-2 px-4 group text-sky-700'>
+          Max
+        </button>
+      }
     </label>
   )
 }
@@ -181,6 +184,7 @@ const Recipient: NextPage<{
                 decimal={0}
                 value={quantity}
                 max={quantity + assetBudget}
+                maxButton={true}
                 onChange={onChange} />
               <button className='p-2' onClick={() => deleteAsset(id)}>
                 <TrashIcon className='w-4' />
