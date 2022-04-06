@@ -10,6 +10,7 @@ describe('Create a new treasury', () => {
     cy.visit('http://localhost:3000/')
     cy.contains('New Treasury').click()
     cy.url().should('eq', 'http://localhost:3000/treasuries/new')
+    cy.contains('New Signer (min. 2)').should('be.visible')
   })
 
   it('Should fill title and description', () => {
