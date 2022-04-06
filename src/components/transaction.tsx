@@ -274,7 +274,7 @@ const NewTransaction: NextPage<{
         value.set_multiasset(multiAsset)
       }
       const txUnspentOutput = TransactionUnspentOutput.new(
-        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), BigNum.from_str(index.toString())),
         TransactionOutput.new(address, value)
       )
       utxosSet.add(txUnspentOutput)
@@ -391,7 +391,7 @@ const TransactionBodyViewer: NextPage<{
       const input = txBody.inputs().get(i)
       return {
         txHash: toHex(input.transaction_id()),
-        index: input.index()
+        index: parseInt(input.index().to_str())
       }
     })
   }
