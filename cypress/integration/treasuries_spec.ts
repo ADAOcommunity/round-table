@@ -12,6 +12,7 @@ describe('Create a new treasury', () => {
     cy.contains('New Treasury').click()
     cy.url().should('eq', 'http://localhost:3000/treasuries/new')
   })
+  
   it('Should fill title and description', () => {
     cy.get('input[placeholder="Write Name"]')
       .type(treasuryName)
