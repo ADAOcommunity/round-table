@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useState, KeyboardEventHandler, ChangeEventHandler } from 'react'
+import { useState, KeyboardEventHandler, ChangeEventHandler, FocusEventHandler, useEffect } from 'react'
 import { Hero, Layout, Panel } from '../../components/layout'
 import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
@@ -116,6 +116,55 @@ const AddAddress: NextPage<{
   )
 }
 
+const RequiredNumberInput: NextPage<{
+  className?: string
+  max: number
+  required: number
+  onCommit: (_: number) => void
+}> = ({ className, required, max, onCommit }) => {
+  const [value, setValue] = useState(required.toString())
+
+  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const value = event.target.value
+    setValue(value)
+  }
+
+  const blurHandle: FocusEventHandler<HTMLInputElement> = () => {
+    const parsedValue = parse(value)
+    onCommit(parsedValue)
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    isMounted && setValue(required.toString())
+
+    return () => {
+      isMounted = false
+    }
+  }, [required])
+
+  function parse(input: string): number {
+    const parsedValue = parseInt(input)
+
+    if (isNaN(parsedValue)) return 1
+    if (parsedValue < 1) return 1
+    if (parsedValue > max) return max
+    return parsedValue
+  }
+
+  return (
+    <input type='number'
+      className={className}
+      value={value}
+      step={1}
+      min={1}
+      max={max}
+      onBlur={blurHandle}
+      onChange={changeHandle} />
+  )
+}
+
 const NewTreasury: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [scriptType, setScriptType] = useState<MultiSigType>('all')
@@ -150,16 +199,6 @@ const NewTreasury: NextPage = () => {
     const set = new Set(addresses)
     set.delete(address)
     setAddresses(set)
-  }
-
-  const limitRequired = (input: string) => {
-    let requiredAmount = 0;
-    if (parseInt(input == "" ? "0" : input) <= addresses.size) {
-      requiredAmount = parseInt(input)
-    } else {
-      requiredAmount = addresses.size
-    }
-    return requiredAmount
   }
 
   return (
@@ -212,21 +251,22 @@ const NewTreasury: NextPage = () => {
               <div className='space-y-1'>
                 <div>Required Signers</div>
                 <div className='flex space-x-2 items-center'>
-                  <select className='bg-white border rounded p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
+                  <select className='bg-white border rounded text-sm p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
                     <option value="all">All</option>
                     <option value="any">Any</option>
                     <option value="atLeast">At least</option>
                   </select>
                   {scriptType == 'atLeast' &&
-                    <input type='number'
+                    <RequiredNumberInput
                       className='border rounded p-1'
-                      value={required}
-                      step={1}
-                      min={1}
                       max={addresses.size}
-                      onChange={(e) => setRequired(() => limitRequired(e.target.value))} />
+                      required={required}
+                      onCommit={setRequired} />
                   }
-                  <div className='p-2'>of&nbsp;{addresses.size}</div>
+                  <div className='p-2 space-x-1'>
+                    <span>of</span>
+                    <span>{addresses.size}</span>
+                  </div>
                 </div>
               </div>}
             <hr />
