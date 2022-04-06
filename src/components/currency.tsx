@@ -1,5 +1,5 @@
 import { NextPage } from "next"
-import { ChangeEvent, useContext } from "react"
+import { ChangeEventHandler, useContext } from "react"
 import NumberFormat from "react-number-format"
 import { Config, ConfigContext } from "../cardano/config"
 
@@ -22,7 +22,7 @@ const CurrencyInput: NextPage<{
 }> = ({ value, onChange, decimals, ...props }) => {
   const inputValue = toDecimal(value, decimals)
 
-  const changeHandle = (event: ChangeEvent<HTMLInputElement>) => {
+  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
     const [i, f] = event.target.value.split('.', 2)
     const number = BigInt(i + (f || '0').slice(0, decimals).padEnd(decimals, '0'))
     onChange(number)
