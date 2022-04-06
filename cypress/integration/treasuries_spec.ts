@@ -1,4 +1,3 @@
-
 const treasuryName = "Test treasury"
 const treasuryDesc = "This is a description of the treasury"
 const addresses = [
@@ -12,7 +11,7 @@ describe('Create a new treasury', () => {
     cy.contains('New Treasury').click()
     cy.url().should('eq', 'http://localhost:3000/treasuries/new')
   })
-  
+
   it('Should fill title and description', () => {
     cy.get('input[placeholder="Write Name"]')
       .type(treasuryName)
