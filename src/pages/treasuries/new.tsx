@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useState, KeyboardEventHandler, ChangeEventHandler } from 'react'
+import { useState, KeyboardEventHandler, ChangeEventHandler, FocusEventHandler, useEffect } from 'react'
 import { Hero, Layout, Panel } from '../../components/layout'
 import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
 import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
@@ -120,12 +120,29 @@ const RequiredNumberInput: NextPage<{
   className?: string
   max: number
   required: number
-  onChange: (_: number) => void
-}> = ({ className, required, max, onChange }) => {
+  onCommit: (_: number) => void
+}> = ({ className, required, max, onCommit }) => {
+  const [value, setValue] = useState(required.toString())
+
   const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
     const value = event.target.value
-    onChange(parse(value))
+    setValue(value)
   }
+
+  const blurHandle: FocusEventHandler<HTMLInputElement> = () => {
+    const parsedValue = parse(value)
+    onCommit(parsedValue)
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    isMounted && setValue(required.toString())
+
+    return () => {
+      isMounted = false
+    }
+  }, [required])
 
   function parse(input: string): number {
     const parsedValue = parseInt(input)
@@ -139,10 +156,11 @@ const RequiredNumberInput: NextPage<{
   return (
     <input type='number'
       className={className}
-      value={required}
+      value={value}
       step={1}
       min={1}
       max={max}
+      onBlur={blurHandle}
       onChange={changeHandle} />
   )
 }
@@ -239,11 +257,11 @@ const NewTreasury: NextPage = () => {
                     <option value="atLeast">At least</option>
                   </select>
                   {scriptType == 'atLeast' &&
-                   <RequiredNumberInput
-                     className='border rounded p-1'
-                     max={addresses.size}
-                     required={required}
-                     onChange={setRequired} />
+                    <RequiredNumberInput
+                      className='border rounded p-1'
+                      max={addresses.size}
+                      required={required}
+                      onCommit={setRequired} />
                   }
                   <div className='p-2 space-x-1'>
                     <span>of</span>
