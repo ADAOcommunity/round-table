@@ -152,6 +152,16 @@ const NewTreasury: NextPage = () => {
     setAddresses(set)
   }
 
+  const limitRequired = (input: string) => {
+    let requiredAmount = 0;
+    if (parseInt(input == "" ? "0" : input) <= addresses.size) {
+      requiredAmount = parseInt(input)
+    } else {
+      requiredAmount = addresses.size
+    }
+    return requiredAmount
+  }
+
   return (
     <Layout>
       <div className='space-y-2'>
@@ -214,7 +224,7 @@ const NewTreasury: NextPage = () => {
                       step={1}
                       min={1}
                       max={addresses.size}
-                      onChange={(e) => setRequired(parseInt(e.target.value))} />
+                      onChange={(e) => setRequired(() => limitRequired(e.target.value))} />
                   }
                   <div className='p-2'>of&nbsp;{addresses.size}</div>
                 </div>
