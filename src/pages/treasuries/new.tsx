@@ -96,7 +96,7 @@ const AddAddress: NextPage<{
 
   return (
     <label className='block space-y-1'>
-      <div>New Signer</div>
+      <div>New Signer (min. 2)</div>
       <div className='flex space-x-2 items-center'>
         <AddressInput
           cardano={cardano}
