@@ -325,7 +325,7 @@ const NewTransaction: NextPage<{
 
   return (
     <Panel>
-      <ul className='divide-y'>
+      <ul>
         {recipients.map((recipient, index) =>
           <li key={recipient.id}>
             <header className='flex px-4 py-2 bg-gray-100'>
