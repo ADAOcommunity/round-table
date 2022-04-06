@@ -152,14 +152,13 @@ const NewTreasury: NextPage = () => {
     setAddresses(set)
   }
 
-  const limitRequired = (input: string) => {
-    let requiredAmount = 0;
-    if (parseInt(input == "" ? "0" : input) <= addresses.size) {
-      requiredAmount = parseInt(input)
-    } else {
-      requiredAmount = addresses.size
-    }
-    return requiredAmount
+  function parseRequired(input: string): number {
+    const parsedValue = parseInt(input)
+
+    if (isNaN(parsedValue)) return 1
+    if (parsedValue < 1) return 1
+    if (parsedValue > addresses.size) return addresses.size
+    return parsedValue
   }
 
   return (
@@ -224,7 +223,7 @@ const NewTreasury: NextPage = () => {
                       step={1}
                       min={1}
                       max={addresses.size}
-                      onChange={(e) => setRequired(() => limitRequired(e.target.value))} />
+                      onChange={(e) => setRequired(parseRequired(e.target.value))} />
                   }
                   <div className='p-2'>of&nbsp;{addresses.size}</div>
                 </div>
