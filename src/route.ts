@@ -1,5 +1,5 @@
-import { NativeScript } from "@adaocommunity/cardano-serialization-lib-browser";
-import { encodeCardanoData } from "./cardano/serialization-lib";
+import { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import { encodeCardanoData } from './cardano/serialization-lib'
 
 function getTreasuriesPath(subPath?: string): string {
   return '/' + ['treasuries', subPath].join('/')

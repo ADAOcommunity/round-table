@@ -2,11 +2,6 @@
 # yarn lockfile v1
 
 
-"@adaocommunity/cardano-serialization-lib-browser@^10.0.5":
-  version "10.0.5"
-  resolved "https://registry.yarnpkg.com/@adaocommunity/cardano-serialization-lib-browser/-/cardano-serialization-lib-browser-10.0.5.tgz#c4583de800a885f7f440de68825b26ca0214ebcb"
-  integrity sha512-FCWZJNepRHhL0aQh+/XxRwSNZpt+H+aC9meFkCKnSbn7I1C8QQrsrO9sM3Melw0/Z9kux3wUnR1IMllnJyt2mQ==
-
 "@ampproject/remapping@^2.1.0":
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/@ampproject/remapping/-/remapping-2.1.2.tgz#4edca94973ded9630d20101cd8559cedb8d8bd34"
@@ -367,6 +362,11 @@
   dependencies:
     debug "^3.1.0"
     lodash.once "^4.1.1"
+
+"@dcspark/cardano-multiplatform-lib-browser@^0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@dcspark/cardano-multiplatform-lib-browser/-/cardano-multiplatform-lib-browser-0.1.0.tgz#b52269777558d98d9da65fc48ced3352eeab1631"
+  integrity sha512-7HpwYeeuKsmfhjZlOhJryS2+xUll7o/QXBOyH5zgdy6fYdilAfmvhFGXc7ZCFFTtOdKC1jM3QtTWdaSBTCiIkg==
 
 "@eslint/eslintrc@^1.2.1":
   version "1.2.1"

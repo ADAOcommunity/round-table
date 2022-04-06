@@ -1,8 +1,8 @@
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
 import { ProtocolParameters } from './query-api'
 
-type CardanoWASM = typeof import('@adaocommunity/cardano-serialization-lib-browser')
+type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
 
 type Result<T> =
@@ -251,7 +251,7 @@ class Factory {
 
   public async load() {
     if (!this.instance)
-      this._instance = new Cardano(await import('@adaocommunity/cardano-serialization-lib-browser'))
+      this._instance = new Cardano(await import('@dcspark/cardano-multiplatform-lib-browser'))
     return this.instance
   }
 }

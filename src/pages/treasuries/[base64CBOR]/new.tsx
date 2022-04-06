@@ -9,7 +9,7 @@ import { ConfigContext } from '../../../cardano/config'
 import { NativeScriptInfoViewer, NewTransaction } from '../../../components/transaction'
 import type { ProtocolParameters } from '../../../cardano/query-api'
 import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../../cardano/query-api'
-import type { NativeScript } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const NewMultiSigTransaction: NextPage<{
   cardano: Cardano
