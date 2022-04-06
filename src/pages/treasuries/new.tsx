@@ -116,6 +116,37 @@ const AddAddress: NextPage<{
   )
 }
 
+const RequiredNumberInput: NextPage<{
+  className?: string
+  max: number
+  required: number
+  onChange: (_: number) => void
+}> = ({ className, required, max, onChange }) => {
+  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
+    const value = event.target.value
+    onChange(parse(value))
+  }
+
+  function parse(input: string): number {
+    const parsedValue = parseInt(input)
+
+    if (isNaN(parsedValue)) return 1
+    if (parsedValue < 1) return 1
+    if (parsedValue > max) return max
+    return parsedValue
+  }
+
+  return (
+    <input type='number'
+      className={className}
+      value={required}
+      step={1}
+      min={1}
+      max={max}
+      onChange={changeHandle} />
+  )
+}
+
 const NewTreasury: NextPage = () => {
   const [addresses, setAddresses] = useState<Set<string>>(new Set())
   const [scriptType, setScriptType] = useState<MultiSigType>('all')
@@ -150,15 +181,6 @@ const NewTreasury: NextPage = () => {
     const set = new Set(addresses)
     set.delete(address)
     setAddresses(set)
-  }
-
-  function parseRequired(input: string): number {
-    const parsedValue = parseInt(input)
-
-    if (isNaN(parsedValue)) return 1
-    if (parsedValue < 1) return 1
-    if (parsedValue > addresses.size) return addresses.size
-    return parsedValue
   }
 
   return (
@@ -211,19 +233,17 @@ const NewTreasury: NextPage = () => {
               <div className='space-y-1'>
                 <div>Required Signers</div>
                 <div className='flex space-x-2 items-center'>
-                  <select className='bg-white border rounded p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
+                  <select className='bg-white border rounded text-sm p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
                     <option value="all">All</option>
                     <option value="any">Any</option>
                     <option value="atLeast">At least</option>
                   </select>
                   {scriptType == 'atLeast' &&
-                    <input type='number'
-                      className='border rounded p-1'
-                      value={required}
-                      step={1}
-                      min={1}
-                      max={addresses.size}
-                      onChange={(e) => setRequired(parseRequired(e.target.value))} />
+                   <RequiredNumberInput
+                     className='border rounded p-1'
+                     max={addresses.size}
+                     required={required}
+                     onChange={setRequired} />
                   }
                   <div className='p-2 space-x-1'>
                     <span>of</span>
