@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react-hooks'
-import { getAssetName, getPolicyId, useAddressUTxOsQuery, useProtocolParametersQuery } from './query-api'
+import { getAssetName, getPolicyId, useAddressUTxOsQuery, usePaymentAddressesQuery, useProtocolParametersQuery } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import { NextPage } from 'next'
@@ -82,6 +82,28 @@ describe('GraphQL API', () => {
       expect(utxo2.value).toBe('10000000')
       expect(utxo2.tokens.length).toBe(0)
       expect(utxo1.index).toBe(0)
+    }
+  })
+
+  test('usePaymentAddressesQuery', async () => {
+    const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
+    const { result, waitForValueToChange } = renderHook(() => usePaymentAddressesQuery({ variables: { addresses: [address] } }), { wrapper })
+
+    expect(result.current.loading).toBe(true)
+
+    await waitForValueToChange(() => result.current.loading, { timeout: 10000 })
+
+    expect(result.current.loading).toBe(false)
+
+    if (result.current.data) {
+      const paymentAddresses = result.current.data.paymentAddresses
+      expect(paymentAddresses.length).toBe(1)
+      const summary = paymentAddresses[0].summary
+      if (summary) {
+        expect(summary.assetBalances.length).toBe(3)
+        expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
+        expect(summary.assetBalances[0]?.quantity).toBe('11413762')
+      }
     }
   })
 })
