@@ -1,6 +1,7 @@
-import { gql, useQuery } from '@apollo/client'
+import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
 import type { Cardano, PaymentAddress, TransactionOutput } from '@cardano-graphql/client-ts'
+import { Config } from './config'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -118,5 +119,16 @@ query getProtocolParameters {
 
 const useProtocolParametersQuery: OptionalQuery<{ cardano: Cardano }, {}> = () => useQuery(ProtocolParametersQuery)
 
+const createApolloClient = (config: Config) => new ApolloClient({
+  uri: config.queryAPI.URI,
+  cache: new InMemoryCache({
+    typePolicies: {
+      PaymentAddress: {
+        keyFields: ['address']
+      }
+    }
+  })
+})
+
 export type { Value }
-export { getBalance, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useAddressUTxOsQuery, useProtocolParametersQuery, usePaymentAddressesQuery }
+export { createApolloClient, getBalance, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useAddressUTxOsQuery, useProtocolParametersQuery, usePaymentAddressesQuery }
