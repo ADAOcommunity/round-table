@@ -262,7 +262,7 @@ class Factory {
 
 const CardanoSerializationLib = new Factory()
 
-const useCardanoSerializationLib = () => {
+const useCardanoMultiplatformLib = () => {
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
 
   useEffect(() => {
@@ -281,4 +281,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib, verifySignature }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature }

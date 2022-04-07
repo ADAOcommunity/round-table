@@ -1,8 +1,8 @@
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
-import type { Cardano } from '../../../cardano/serialization-lib'
+import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
+import type { Cardano } from '../../../cardano/multiplatform-lib'
 import { Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import { NativeScriptInfoViewer, NativeScriptViewer } from '../../../components/transaction'
@@ -81,7 +81,7 @@ const ShowTreasury: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
 
   if (!cardano) return <Loading />;
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid URL</ErrorMessage>;

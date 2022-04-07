@@ -1,8 +1,8 @@
 import type { NextPage } from 'next'
 import { useState, KeyboardEventHandler, ChangeEventHandler, FocusEventHandler, useEffect } from 'react'
 import { Hero, Layout, Panel } from '../../components/layout'
-import { Result, toHex, useCardanoSerializationLib } from '../../cardano/serialization-lib'
-import type { Cardano, MultiSigType } from '../../cardano/serialization-lib'
+import { Result, toHex, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
+import type { Cardano, MultiSigType } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import type { Address, Ed25519KeyHash } from '@dcspark/cardano-multiplatform-lib-browser'
 import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
@@ -171,7 +171,7 @@ const NewTreasury: NextPage = () => {
   const [required, setRequired] = useState(1)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
   const keyHashesResult: Result<Ed25519KeyHash[]> = Array

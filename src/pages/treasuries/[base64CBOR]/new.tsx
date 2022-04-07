@@ -1,8 +1,8 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout } from '../../../components/layout'
-import { Cardano } from '../../../cardano/serialization-lib'
-import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
+import { Cardano } from '../../../cardano/multiplatform-lib'
+import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../../components/status'
 import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
@@ -50,7 +50,7 @@ const NewMultiSigTransaction: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
   const { loading, error, data } = useProtocolParametersQuery()
 
   if (!cardano) return <Loading />;

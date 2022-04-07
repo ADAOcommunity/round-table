@@ -1,8 +1,8 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/layout'
-import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
-import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { toHex, toIter, verifySignature } from '../../cardano/multiplatform-lib'
+import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
@@ -47,7 +47,7 @@ const ManualSign: NextPage<{
 const GetTransaction: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _] = useContext(ConfigContext)
 
