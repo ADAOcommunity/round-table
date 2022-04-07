@@ -504,8 +504,8 @@ const NativeScriptInfoViewer: NextPage<{
   className?: string
   script: NativeScript
 }> = ({ cardano, className, script }) => {
-  const hash = toHex(cardano.hashScript(script))
-  const treasury = useLiveQuery(async () => db.treasuries.get(hash), [script])
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
 
   if (!treasury) return (
     <div className='p-4 text-white bg-sky-700 rounded shadow space-y-1'>
