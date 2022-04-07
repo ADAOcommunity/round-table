@@ -3,13 +3,15 @@ import type { AppProps } from 'next/app'
 import { ConfigContext, config } from '../cardano/config'
 import Head from 'next/head'
 import { NotificationContext, useNotification } from '../components/notification'
-import { ApolloProvider } from '@apollo/client'
-import { createApolloClient } from '../cardano/query-api'
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
 
-  const apolloClient = createApolloClient(config.queryAPI.URI)
+  const apolloClient = new ApolloClient({
+    uri: config.queryAPI.URI,
+    cache: new InMemoryCache()
+  })
 
   return (
     <ConfigContext.Provider value={[config, () => { }]}>

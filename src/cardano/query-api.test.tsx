@@ -1,12 +1,19 @@
 import { renderHook } from '@testing-library/react-hooks'
-import { createApolloClient, getAssetName, getPolicyId, useAddressUTxOsQuery, useProtocolParametersQuery } from './query-api'
+import { getAssetName, getPolicyId, useAddressUTxOsQuery, useProtocolParametersQuery } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import { NextPage } from 'next'
+import fetch from 'cross-fetch'
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
 
 const policyId = '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f'
 const assetName = '7453554e444145'
 const assetId = policyId + assetName
+
+const createApolloClient = (uri: string) => new ApolloClient({
+  link: new HttpLink({ uri, fetch }),
+  cache: new InMemoryCache()
+})
 
 test('getAssetName', () => {
   expect(getAssetName(assetId)).toBe(assetName)

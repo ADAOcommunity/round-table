@@ -1,7 +1,6 @@
-import { gql, useQuery, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
+import { gql, useQuery } from '@apollo/client'
 import type { QueryOptions } from '@apollo/client'
 import type { Cardano, TransactionOutput } from '@cardano-graphql/client-ts'
-import fetch from 'cross-fetch'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -74,10 +73,5 @@ const useProtocolParametersQuery = (options?: QueryOptions) => useQuery<{ cardan
   ProtocolParametersQuery, options
 )
 
-const createApolloClient = (uri: string) => new ApolloClient({
-  link: new HttpLink({ uri, fetch }),
-  cache: new InMemoryCache()
-})
-
 export type { Value }
-export { createApolloClient, getBalance, getPolicyId, getAssetName, useAddressUTxOsQuery, useProtocolParametersQuery }
+export { getBalance, getPolicyId, getAssetName, useAddressUTxOsQuery, useProtocolParametersQuery }
