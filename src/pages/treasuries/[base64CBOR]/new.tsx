@@ -34,6 +34,7 @@ const NewMultiSigTransaction: NextPage<{
     <Layout>
       <div className='space-y-2'>
         <NativeScriptInfoViewer
+          cardano={cardano}
           className='border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden p-4 space-y-1'
           script={script} />
         <NewTransaction
