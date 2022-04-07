@@ -274,6 +274,7 @@ const NewTreasury: NextPage = () => {
           </div>
           <footer className='flex justify-end p-4 bg-gray-100'>
             <SaveTreasuryButton
+              cardano={cardano}
               className='px-4 py-2 bg-sky-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
               name={name}
               description={description}

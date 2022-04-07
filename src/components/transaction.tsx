@@ -500,10 +500,12 @@ const AddressViewer: NextPage<{
 }
 
 const NativeScriptInfoViewer: NextPage<{
+  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ className, script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, className, script }) => {
+  const hash = toHex(cardano.hashScript(script))
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash), [script])
 
   if (!treasury) return (
     <div className='p-4 text-white bg-sky-700 rounded shadow space-y-1'>
@@ -724,22 +726,23 @@ const SubmitTxButton: NextPage<{
 }
 
 const SaveTreasuryButton: NextPage<{
+  cardano: Cardano
   className?: string
   name: string
   description: string
   script?: NativeScript
-}> = ({ name, description, script, className, children }) => {
+}> = ({ cardano, name, description, script, className, children }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
 
   if (!script) return <button className={className} disabled={true}>{children}</button>;
 
-  const base64CBOR = encodeCardanoData(script, 'base64')
+  const hash = cardano.hashScript(script).to_hex()
 
   const submitHandle = () => {
     db
       .treasuries
-      .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
+      .put({ hash, name, description, script: script.to_bytes(), updatedAt: new Date() }, hash)
       .then(() => router.push(getTreasuryPath(script)))
       .catch(() => notify('error', 'Failed to save'))
   }

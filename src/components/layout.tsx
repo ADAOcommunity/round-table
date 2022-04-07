@@ -9,6 +9,7 @@ import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getTreasuriesPath } from '../route'
+import { encodeCardanoData } from '../cardano/multiplatform-lib'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -142,9 +143,10 @@ const TreasuryListing: NextPage<{
   treasury: Treasury
 }> = ({ treasury }) => {
   const { name, script } = treasury
+  const base64CBOR = encodeCardanoData(script, 'base64')
   return (
     <NavLink
-      href={getTreasuriesPath(encodeURIComponent(script))}
+      href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-sky-700'>
       {name}
