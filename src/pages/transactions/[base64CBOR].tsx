@@ -124,8 +124,8 @@ const GetTransaction: NextPage = () => {
           <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
-          <Panel>
-            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} key={index} />
+          <Panel key={index}>
+            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} />
             <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
               <div className='flex space-x-1 items-center'>
                 <SignatureSync
