@@ -13,7 +13,7 @@ type Value = {
   assets: Assets
 }
 
-const getBalance = (utxos: TransactionOutput[]): Value => {
+const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
   const assets: Assets = new Map()
 
   utxos && utxos.forEach((utxo) => {
@@ -131,4 +131,4 @@ const createApolloClient = (config: Config) => new ApolloClient({
 })
 
 export type { Value }
-export { createApolloClient, getBalance, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useAddressUTxOsQuery, useProtocolParametersQuery, usePaymentAddressesQuery }
+export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useAddressUTxOsQuery, useProtocolParametersQuery, usePaymentAddressesQuery }

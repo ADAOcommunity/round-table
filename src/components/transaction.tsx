@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
-import { getAssetName, getBalance, getPolicyId, Value } from '../cardano/query-api'
+import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
 import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
 import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
@@ -257,7 +257,7 @@ const NewTransaction: NextPage<{
         _quantity && assets.set(id, _quantity - quantity)
       })
       return { lovelace, assets }
-    }, getBalance(utxos))
+    }, getBalanceByUTxOs(utxos))
 
   const buildUTxOSet = () => {
     const { Address, AssetName, BigNum, MultiAsset, ScriptHash,
