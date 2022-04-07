@@ -61,19 +61,21 @@ describe('Create a new treasury', () => {
   })
 
   it('Should edit treasury info', () => {
-    const editedName = 'Lorem Ipsum'
-    const editedDesc = 'This is edited description'
+    const addedName = 'added'
+    const addedDesc = 'xxx'
+    const editedName = treasuryName + addedName
+    const editedDesc = treasuryDesc + addedDesc
 
     cy.contains('Edit Info').click()
 
     cy.wait(1500)
 
     cy.get('input[placeholder="Write Name"]')
-      .type(editedName)
+      .type(addedName)
       .should("have.value", editedName);
 
     cy.get('textarea[placeholder="Describe the treasury"]')
-      .type(editedDesc)
+      .type(addedDesc)
       .should("have.value", editedDesc)
 
     cy.contains('Save Treasury').click()
