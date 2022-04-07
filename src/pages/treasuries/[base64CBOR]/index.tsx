@@ -20,7 +20,7 @@ const ShowBalance: NextPage<{
 }> = ({ cardano, script, className }) => {
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  const { loading, error, data } = usePaymentAddressesQuery({ variables: { addresses: [address] } })
+  const { loading, error, data } = usePaymentAddressesQuery({ variables: { addresses: [address] }, fetchPolicy: 'network-only' })
 
   if (loading) return null
   if (error) return null
