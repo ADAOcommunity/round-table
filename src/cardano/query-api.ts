@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
-import type { Cardano, TransactionOutput } from '@cardano-graphql/client-ts'
+import type { Cardano, PaymentAddress, TransactionOutput } from '@cardano-graphql/client-ts'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -30,6 +30,9 @@ const getBalance = (utxos: TransactionOutput[]): Value => {
   }
 }
 
+type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
+type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
+
 const UTxOsQuery = gql`
 query UTxOsByAddress($address: String!) {
   utxos(where: { address: { _eq: $address } }) {
@@ -47,13 +50,54 @@ query UTxOsByAddress($address: String!) {
   }
 }`
 
-type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
-type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
-
 const useAddressUTxOsQuery: Query<
   { utxos: TransactionOutput[] },
   { address: string }
 > = (options) => useQuery(UTxOsQuery, options)
+
+const PaymentAddressesQuery = gql`
+query PaymentAddressByAddresses($addresses: [String]!) {
+  paymentAddresses(addresses: $addresses) {
+    address
+    summary {
+      assetBalances {
+        asset {
+          assetId
+        }
+        quantity
+      }
+    }
+  }
+}`
+
+const usePaymentAddressesQuery: Query<
+  { paymentAddresses: PaymentAddress[] },
+  { addresses: string[] }
+> = (options) => useQuery(PaymentAddressesQuery, options)
+
+function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value {
+  const balance: Value = {
+    lovelace: BigInt(0),
+    assets: new Map()
+  }
+
+  paymentAddresses.forEach((paymentAddress) => {
+    paymentAddress.summary?.assetBalances?.forEach((assetBalance) => {
+      if (assetBalance) {
+        const { assetId } = assetBalance.asset
+        const quantity = assetBalance.quantity
+        if (assetId === 'ada') {
+          balance.lovelace = balance.lovelace + BigInt(quantity)
+          return
+        }
+        const value = balance.assets.get(assetId) ?? BigInt(0)
+        balance.assets.set(assetId, value + BigInt(quantity))
+      }
+    })
+  })
+
+  return balance
+}
 
 const ProtocolParametersQuery = gql`
 query getProtocolParameters {
@@ -75,4 +119,4 @@ query getProtocolParameters {
 const useProtocolParametersQuery: OptionalQuery<{ cardano: Cardano }, {}> = () => useQuery(ProtocolParametersQuery)
 
 export type { Value }
-export { getBalance, getPolicyId, getAssetName, useAddressUTxOsQuery, useProtocolParametersQuery }
+export { getBalance, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useAddressUTxOsQuery, useProtocolParametersQuery, usePaymentAddressesQuery }

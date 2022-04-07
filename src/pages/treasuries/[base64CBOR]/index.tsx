@@ -9,7 +9,7 @@ import { NativeScriptInfoViewer, NativeScriptViewer } from '../../../components/
 import Link from 'next/link'
 import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
-import { getAssetName, getBalance, getPolicyId, useAddressUTxOsQuery } from '../../../cardano/query-api'
+import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
 
@@ -20,16 +20,15 @@ const ShowBalance: NextPage<{
 }> = ({ cardano, script, className }) => {
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  const { loading, error, data } = useAddressUTxOsQuery({ variables: { address } })
+  const { loading, error, data } = usePaymentAddressesQuery({ variables: { addresses: [address] } })
 
-  if (loading) return <></>;
-  if (error) return <></>;
+  if (loading) return null
+  if (error) return null
 
-  const utxos = data?.utxos
+  const paymentAddresses = data?.paymentAddresses
+  if (!paymentAddresses) return null
 
-  if (!utxos) return <></>;
-
-  const balance = getBalance(utxos)
+  const balance = getBalanceByPaymentAddresses(paymentAddresses)
 
   return (
     <div className={className}>
