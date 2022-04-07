@@ -1,4 +1,5 @@
 import { gql, useQuery, ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
+import type { QueryOptions } from '@apollo/client'
 import type { Cardano, TransactionOutput } from '@cardano-graphql/client-ts'
 import fetch from 'cross-fetch'
 
@@ -47,7 +48,10 @@ query UTxOsByAddress($address: String!) {
   }
 }`
 
-const useAddressUTxOsQuery = (address: string) => useQuery<{ utxos: TransactionOutput[] }>(UTxOsQuery, { variables: { address } })
+const useAddressUTxOsQuery = (address: string, options?: QueryOptions) => useQuery<{ utxos: TransactionOutput[] }>(
+  UTxOsQuery,
+  { variables: { address }, ...options }
+)
 
 const ProtocolParametersQuery = gql`
 query getProtocolParameters {
@@ -66,7 +70,9 @@ query getProtocolParameters {
   }
 }`
 
-const useProtocolParametersQuery = () => useQuery<{ cardano: Cardano }>(ProtocolParametersQuery)
+const useProtocolParametersQuery = (options?: QueryOptions) => useQuery<{ cardano: Cardano }>(
+  ProtocolParametersQuery, options
+)
 
 const createApolloClient = (uri: string) => new ApolloClient({
   link: new HttpLink({ uri, fetch }),
