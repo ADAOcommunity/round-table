@@ -47,7 +47,8 @@ query UTxOsByAddress($address: String!) {
   }
 }`
 
-type Query<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>
+type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
+type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
 const useAddressUTxOsQuery: Query<
   { utxos: TransactionOutput[] },
@@ -71,7 +72,7 @@ query getProtocolParameters {
   }
 }`
 
-const useProtocolParametersQuery: Query<{ cardano: Cardano }, {}> = () => useQuery(ProtocolParametersQuery)
+const useProtocolParametersQuery: OptionalQuery<{ cardano: Cardano }, {}> = () => useQuery(ProtocolParametersQuery)
 
 export type { Value }
 export { getBalance, getPolicyId, getAssetName, useAddressUTxOsQuery, useProtocolParametersQuery }
