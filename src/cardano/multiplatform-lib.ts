@@ -260,7 +260,7 @@ class Factory {
   }
 }
 
-const CardanoSerializationLib = new Factory()
+const Loader = new Factory()
 
 const useCardanoMultiplatformLib = () => {
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
@@ -268,7 +268,7 @@ const useCardanoMultiplatformLib = () => {
   useEffect(() => {
     let isMounted = true
 
-    CardanoSerializationLib.load().then((instance) => {
+    Loader.load().then((instance) => {
       isMounted && setCardano(instance)
     })
 
@@ -281,4 +281,4 @@ const useCardanoMultiplatformLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader }
