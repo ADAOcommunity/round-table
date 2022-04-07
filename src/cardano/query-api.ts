@@ -1,5 +1,5 @@
 import { gql, useQuery } from '@apollo/client'
-import type { QueryOptions } from '@apollo/client'
+import type { QueryHookOptions, QueryResult } from '@apollo/client'
 import type { Cardano, TransactionOutput } from '@cardano-graphql/client-ts'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
@@ -47,10 +47,12 @@ query UTxOsByAddress($address: String!) {
   }
 }`
 
-const useAddressUTxOsQuery = (address: string, options?: QueryOptions) => useQuery<{ utxos: TransactionOutput[] }>(
-  UTxOsQuery,
-  { variables: { address }, ...options }
-)
+type Query<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>
+
+const useAddressUTxOsQuery: Query<
+  { utxos: TransactionOutput[] },
+  { address: string }
+> = (options) => useQuery(UTxOsQuery, options)
 
 const ProtocolParametersQuery = gql`
 query getProtocolParameters {
@@ -69,9 +71,7 @@ query getProtocolParameters {
   }
 }`
 
-const useProtocolParametersQuery = (options?: QueryOptions) => useQuery<{ cardano: Cardano }>(
-  ProtocolParametersQuery, options
-)
+const useProtocolParametersQuery: Query<{ cardano: Cardano }, {}> = () => useQuery(ProtocolParametersQuery)
 
 export type { Value }
 export { getBalance, getPolicyId, getAssetName, useAddressUTxOsQuery, useProtocolParametersQuery }

@@ -59,7 +59,7 @@ describe('GraphQL API', () => {
 
   test('useAddressUTxOsQuery', async () => {
     const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result, waitForValueToChange } = renderHook(() => useAddressUTxOsQuery(address), { wrapper })
+    const { result, waitForValueToChange } = renderHook(() => useAddressUTxOsQuery({ variables: { address } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
 
