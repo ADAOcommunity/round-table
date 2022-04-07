@@ -527,10 +527,12 @@ const NativeScriptInfoViewer: NextPage<{
 }
 
 const DeleteTreasuryButton: NextPage<{
+  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ className, children, script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, className, children, script }) => {
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const router = useRouter()
 
   const deleteHandle = () => {

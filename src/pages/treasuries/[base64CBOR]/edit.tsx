@@ -56,6 +56,7 @@ const EditTreasury: NextPage<{
       </div>
       <footer className='flex justify-between p-4 bg-gray-100'>
         <DeleteTreasuryButton
+          cardano={cardano}
           className='px-4 py-2 text-sky-700 disabled:text-gray-400'
           script={script}>
           Delete
