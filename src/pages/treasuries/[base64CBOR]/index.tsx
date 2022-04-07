@@ -1,15 +1,15 @@
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
-import type { Cardano } from '../../../cardano/serialization-lib'
+import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
+import type { Cardano } from '../../../cardano/multiplatform-lib'
 import { Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import { NativeScriptInfoViewer, NativeScriptViewer } from '../../../components/transaction'
 import Link from 'next/link'
 import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
-import { getAssetName, getBalance, getPolicyId, useAddressUTxOsQuery } from '../../../cardano/query-api'
+import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
 
@@ -20,11 +20,15 @@ const ShowBalance: NextPage<{
 }> = ({ cardano, script, className }) => {
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  const utxos = useAddressUTxOsQuery(address, config)
+  const { loading, error, data } = usePaymentAddressesQuery({ variables: { addresses: [address] }, fetchPolicy: 'network-only' })
 
-  if (utxos.type !== 'ok') return <></>;
+  if (loading) return null
+  if (error) return null
 
-  const balance = getBalance(utxos.data)
+  const paymentAddresses = data?.paymentAddresses
+  if (!paymentAddresses) return null
+
+  const balance = getBalanceByPaymentAddresses(paymentAddresses)
 
   return (
     <div className={className}>
@@ -77,7 +81,7 @@ const ShowTreasury: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
 
   if (!cardano) return <Loading />;
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid URL</ErrorMessage>;

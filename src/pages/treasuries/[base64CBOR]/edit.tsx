@@ -1,6 +1,6 @@
 import { NextPage } from 'next'
 import { NextRouter, useRouter } from 'next/router'
-import { encodeCardanoData, getResult, useCardanoSerializationLib } from '../../../cardano/serialization-lib'
+import { encodeCardanoData, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
@@ -76,7 +76,7 @@ const EditTreasury: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
 
   if (!cardano) return <Loading />;
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid URL</ErrorMessage>;

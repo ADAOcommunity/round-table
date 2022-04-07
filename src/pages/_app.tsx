@@ -3,6 +3,10 @@ import type { AppProps } from 'next/app'
 import { ConfigContext, config } from '../cardano/config'
 import Head from 'next/head'
 import { NotificationContext, useNotification } from '../components/notification'
+import { ApolloProvider } from '@apollo/client'
+import { createApolloClient } from '../cardano/query-api'
+
+const apolloClient = createApolloClient(config)
 
 function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
@@ -10,10 +14,12 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ConfigContext.Provider value={[config, () => { }]}>
       <NotificationContext.Provider value={notification}>
-        <Head>
-          <title>{config.isMainnet ? 'RoundTable (Mainnet)' : 'RoundTable (Testnet)'}</title>
-        </Head>
-        <Component {...pageProps} />
+        <ApolloProvider client={apolloClient}>
+          <Head>
+            <title>{config.isMainnet ? 'RoundTable (Mainnet)' : 'RoundTable (Testnet)'}</title>
+          </Head>
+          <Component {...pageProps} />
+        </ApolloProvider>
       </NotificationContext.Provider>
     </ConfigContext.Provider>
   )

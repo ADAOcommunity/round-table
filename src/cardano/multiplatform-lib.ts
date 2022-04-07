@@ -1,6 +1,6 @@
+import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
 import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
-import { ProtocolParameters } from './query-api'
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
@@ -155,10 +155,14 @@ class Cardano {
     }
   }
 
-  public createTxBuilder(protocolParameters: ProtocolParameters): TransactionBuilder {
+  public createTxBuilder(protocolParameters: ShelleyProtocolParams): TransactionBuilder {
     const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
       coinsPerUtxoWord, maxTxSize, maxValSize } = protocolParameters
+
+    if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
+    if (!maxValSize) throw new Error('No maxValSize')
+
     const toBigNum = (value: number) => BigNum.from_str(value.toString())
     const config = TransactionBuilderConfigBuilder.new()
       .fee_algo(LinearFee.new(toBigNum(minFeeA), toBigNum(minFeeB)))
@@ -166,7 +170,7 @@ class Cardano {
       .key_deposit(toBigNum(keyDeposit))
       .coins_per_utxo_word(toBigNum(coinsPerUtxoWord))
       .max_tx_size(maxTxSize)
-      .max_value_size(maxValSize)
+      .max_value_size(parseFloat(maxValSize))
       .build()
     return TransactionBuilder.new(config)
   }
@@ -258,7 +262,7 @@ class Factory {
 
 const CardanoSerializationLib = new Factory()
 
-const useCardanoSerializationLib = () => {
+const useCardanoMultiplatformLib = () => {
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
 
   useEffect(() => {
@@ -277,4 +281,4 @@ const useCardanoSerializationLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoSerializationLib, verifySignature }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature }
