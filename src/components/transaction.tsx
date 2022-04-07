@@ -1,8 +1,9 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
-import { getAssetName, getBalance, getPolicyId, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
+import { getAssetName, getBalance, getPolicyId, Value } from '../cardano/query-api'
 import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/serialization-lib'
 import type { Result } from '../cardano/serialization-lib'
+import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { CheckIcon, DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
@@ -18,6 +19,7 @@ import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getTreasuriesPath, getTreasuryPath } from '../route'
+import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
 
 type Recipient = {
   id: string
@@ -201,9 +203,9 @@ const Recipient: NextPage<{
 const NewTransaction: NextPage<{
   cardano: Cardano
   changeAddress?: Address
-  protocolParameters: ProtocolParameters
+  protocolParameters: ShelleyProtocolParams
   nativeScriptSet?: NativeScripts
-  utxos: UTxO[]
+  utxos: GraphQLTransactionOutput[]
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
 
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
@@ -264,21 +266,21 @@ const NewTransaction: NextPage<{
 
     const utxosSet = TransactionUnspentOutputs.new()
     utxos.forEach((utxo) => {
-      const { txHash, index, lovelace, assets } = utxo
-      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      const value = cardano.lib.Value.new(BigNum.from_str(utxo.value.toString()))
       const address = Address.from_bech32(utxo.address)
-      if (assets.length > 0) {
+      if (utxo.tokens.length > 0) {
         const multiAsset = MultiAsset.new()
-        assets.forEach((asset) => {
+        utxo.tokens.forEach((token) => {
+          const asset = token.asset
           const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
           const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
-          const quantity = BigNum.from_str(asset.quantity.toString())
+          const quantity = BigNum.from_str(token.quantity.toString())
           multiAsset.set_asset(policyId, assetName, quantity)
         })
         value.set_multiasset(multiAsset)
       }
       const txUnspentOutput = TransactionUnspentOutput.new(
-        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), BigNum.from_str(index.toString())),
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(utxo.txHash, 'hex')), BigNum.from_str(utxo.index.toString())),
         TransactionOutput.new(address, value)
       )
       utxosSet.add(txUnspentOutput)

@@ -20,11 +20,16 @@ const ShowBalance: NextPage<{
 }> = ({ cardano, script, className }) => {
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  const utxos = useAddressUTxOsQuery(address, config)
+  const { loading, error, data } = useAddressUTxOsQuery(address)
 
-  if (utxos.type !== 'ok') return <></>;
+  if (loading) return <></>;
+  if (error) return <></>;
 
-  const balance = getBalance(utxos.data)
+  const utxos = data?.utxos
+
+  if (!utxos) return <></>;
+
+  const balance = getBalance(utxos)
 
   return (
     <div className={className}>
