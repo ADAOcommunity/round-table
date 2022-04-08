@@ -23,6 +23,7 @@ const DownloadDataButton: NextPage<{
 
 type UserData = {
   isMainnet: boolean
+  version: string
   treasuries: Treasury[]
 }
 
@@ -34,6 +35,7 @@ const ExportUserDataButton: NextPage = () => {
 
   const userData: UserData = {
     isMainnet: config.isMainnet,
+    version: '1',
     treasuries
   }
   const userDataJSON = JSON.stringify(userData)
