@@ -59,4 +59,37 @@ describe('Create a new treasury', () => {
     cy.contains(treasuryName).click()
     cy.url().should('eq', 'http://localhost:3000/treasuries/gwMCgoIAWBz2v%2FtCURgnKF2D4mFnXqjUTGnZS54dlZQ1d90KggBYHOHZFcEMhAAXvTkIioJQeycVCkOOiQd4QiFJEwk%3D')
   })
+
+  it('Should edit treasury info', () => {
+    const addedName = 'added'
+    const addedDesc = 'xxx'
+    const editedName = treasuryName + addedName
+    const editedDesc = treasuryDesc + addedDesc
+
+    cy.contains('Edit Info').click()
+
+    cy.wait(1500)
+
+    cy.get('input[placeholder="Write Name"]')
+      .type(addedName)
+      .should("have.value", editedName);
+
+    cy.get('textarea[placeholder="Describe the treasury"]')
+      .type(addedDesc)
+      .should("have.value", editedDesc)
+
+    cy.contains('Save Treasury').click()
+
+    cy.wait(1500)
+
+    cy.contains(editedName).should('be.visible')
+    cy.contains(editedDesc).should('be.visible')
+  })
+
+  it('Should delete treasury info', () => {
+    cy.contains('Edit Info').click()
+    cy.contains('Delete').click()
+    cy.url().should('eq', 'http://localhost:3000/treasuries/new')
+    cy.contains(treasuryName + 'added').should('not.exist')
+  })
 })

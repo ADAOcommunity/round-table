@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
-import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
+import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
@@ -500,10 +500,12 @@ const AddressViewer: NextPage<{
 }
 
 const NativeScriptInfoViewer: NextPage<{
+  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ className, script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, className, script }) => {
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
 
   if (!treasury) return (
     <div className='p-4 text-white bg-sky-700 rounded shadow space-y-1'>
@@ -525,16 +527,18 @@ const NativeScriptInfoViewer: NextPage<{
 }
 
 const DeleteTreasuryButton: NextPage<{
+  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ className, children, script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, className, children, script }) => {
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const router = useRouter()
 
   const deleteHandle = () => {
     db
       .treasuries
-      .delete(encodeCardanoData(script, 'base64'))
+      .delete(hash.to_hex())
       .then(() => router.push(getTreasuriesPath('new')))
   }
 
@@ -724,22 +728,23 @@ const SubmitTxButton: NextPage<{
 }
 
 const SaveTreasuryButton: NextPage<{
+  cardano: Cardano
   className?: string
   name: string
   description: string
   script?: NativeScript
-}> = ({ name, description, script, className, children }) => {
+}> = ({ cardano, name, description, script, className, children }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
 
   if (!script) return <button className={className} disabled={true}>{children}</button>;
 
-  const base64CBOR = encodeCardanoData(script, 'base64')
+  const hash = cardano.hashScript(script).to_hex()
 
   const submitHandle = () => {
     db
       .treasuries
-      .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
+      .put({ hash, name, description, script: script.to_bytes(), updatedAt: new Date() }, hash)
       .then(() => router.push(getTreasuryPath(script)))
       .catch(() => notify('error', 'Failed to save'))
   }

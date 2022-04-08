@@ -62,7 +62,7 @@ const ShowTreasury: NextPage<{
   return (
     <Panel>
       <div className='p-4 space-y-2'>
-        <NativeScriptInfoViewer className='space-y-1' script={script} />
+        <NativeScriptInfoViewer cardano={cardano} className='space-y-1' script={script} />
         <NativeScriptViewer className='space-y-2' cardano={cardano} script={script} />
         <ShowBalance cardano={cardano} script={script} />
       </div>

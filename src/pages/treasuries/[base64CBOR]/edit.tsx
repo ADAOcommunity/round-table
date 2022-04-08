@@ -1,6 +1,6 @@
 import { NextPage } from 'next'
 import { NextRouter, useRouter } from 'next/router'
-import { encodeCardanoData, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
+import { Cardano, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
@@ -10,10 +10,12 @@ import { db } from '../../../db'
 import { useEffect, useState } from 'react'
 
 const EditTreasury: NextPage<{
+  cardano: Cardano
   router: NextRouter
   script: NativeScript
-}> = ({ script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, script }) => {
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
@@ -54,6 +56,7 @@ const EditTreasury: NextPage<{
       </div>
       <footer className='flex justify-between p-4 bg-gray-100'>
         <DeleteTreasuryButton
+          cardano={cardano}
           className='px-4 py-2 text-sky-700 disabled:text-gray-400'
           script={script}>
           Delete
@@ -61,6 +64,7 @@ const EditTreasury: NextPage<{
         <div className='space-x-2'>
           <BackButton className='px-4 py-2 border rounded text-sky-700'>Back</BackButton>
           <SaveTreasuryButton
+            cardano={cardano}
             className='px-4 py-2 bg-sky-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
             name={name}
             description={description}
@@ -94,7 +98,7 @@ const GetTreasury: NextPage = () => {
         <Panel>
           <NativeScriptViewer className='p-4 space-y-2' cardano={cardano} script={script} />
         </Panel>
-        <EditTreasury router={router} script={script} />
+        <EditTreasury cardano={cardano} router={router} script={script} />
       </div>
     </Layout>
   )

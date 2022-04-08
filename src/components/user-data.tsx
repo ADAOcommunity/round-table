@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { NextPage } from 'next'
 import { ChangeEventHandler, MouseEventHandler, useContext, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
-import { Cardano } from '../cardano/multiplatform-lib'
+import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import { db, Treasury } from '../db'
 
 const DownloadDataButton: NextPage<{
@@ -71,11 +71,12 @@ const ExportUserDataButton: NextPage = () => {
   )
 }
 
-const ImportUserData: NextPage<{
-  cardano: Cardano
-}> = ({ cardano }) => {
+const ImportUserData: NextPage = () => {
+  const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
   const [userDataJSON, setUserDataJSON] = useState('')
+
+  if (!cardano) return null;
 
   const changeHandle: ChangeEventHandler<HTMLInputElement> = async (event) => {
     event.preventDefault()

@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
-import { CogIcon, HomeIcon, PlusIcon } from '@heroicons/react/solid'
+import { CogIcon, PlusIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -9,6 +9,7 @@ import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getTreasuriesPath } from '../route'
+import { encodeCardanoData } from '../cardano/multiplatform-lib'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -117,7 +118,9 @@ const PrimaryBar: NextPage = () => {
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
       <Link href='/'>
         <a className='p-4 hover:bg-sky-700'>
-          <HomeIcon className='w-12' />
+          <div className='bg-white rounded-full p-0.5 rounded-full' style={{ height: '48px' }}>
+            <Image src='/marker.svg' width={48} height={48} alt='Home' />
+          </div>
         </a>
       </Link>
       <NavLink
@@ -127,7 +130,9 @@ const PrimaryBar: NextPage = () => {
         <CogIcon className='w-12' />
       </NavLink>
       <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/SDnm4GzY'>
-        <Image src='/Discord-Logo-White.svg' width={48} height={48} alt='Discord Server'></Image>
+        <div style={{ height: '48px' }}>
+          <Image src='/Discord-Logo-White.svg' width={48} height={48} alt='Discord Server'></Image>
+        </div>
       </a>
       <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://github.com/ADAOcommunity/round-table'>
         <svg className='w-12 fill-white' viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -142,9 +147,10 @@ const TreasuryListing: NextPage<{
   treasury: Treasury
 }> = ({ treasury }) => {
   const { name, script } = treasury
+  const base64CBOR = encodeCardanoData(script, 'base64')
   return (
     <NavLink
-      href={getTreasuriesPath(encodeURIComponent(script))}
+      href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-sky-700'>
       {name}
