@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
-import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
+import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
@@ -538,7 +538,7 @@ const DeleteTreasuryButton: NextPage<{
   const deleteHandle = () => {
     db
       .treasuries
-      .delete(encodeCardanoData(script, 'base64'))
+      .delete(hash.to_hex())
       .then(() => router.push(getTreasuriesPath('new')))
   }
 

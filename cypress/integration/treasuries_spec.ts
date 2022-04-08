@@ -85,4 +85,11 @@ describe('Create a new treasury', () => {
     cy.contains(editedName).should('be.visible')
     cy.contains(editedDesc).should('be.visible')
   })
+
+  it('Should delete treasury info', () => {
+    cy.contains('Edit Info').click()
+    cy.contains('Delete').click()
+    cy.url().should('eq', 'http://localhost:3000/treasuries/new')
+    cy.contains(treasuryName + 'added').should('not.exist')
+  })
 })
