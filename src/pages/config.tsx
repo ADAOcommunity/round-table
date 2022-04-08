@@ -2,6 +2,7 @@ import { NextPage } from "next";
 import { Layout, Panel } from '../components/layout'
 import { useContext } from "react";
 import { ConfigContext } from "../cardano/config";
+import { ExportUserDataButton, ImportUserData } from '../components/user-data'
 
 const Configure: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
@@ -30,6 +31,16 @@ const Configure: NextPage = () => {
               {config.gunPeers.map((peer, index) => <li key={index}>{peer}</li>)}
             </ul>
           </div>}
+        </div>
+        <div className='font-semibold'>User Data Export/Import</div>
+        <p>User data has to be on the same network. For example, data exported from testnet cannot be imported to mainnet.</p>
+        <p>Save my treasuries</p>
+        <div className='flex'>
+          <ExportUserDataButton />
+        </div>
+        <p className='mt-2'>Load my treasuries</p>
+        <div className='flex'>
+          <ImportUserData />
         </div>
       </Panel>
     </Layout>
