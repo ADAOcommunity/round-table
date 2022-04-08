@@ -131,7 +131,7 @@ class Cardano {
 
   public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
     return getResult(() => {
-      const keyHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_keyhash()
+      const keyHash = address.as_base()?.payment_cred().to_keyhash()
       if (!keyHash) throw new Error('failed to get keyhash from address')
       return keyHash
     })
@@ -139,7 +139,7 @@ class Cardano {
 
   public getAddressScriptHash(address: Address): Result<ScriptHash> {
     return getResult(() => {
-      const scriptHash = this.lib.BaseAddress.from_address(address)?.payment_cred().to_scripthash()
+      const scriptHash = address.as_base()?.payment_cred().to_scripthash()
       if (!scriptHash) throw new Error('failed to get script hash from address')
       return scriptHash
     })
