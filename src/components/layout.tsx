@@ -118,7 +118,9 @@ const PrimaryBar: NextPage = () => {
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
       <Link href='/'>
         <a className='p-4 hover:bg-sky-700'>
-          <Image className='bg-white rounded-full' src='/RoundTable_solo_transparent.svg' width={48} height={48} alt='Home' />
+          <div className='bg-white rounded-full p-0.5 rounded-full' style={{ height: '48px' }}>
+            <Image src='/marker.svg' width={48} height={48} alt='Home' />
+          </div>
         </a>
       </Link>
       <NavLink
@@ -128,7 +130,9 @@ const PrimaryBar: NextPage = () => {
         <CogIcon className='w-12' />
       </NavLink>
       <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/SDnm4GzY'>
-        <Image src='/Discord-Logo-White.svg' width={48} height={48} alt='Discord Server'></Image>
+        <div style={{ height: '48px' }}>
+          <Image src='/Discord-Logo-White.svg' width={48} height={48} alt='Discord Server'></Image>
+        </div>
       </a>
       <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://github.com/ADAOcommunity/round-table'>
         <svg className='w-12 fill-white' viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
