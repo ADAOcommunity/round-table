@@ -118,7 +118,7 @@ const PrimaryBar: NextPage = () => {
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
       <Link href='/'>
         <a className='p-4 hover:bg-sky-700'>
-          <HomeIcon className='w-12' />
+          <Image className='bg-white rounded-full' src='/RoundTable_solo_transparent.svg' width={48} height={48} alt='Home' />
         </a>
       </Link>
       <NavLink
