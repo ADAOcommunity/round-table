@@ -84,7 +84,7 @@ const ImportUserData: NextPage = () => {
         type='file'
         onChange={changeHandle} />
       <button
-        className='p-2 bg-sky-700 text-white'
+        className='p-2 bg-sky-700 text-white disabled:text-gray-400 disabled:bg-gray-100'
         onClick={clickHandle}
         disabled={!userData || userData.isMainnet !== config.isMainnet}>
         Import User Data
