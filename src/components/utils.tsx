@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { NextPage } from 'next'
-import { ChangeEventHandler, MouseEventHandler, useState } from 'react'
+import { ChangeEventHandler, MouseEventHandler, useContext, useState } from 'react'
+import { ConfigContext } from '../cardano/config'
 import { db, Treasury } from '../db'
 
 const DownloadDataButton: NextPage<{
@@ -21,28 +22,37 @@ const DownloadDataButton: NextPage<{
 }
 
 type UserData = {
+  isMainnet: boolean
   treasuries: Treasury[]
 }
 
 const ExportUserDataButton: NextPage = () => {
+  const [config, _] = useContext(ConfigContext)
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
 
   if (!treasuries) return null
 
-  const data = JSON.stringify({ treasuries })
+  const userData: UserData = {
+    isMainnet: config.isMainnet,
+    treasuries
+  }
+  const userDataJSON = JSON.stringify(userData)
+
+  const filename = `roundtable-backup.${config.isMainnet ? 'mainnet' : 'testnet'}.json`
 
   return (
     <DownloadDataButton
       className='p-2 rounded bg-sky-700 text-white'
       mime='application/json;charset=utf-8'
-      filename='roundtable-backup.json'
-      data={data}>
+      filename={filename}
+      data={userDataJSON}>
       Export User Data
     </DownloadDataButton>
   )
 }
 
 const ImportUserData: NextPage = () => {
+  const [config, _] = useContext(ConfigContext)
   const [userData, setUserData] = useState<UserData | undefined>(undefined)
 
   const changeHandle: ChangeEventHandler<HTMLInputElement> = async (event) => {
@@ -64,6 +74,7 @@ const ImportUserData: NextPage = () => {
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
     if (!userData) return;
+    if (userData.isMainnet !== config.isMainnet) return;
     db.treasuries.bulkAdd(userData.treasuries)
   }
 
@@ -75,7 +86,7 @@ const ImportUserData: NextPage = () => {
       <button
         className='p-2 bg-sky-700 text-white'
         onClick={clickHandle}
-        disabled={!userData}>
+        disabled={!userData || userData.isMainnet !== config.isMainnet}>
         Import User Data
       </button>
     </div>
