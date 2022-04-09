@@ -16,7 +16,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       <NotificationContext.Provider value={notification}>
         <ApolloProvider client={apolloClient}>
           <Head>
-            <title>{config.isMainnet ? 'RoundTable (Mainnet)' : 'RoundTable (Testnet)'}</title>
+            <title>{config.isMainnet ? 'RoundTable' : 'RoundTable Testnet'}</title>
             <link rel="shortcut icon" href="/marker.svg" />
           </Head>
           <Component {...pageProps} />
