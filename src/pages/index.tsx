@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Layout, Panel } from '../components/layout'
 
 const Home: NextPage = () => {
@@ -12,7 +13,11 @@ const Home: NextPage = () => {
           </div>
           <h1 className='text-lg font-semibold'>Round Table</h1>
           <p>Round Table is ADAO Community’s open-source, multi-signature dApp. ADAO plans to publish a user guide and proper documentation to allow for easier contribution to our open-source repository, and ease Round Table’s adoption by Cardano community projects and organisations. ADAO has already developed working minimum viable product (MVP) and is performing tests and reviews both internally and in collaboration with partner organisations.</p>
-          <p>You can load your data in config page.</p>
+          <nav>
+            <Link href='/config'>
+              <a className='text-sky-700'>Import my data to start</a>
+            </Link>
+          </nav>
         </Panel>
       </div>
     </Layout>
