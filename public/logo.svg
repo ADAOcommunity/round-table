@@ -9,11 +9,11 @@
        .fill-teal {
          fill: #14B8A6;
        }
-       .text-lg-1 {
+       .text-lg {
          font: normal 120px sans-serif;
        }
-       .text-lg-2 {
-         font: bold 120px sans-serif;
+       .font-bold {
+         font-weight: bold;
        }
        .text-sm {
          font: normal 80px sans-serif;
@@ -47,9 +47,9 @@
   <use href="#person" class="fill-sky" transform="rotate(270 500 500)" />
   <use href="#person" class="fill-teal" transform="rotate(315 500 500)" />
 
-  <text class="text-lg-1 fill-sky" y="1130" x="160">
+  <text class="text-lg fill-sky" y="1130" x="160">
     Round
-    <tspan class="text-lg-2 fill-teal">Table</tspan>
+    <tspan class="font-bold fill-teal">Table</tspan>
   </text>
   <text class="text-sm fill-sky" y="1230" x="200">A Multi-Sig dApp</text>
 </svg>
