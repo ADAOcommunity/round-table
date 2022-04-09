@@ -17,6 +17,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <ApolloProvider client={apolloClient}>
           <Head>
             <title>{config.isMainnet ? 'RoundTable (Mainnet)' : 'RoundTable (Testnet)'}</title>
+            <link rel="shortcut icon" href="/marker.svg" />
           </Head>
           <Component {...pageProps} />
         </ApolloProvider>
