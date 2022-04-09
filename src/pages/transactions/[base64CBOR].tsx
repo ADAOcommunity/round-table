@@ -1,11 +1,11 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/layout'
-import { toHex, toIter, verifySignature } from '../../cardano/serialization-lib'
-import { getResult, useCardanoSerializationLib } from '../../cardano/serialization-lib'
+import { toHex, toIter, verifySignature } from '../../cardano/multiplatform-lib'
+import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../components/status'
 import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
-import type { Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
+import type { Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useContext, useState } from 'react'
 import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
@@ -47,7 +47,7 @@ const ManualSign: NextPage<{
 const GetTransaction: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const cardano = useCardanoSerializationLib()
+  const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _] = useContext(ConfigContext)
 
@@ -124,8 +124,8 @@ const GetTransaction: NextPage = () => {
           <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
-          <Panel>
-            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} key={index} />
+          <Panel key={index}>
+            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} />
             <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
               <div className='flex space-x-1 items-center'>
                 <SignatureSync

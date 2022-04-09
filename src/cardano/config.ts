@@ -5,11 +5,7 @@ type GraphQL = {
   URI: string
 }
 
-type Koios = {
-  type: 'koios'
-}
-
-type QueryAPI = GraphQL | Koios
+type QueryAPI = GraphQL
 
 type Config = {
   isMainnet: boolean
@@ -17,20 +13,24 @@ type Config = {
   gunPeers: string[]
 }
 
+const defaultGraphQLMainnet = 'https://d.graphql-api.mainnet.dandelion.link'
+const defaultGraphQLTestnet = 'https://d.graphql-api.testnet.dandelion.link'
+
 const defaultConfig: Config = {
   isMainnet: true,
-  queryAPI: { type: 'koios' },
+  queryAPI: { type: 'graphql', URI: defaultGraphQLMainnet },
   gunPeers: []
 }
 
 const createConfig = (): Config => {
   const isMainnet = !process.env.NEXT_PUBLIC_TESTNET
-  const grapQLURI = process.env.NEXT_PUBLIC_GRAPHQL
+  const defaultGraphQL = isMainnet ? defaultGraphQLMainnet : defaultGraphQLTestnet
+  const grapQLURI = process.env.NEXT_PUBLIC_GRAPHQL ?? defaultGraphQL
   const gunPeers = (process.env.NEXT_PUBLIC_GUN ?? '').split(';')
 
   return {
     isMainnet,
-    queryAPI: grapQLURI ? { type: 'graphql', URI: grapQLURI } : { type: 'koios' },
+    queryAPI: { type: 'graphql', URI: grapQLURI },
     gunPeers
   }
 }

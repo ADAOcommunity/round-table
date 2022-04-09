@@ -1,9 +1,10 @@
 import { useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
-import { getAssetName, getBalance, getPolicyId, ProtocolParameters, UTxO, Value } from '../cardano/query-api'
-import { Cardano, encodeCardanoData, getResult, toHex, toIter } from '../cardano/serialization-lib'
-import type { Result } from '../cardano/serialization-lib'
-import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@adaocommunity/cardano-serialization-lib-browser'
+import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
+import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
+import type { Result } from '../cardano/multiplatform-lib'
+import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
+import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { CheckIcon, DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
@@ -18,6 +19,7 @@ import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getTreasuriesPath, getTreasuryPath } from '../route'
+import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
 
 type Recipient = {
   id: string
@@ -45,10 +47,11 @@ const LabeledCurrencyInput: NextPage<{
   decimal: number
   value: bigint
   max: bigint
+  maxButton?: boolean
   onChange: (_: bigint) => void
   placeholder?: string
 }> = (props) => {
-  const { decimal, value, onChange, max, symbol, placeholder } = props
+  const { decimal, value, onChange, max, maxButton, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
@@ -67,11 +70,13 @@ const LabeledCurrencyInput: NextPage<{
         <span>{toDecimal(max, decimal)}</span>
         <span>{symbol}</span>
       </div>
-      <button
-        onClick={() => onChange(max)}
-        className='bg-gray-100 border-l py-2 px-4 group text-sky-700'>
-        Max
-      </button>
+      {maxButton &&
+        <button
+          onClick={() => onChange(max)}
+          className='bg-gray-100 border-l py-2 px-4 group text-sky-700'>
+          Max
+        </button>
+      }
     </label>
   )
 }
@@ -181,6 +186,7 @@ const Recipient: NextPage<{
                 decimal={0}
                 value={quantity}
                 max={quantity + assetBudget}
+                maxButton={true}
                 onChange={onChange} />
               <button className='p-2' onClick={() => deleteAsset(id)}>
                 <TrashIcon className='w-4' />
@@ -197,9 +203,9 @@ const Recipient: NextPage<{
 const NewTransaction: NextPage<{
   cardano: Cardano
   changeAddress?: Address
-  protocolParameters: ProtocolParameters
+  protocolParameters: ShelleyProtocolParams
   nativeScriptSet?: NativeScripts
-  utxos: UTxO[]
+  utxos: GraphQLTransactionOutput[]
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
 
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
@@ -251,7 +257,7 @@ const NewTransaction: NextPage<{
         _quantity && assets.set(id, _quantity - quantity)
       })
       return { lovelace, assets }
-    }, getBalance(utxos))
+    }, getBalanceByUTxOs(utxos))
 
   const buildUTxOSet = () => {
     const { Address, AssetName, BigNum, MultiAsset, ScriptHash,
@@ -260,21 +266,21 @@ const NewTransaction: NextPage<{
 
     const utxosSet = TransactionUnspentOutputs.new()
     utxos.forEach((utxo) => {
-      const { txHash, index, lovelace, assets } = utxo
-      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
+      const value = cardano.lib.Value.new(BigNum.from_str(utxo.value.toString()))
       const address = Address.from_bech32(utxo.address)
-      if (assets.length > 0) {
+      if (utxo.tokens.length > 0) {
         const multiAsset = MultiAsset.new()
-        assets.forEach((asset) => {
+        utxo.tokens.forEach((token) => {
+          const asset = token.asset
           const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
           const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
-          const quantity = BigNum.from_str(asset.quantity.toString())
+          const quantity = BigNum.from_str(token.quantity.toString())
           multiAsset.set_asset(policyId, assetName, quantity)
         })
         value.set_multiasset(multiAsset)
       }
       const txUnspentOutput = TransactionUnspentOutput.new(
-        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(txHash, 'hex')), index),
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(utxo.txHash, 'hex')), BigNum.from_str(utxo.index.toString())),
         TransactionOutput.new(address, value)
       )
       utxosSet.add(txUnspentOutput)
@@ -321,7 +327,7 @@ const NewTransaction: NextPage<{
 
   return (
     <Panel>
-      <ul className='divide-y'>
+      <ul>
         {recipients.map((recipient, index) =>
           <li key={recipient.id}>
             <header className='flex px-4 py-2 bg-gray-100'>
@@ -391,7 +397,7 @@ const TransactionBodyViewer: NextPage<{
       const input = txBody.inputs().get(i)
       return {
         txHash: toHex(input.transaction_id()),
-        index: input.index()
+        index: parseInt(input.index().to_str())
       }
     })
   }
@@ -494,10 +500,12 @@ const AddressViewer: NextPage<{
 }
 
 const NativeScriptInfoViewer: NextPage<{
+  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ className, script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, className, script }) => {
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
 
   if (!treasury) return (
     <div className='p-4 text-white bg-sky-700 rounded shadow space-y-1'>
@@ -519,16 +527,18 @@ const NativeScriptInfoViewer: NextPage<{
 }
 
 const DeleteTreasuryButton: NextPage<{
+  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ className, children, script }) => {
-  const treasury = useLiveQuery(async () => db.treasuries.get(encodeCardanoData(script, 'base64')), [script])
+}> = ({ cardano, className, children, script }) => {
+  const hash = cardano.hashScript(script)
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const router = useRouter()
 
   const deleteHandle = () => {
     db
       .treasuries
-      .delete(encodeCardanoData(script, 'base64'))
+      .delete(hash.to_hex())
       .then(() => router.push(getTreasuriesPath('new')))
   }
 
@@ -718,22 +728,23 @@ const SubmitTxButton: NextPage<{
 }
 
 const SaveTreasuryButton: NextPage<{
+  cardano: Cardano
   className?: string
   name: string
   description: string
   script?: NativeScript
-}> = ({ name, description, script, className, children }) => {
+}> = ({ cardano, name, description, script, className, children }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
 
   if (!script) return <button className={className} disabled={true}>{children}</button>;
 
-  const base64CBOR = encodeCardanoData(script, 'base64')
+  const hash = cardano.hashScript(script).to_hex()
 
   const submitHandle = () => {
     db
       .treasuries
-      .put({ name, description, script: base64CBOR, updatedAt: new Date() }, base64CBOR)
+      .put({ hash, name, description, script: script.to_bytes(), updatedAt: new Date() }, hash)
       .then(() => router.push(getTreasuryPath(script)))
       .catch(() => notify('error', 'Failed to save'))
   }
