@@ -3,15 +3,15 @@
      xmlns="http://www.w3.org/2000/svg">
   <defs>
     <style type="text/css"><![CDATA[
-       .fill-blue {
-         fill: #007bc4;
+       .fill-sky {
+         fill: #0284C7;
        }
        .fill-teal {
-         fill: #1cbdad;
+         fill: #2DD4BF;
        }
     ]]></style>
   </defs>
-  <circle class="fill-blue" cx="500" cy="500" r="350" />
+  <circle class="fill-sky" cx="500" cy="500" r="350" />
   <symbol id='lg-star'>
     <polygon points="500,200 570,430 800,500 570,570 500,800 430,570 200,500 430,430" />
   </symbol>
@@ -29,12 +29,12 @@
     <circle cx="500" cy="105" r="15" transform="rotate(15 500 500)" />
     <circle cx="500" cy="105" r="15" transform="rotate(345 500 500)" />
   </symbol>
-  <use href="#person" class="fill-blue" />
+  <use href="#person" class="fill-sky" />
   <use href="#person" class="fill-teal" transform="rotate(45 500 500)" />
-  <use href="#person" class="fill-blue" transform="rotate(90 500 500)" />
+  <use href="#person" class="fill-sky" transform="rotate(90 500 500)" />
   <use href="#person" class="fill-teal" transform="rotate(135 500 500)" />
-  <use href="#person" class="fill-blue" transform="rotate(180 500 500)" />
+  <use href="#person" class="fill-sky" transform="rotate(180 500 500)" />
   <use href="#person" class="fill-teal" transform="rotate(225 500 500)" />
-  <use href="#person" class="fill-blue" transform="rotate(270 500 500)" />
+  <use href="#person" class="fill-sky" transform="rotate(270 500 500)" />
   <use href="#person" class="fill-teal" transform="rotate(315 500 500)" />
 </svg>
