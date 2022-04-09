@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
-import { CogIcon, PlusIcon } from '@heroicons/react/solid'
+import { CogIcon, HomeIcon, PlusIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -118,9 +118,7 @@ const PrimaryBar: NextPage = () => {
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
       <Link href='/'>
         <a className='p-4 hover:bg-sky-700'>
-          <div className='bg-white rounded-full p-0.5 rounded-full' style={{ height: '48px' }}>
-            <Image src='/marker.svg' width={48} height={48} alt='Home' />
-          </div>
+          <HomeIcon className='w-12' />
         </a>
       </Link>
       <NavLink
