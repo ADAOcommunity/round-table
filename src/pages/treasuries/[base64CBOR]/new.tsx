@@ -19,7 +19,10 @@ const NewMultiSigTransaction: NextPage<{
 
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
-  const { loading, error, data } = useAddressUTxOsQuery({ variables: { address: address.to_bech32() } })
+  const { loading, error, data } = useAddressUTxOsQuery({
+    variables: { address: address.to_bech32() },
+    fetchPolicy: 'network-only'
+  })
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
