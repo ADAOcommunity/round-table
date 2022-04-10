@@ -693,43 +693,24 @@ const SubmitTxButton: NextPage<{
   className?: string
   transaction: Transaction
 }> = ({ className, children, transaction }) => {
-
-  const [run, setRun] = useState(false)
   const { notify } = useContext(NotificationContext)
-  const [wallet, setWallet] = useState<Wallet | undefined>()
-  const isDisabled = !wallet
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const URL = 'http://testrelay1.panl.org:8090/api/submit/tx'
 
-  useEffect(() => {
-    let isMounted = true
-
-    const cardano = (window as any).cardano
-    isMounted && setWallet(cardano?.nami || cardano?.eternl || cardano?.gerowallet)
-
-    return () => {
-      isMounted = false
-    }
-  }, [wallet])
-
-  useEffect(() => {
-    if (run && wallet) {
-      const walletAPI: Promise<WalletAPI> = wallet.enable()
-      walletAPI.then((api) => {
-        api.submitTx(toHex(transaction))
-          .then(() => {
-            notify('success', 'The transaction is submitted.')
-          })
-          .catch((reason) => {
-            notify('error', reason.info)
-          })
-      })
-        .catch((reason) => console.error(reason))
-        .finally(() => setRun(false))
-    }
-  })
+  const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
+    setIsSubmitting(true)
+    fetch(URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/cbor' },
+      body: transaction.to_bytes()
+    }).then(() => notify('success', 'The transaction is submitted.'))
+      .catch(() => notify('error', 'Failed to submit.'))
+      .finally(() => setIsSubmitting(false))
+  }
 
   return (
-    <button onClick={() => setRun(true)} className={className} disabled={isDisabled}>
-      {isDisabled ? 'No wallet to submit' : children}
+    <button onClick={clickHandle} className={className} disabled={isSubmitting}>
+      {isSubmitting ? 'Submitting' : children}
     </button>
   )
 }
