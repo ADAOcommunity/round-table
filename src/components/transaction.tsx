@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react'
+import { MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
@@ -595,6 +595,7 @@ const NativeScriptViewer: NextPage<{
 type WalletAPI = {
   signTx(tx: string, partialSign: boolean): Promise<string>
   submitTx(tx: string): Promise<string>
+  getNetworkId(): Promise<number>
 }
 
 type Wallet = {
@@ -621,63 +622,69 @@ const WalletIcon: NextPage<{
   )
 }
 
+type WalletName = 'eternl' | 'nami' | 'gero' | 'flint'
+
+const getWallet = (name: WalletName): Wallet | undefined => {
+  const cardano = (window as any).cardano
+  switch (name) {
+    case 'eternl': return cardano?.eternl
+    case 'nami': return cardano?.nami
+    case 'gero': return cardano?.gerowallet
+    case 'flint': return cardano?.flint
+  }
+}
+
+type TxSignError = {
+  code: 1 | 2
+  info: string
+}
+
 const SignTxButton: NextPage<{
   className?: string,
   transaction: Transaction,
   partialSign: boolean,
   signHandle: (_: string) => void,
-  wallet: 'eternl' | 'nami' | 'gero' | 'flint'
-}> = ({ wallet, transaction, partialSign, signHandle, className }) => {
+  name: WalletName
+}> = ({ name, transaction, partialSign, signHandle, className }) => {
 
-  const [run, setRun] = useState(false)
-  const [_wallet, setWallet] = useState<Wallet | undefined>(undefined)
-  const isDisabled = !_wallet
+  const [config, _] = useContext(ConfigContext)
+  const { notify } = useContext(NotificationContext)
+  const wallet = getWallet(name)
 
-  useEffect(() => {
-    let isMounted = true
+  if (!wallet) return null
 
-    const chooseWallet = () => {
-      const cardano = (window as any).cardano
-      switch (wallet) {
-        case 'eternl': return cardano?.eternl
-        case 'nami': return cardano?.nami
-        case 'gero': return cardano?.gerowallet
-        case 'flint': return cardano?.flint
-      }
+  const errorHandle = (reason: Error | TxSignError) => {
+    if ('info' in reason) {
+      notify('error', reason.info)
+      return
     }
-
-    isMounted && setWallet(chooseWallet())
-
-    return () => {
-      isMounted = false
+    if ('message' in reason) {
+      notify('error', reason.message)
+      return
     }
-  }, [wallet])
+    console.error(reason)
+  }
 
-  useEffect(() => {
-    if (run && _wallet) {
-      _wallet
-        .enable()
-        .then((walletAPI: WalletAPI) => {
-          const hex = toHex(transaction)
-          walletAPI
-            .signTx(hex, partialSign)
-            .then(signHandle)
-            .catch((error) => console.error(error))
-        })
-        .catch((error) => console.error(error))
-        .finally(() => setRun(false))
+  const clickHandle: MouseEventHandler<HTMLButtonElement> = async () => {
+    const walletAPI = await wallet.enable().catch(errorHandle)
+    if (!walletAPI) return;
+    const networkId = await walletAPI.getNetworkId()
+    if (config.isMainnet ? networkId !== 1 : networkId !== 0) {
+      notify('error', `${name} is on wrong network.`)
+      return
     }
-  })
+    walletAPI
+      .signTx(toHex(transaction), partialSign)
+      .then(signHandle)
+      .catch(errorHandle)
+  }
 
   return (
-    <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>
-      {_wallet &&
-        <>
-          <WalletIcon wallet={_wallet} className='object-contain' />
-          <span>{_wallet.name}</span>
-        </>
-      }
-      {!_wallet && `${wallet} not installed`}
+    <button className={className} onClick={clickHandle}>
+      <span className='flex items-center space-x-1'>
+        <WalletIcon wallet={wallet} className='w-4' />
+        <span>Sign with {name}</span>
+      </span>
     </button>
   )
 }
