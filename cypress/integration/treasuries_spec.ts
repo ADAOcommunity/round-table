@@ -1,4 +1,3 @@
-import * as path from 'path';
 const treasuryName = "Test treasury"
 const treasuryDesc = "This is a description of the treasury"
 const addresses = [
@@ -9,9 +8,15 @@ const addresses = [
 describe('Create a new treasury', () => {
   it('Should show new treasury form', () => {
     cy.visit('http://localhost:3000/')
-    cy.contains('New Treasury').click()
-    cy.url().should('eq', 'http://localhost:3000/treasuries/new')
-    cy.contains('New Signer (min. 2)').should('be.visible')
+
+    cy.contains('New Treasury')
+      .click()
+
+    cy.url()
+      .should('eq', 'http://localhost:3000/treasuries/new')
+
+    cy.contains('New Signer (min. 2)')
+      .should('be.visible')
   })
 
   it('Should fill title and description', () => {
@@ -25,39 +30,88 @@ describe('Create a new treasury', () => {
   })
 
   it('Should add signers', () => {
-    cy.contains('Add').should('be.disabled')
+    cy.contains('Add')
+      .should('be.disabled')
+
+    cy.get('textarea[placeholder="Add signer address and press enter"]')
+      .type("abcdefghijk")
+
+    cy.contains('Add')
+      .should('be.disabled')
+
+    cy.get('textarea[placeholder="Add signer address and press enter"]')
+      .type('{selectall}{backspace}')
+
     var signers = 0
     addresses.map((address) => {
       cy.get('textarea[placeholder="Add signer address and press enter"]')
         .type(address)
         .should("have.value", address)
-      cy.contains('Add').should('be.enabled')
-      cy.contains('Add').click()
-      cy.contains('Add').should('be.disabled')
-      signers++;
-      cy.contains('Signers').parent().find('ul').children().should('have.length', signers)
-    })
 
-    //TODO: check amount of signatures is correct and that each signature has a corresponding public key
+      cy.contains('Add')
+        .should('be.enabled')
+
+      cy.contains('Add')
+        .click()
+
+      cy.contains('Add')
+        .should('be.disabled')
+
+      signers++;
+      cy.contains('Signers')
+        .parent()
+        .find('ul')
+        .children()
+        .should('have.length', signers)
+    })
   })
   //TODO: add test to check if add button is disabled when using wrong address
 
   it('Should limit required signers to amount of signers added to treasury', () => {
-    cy.contains('Required Signers').parent().find('select').select('At least')
-    cy.contains('Required Signers').parent().find('input').type('{selectall}{backspace}')
-    cy.contains('Required Signers').parent().find('input').type('100')
-    cy.contains('Required Signers').parent().find('input').should('have.value', '100')
-    cy.contains('Required Signers').click()
-    cy.contains('Required Signers').parent().find('input').should('have.value', addresses.length.toString())
+    cy.contains('Required Signers')
+      .parent().find('select')
+      .select('At least')
+
+    cy.contains('Required Signers')
+      .parent().find('input')
+      .type('{selectall}{backspace}')
+
+    cy.contains('Required Signers')
+      .parent().find('input')
+      .type('100')
+
+    cy.contains('Required Signers')
+      .parent().find('input')
+      .should('have.value', '100')
+
+    cy.contains('Required Signers')
+      .click()
+
+    cy.contains('Required Signers')
+      .parent().find('input')
+      .should('have.value', addresses.length.toString())
   })
 
   it('Should save treasury', () => {
-    cy.contains('Required Signers').parent().find('input').type('{selectall}{backspace}')
-    cy.contains('Required Signers').parent().find('input').type('2')
-    cy.contains('Save Treasury').should('be.enabled')
-    cy.contains('Save Treasury').click()
+    cy.contains('Required Signers')
+      .parent().find('input')
+      .type('{selectall}{backspace}')
+
+    cy.contains('Required Signers')
+      .parent()
+      .find('input')
+      .type('2')
+
+    cy.contains('Save Treasury')
+      .should('be.enabled')
+
+    cy.contains('Save Treasury')
+      .click()
+
     cy.wait(1500)
+
     cy.contains(treasuryName).click()
+
     cy.url().should('eq', 'http://localhost:3000/treasuries/gwMCgoIAWBz2v%2FtCURgnKF2D4mFnXqjUTGnZS54dlZQ1d90KggBYHOHZFcEMhAAXvTkIioJQeycVCkOOiQd4QiFJEwk%3D')
   })
 
@@ -67,7 +121,8 @@ describe('Create a new treasury', () => {
     const editedName = treasuryName + addedName
     const editedDesc = treasuryDesc + addedDesc
 
-    cy.contains('Edit Info').click()
+    cy.contains('Edit Info')
+      .click()
 
     cy.wait(1500)
 
@@ -79,44 +134,57 @@ describe('Create a new treasury', () => {
       .type(addedDesc)
       .should("have.value", editedDesc)
 
-    cy.contains('Save Treasury').click()
+    cy.contains('Save Treasury')
+      .click()
 
     cy.wait(1500)
 
-    cy.contains(editedName).should('be.visible')
-    cy.contains(editedDesc).should('be.visible')
+    cy.contains(editedName)
+      .should('be.visible')
+
+    cy.contains(editedDesc)
+      .should('be.visible')
   })
 
   it('Should export user data', () => {
     cy.visit('http://localhost:3000/config')
-    cy.contains('Export User Data').click()
-    cy.wait(2000)
-    const downloadsFolder = Cypress.config('downloadsFolder')
-    const downloadedFilename = path.join(downloadsFolder, 'roundtable-backup.mainnet.json')
-    cy.readFile(downloadedFilename).then(data => {
-      expect(data['treasuries'][0]['name']).to.equal('Test treasuryadded')
-      expect(data['treasuries'][0]['description']).to.equal('This is a description of the treasuryxxx')
-      expect(data['treasuries'][0]['script']).to.equal('gwMCgoIAWBz2v/tCURgnKF2D4mFnXqjUTGnZS54dlZQ1d90KggBYHOHZFcEMhAAXvTkIioJQeycVCkOOiQd4QiFJEwk=')
-    })
+    cy.contains('Export User Data')
+      .click()
   })
 
   it('Should delete treasury info', () => {
     cy.visit('http://localhost:3000/treasuries/gwMCgoIAWBz2v%2FtCURgnKF2D4mFnXqjUTGnZS54dlZQ1d90KggBYHOHZFcEMhAAXvTkIioJQeycVCkOOiQd4QiFJEwk%3D')
-    cy.contains('Edit Info').click()
-    cy.contains('Delete').click()
+    cy.contains('Edit Info')
+      .click()
+
+    cy.contains('Delete')
+      .click()
+
     cy.url().should('eq', 'http://localhost:3000/treasuries/new')
-    cy.contains(treasuryName + 'added').should('not.exist')
+
+    cy.contains(treasuryName + 'added')
+      .should('not.exist')
   })
 
   it('Should import user data', () => {
     cy.visit('http://localhost:3000/config')
     const downloadsFolder = Cypress.config('downloadsFolder')
-    const downloadedFilename = path.join(downloadsFolder, 'roundtable-backup.mainnet.json')
-    cy.get('input[type=file]').selectFile(downloadedFilename)
-    cy.contains('Import User Data').should('be.enabled')
-    cy.contains('Import User Data').click()
+    const downloadedFilename = downloadsFolder + '/roundtable-backup.mainnet.json'
+
+    cy.get('input[type=file]')
+      .selectFile(downloadedFilename)
+
+    cy.contains('Import User Data')
+      .should('be.enabled')
+
+    cy.contains('Import User Data')
+      .click()
+
     cy.wait(1500)
-    cy.contains(treasuryName + 'added').click()
+
+    cy.contains(treasuryName + 'added')
+      .click()
+
     cy.url().should('eq', 'http://localhost:3000/treasuries/gwMCgoIAWBz2v%2FtCURgnKF2D4mFnXqjUTGnZS54dlZQ1d90KggBYHOHZFcEMhAAXvTkIioJQeycVCkOOiQd4QiFJEwk%3D')
   })
 })
