@@ -695,7 +695,7 @@ const SubmitTxButton: NextPage<{
 }> = ({ className, children, transaction }) => {
   const { notify } = useContext(NotificationContext)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const URL = 'http://testrelay1.panl.org:8090/api/submit/tx'
+  const URL = 'https://testrelay1.panl.org/'
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
     setIsSubmitting(true)
@@ -703,8 +703,15 @@ const SubmitTxButton: NextPage<{
       method: 'POST',
       headers: { 'Content-Type': 'application/cbor' },
       body: transaction.to_bytes()
-    }).then(() => notify('success', 'The transaction is submitted.'))
-      .catch(() => notify('error', 'Failed to submit.'))
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to submit.')
+        notify('success', 'The transaction is submitted.')
+      })
+      .catch((reason) => {
+        notify('error', 'Failed to connect.')
+        console.error(reason)
+      })
       .finally(() => setIsSubmitting(false))
   }
 
