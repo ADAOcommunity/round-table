@@ -649,7 +649,17 @@ const SignTxButton: NextPage<{
 
   const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
-  const wallet = getWallet(name)
+  const [wallet, setWallet] = useState<Wallet | undefined>(undefined)
+
+  useEffect(() => {
+    let isMounted = true
+
+    isMounted && setWallet(getWallet(name))
+
+    return () => {
+      isMounted = false
+    }
+  }, [name])
 
   if (!wallet) return null
 
