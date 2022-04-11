@@ -1,6 +1,6 @@
 import { MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
-import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
+import { getAssetName, getBalanceByUTxOs, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
@@ -46,21 +46,23 @@ const LabeledCurrencyInput: NextPage<{
   symbol: string
   decimal: number
   value: bigint
+  min?: bigint
   max: bigint
   maxButton?: boolean
   onChange: (_: bigint) => void
   placeholder?: string
 }> = (props) => {
-  const { decimal, value, onChange, max, maxButton, symbol, placeholder } = props
+  const { decimal, value, onChange, min, max, maxButton, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
   }
+  const isValid = value > 0 && value <= max && (min ? value >= min : true)
 
   return (
     <label className='flex grow border rounded overflow-hidden'>
       <CurrencyInput
-        className='p-2 block w-full outline-none'
+        className={['p-2 block w-full outline-none', isValid ? '' : 'text-red-500'].join(' ')}
         decimals={decimal}
         value={value}
         onChange={changeHandle}
@@ -123,8 +125,9 @@ const AddAssetButton: NextPage<{
 const Recipient: NextPage<{
   recipient: Recipient
   budget: Value
+  getMinLovelace: (recipient: Recipient) => bigint
   onChange: (recipient: Recipient) => void
-}> = ({ recipient, budget, onChange }) => {
+}> = ({ recipient, budget, getMinLovelace, onChange }) => {
 
   const [config, _] = useContext(ConfigContext)
   const { address, value } = recipient
@@ -155,6 +158,8 @@ const Recipient: NextPage<{
     })
   }
 
+  const minLovelace = getMinLovelace(recipient)
+
   return (
     <div className='p-4 space-y-2'>
       <div>
@@ -167,13 +172,25 @@ const Recipient: NextPage<{
             placeholder='Address' />
         </label>
       </div>
-      <LabeledCurrencyInput
-        symbol={getADASymbol(config)}
-        decimal={6}
-        value={value.lovelace}
-        max={value.lovelace + budget.lovelace}
-        onChange={setLovelace}
-        placeholder='0.000000' />
+      <div>
+        <LabeledCurrencyInput
+          symbol={getADASymbol(config)}
+          decimal={6}
+          value={value.lovelace}
+          min={minLovelace}
+          max={value.lovelace + budget.lovelace}
+          onChange={setLovelace}
+          placeholder='0.000000' />
+        <p className='text-sm space-x-1'>
+          <span>At least</span>
+          <button
+            onClick={() => setLovelace(minLovelace)}
+            className='text-sky-700 font-semibold'>
+            <ADAAmount lovelace={minLovelace} />
+          </button>
+          <span>is required.</span>
+        </p>
+      </div>
       <ul className='space-y-2'>
         {Array.from(value.assets).map(([id, quantity]) => {
           const symbol = decodeASCII(getAssetName(id))
@@ -207,12 +224,18 @@ const NewTransaction: NextPage<{
   nativeScriptSet?: NativeScripts
   utxos: GraphQLTransactionOutput[]
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
-
+  const txBuilder = cardano.createTxBuilder(protocolParameters)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState('')
 
+  const getMinLovelace = (recipient: Recipient): bigint => {
+    const coinsPerUtxoWord = protocolParameters.coinsPerUtxoWord
+    if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
+    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoWord)
+  }
+
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
-    const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
+    const { TransactionOutputBuilder } = cardano.lib
     const addressResult = cardano.parseAddress(recipient.address)
 
     if (!addressResult?.isOk) return {
@@ -227,18 +250,7 @@ const NewTransaction: NextPage<{
         .new()
         .with_address(address)
         .next()
-      const { lovelace, assets } = recipient.value
-      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
-      if (assets.size > 0) {
-        const multiAsset = MultiAsset.new()
-        assets.forEach((quantity, id, _) => {
-          const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
-          const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
-          const value = BigNum.from_str(quantity.toString())
-          multiAsset.set_asset(policyId, assetName, value)
-        })
-        value.set_multiasset(multiAsset)
-      }
+      const value = cardano.getCardanoValue(recipient.value)
       return builder.with_value(value).build()
     }
 
@@ -290,7 +302,6 @@ const NewTransaction: NextPage<{
   }
 
   const transactionResult = getResult(() => {
-    const txBuilder = cardano.createTxBuilder(protocolParameters)
     const { Address } = cardano.lib
 
     txOutputResults.forEach((txOutputResult) => {
@@ -338,7 +349,11 @@ const NewTransaction: NextPage<{
                 }
               </nav>
             </header>
-            <Recipient recipient={recipient} budget={budget} onChange={handleRecipientChange} />
+            <Recipient
+              recipient={recipient}
+              budget={budget}
+              getMinLovelace={getMinLovelace}
+              onChange={handleRecipientChange} />
           </li>
         )}
       </ul>
