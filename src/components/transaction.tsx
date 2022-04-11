@@ -18,7 +18,7 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { getTreasuriesPath, getTreasuryPath } from '../route'
+import { getTransactionPath, getTreasuriesPath, getTreasuryPath } from '../route'
 import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
 
 type Recipient = {
@@ -323,8 +323,6 @@ const NewTransaction: NextPage<{
     setRecipients(recipients.filter(({ id }) => id !== recipient.id))
   }
 
-  const base64Transaction = transactionResult.isOk && Buffer.from(transactionResult.data.to_bytes()).toString('base64')
-
   return (
     <Panel>
       <ul>
@@ -365,21 +363,32 @@ const NewTransaction: NextPage<{
             </p>
           }
         </div>
-        <nav className='space-x-2'>
+        <nav className='flex justify-end space-x-2'>
           <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
           <button
             className='p-2 rounded text-sky-700 border'
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
           </button>
-          {base64Transaction &&
-            <Link href={`/transactions/${encodeURIComponent(base64Transaction)}`}>
-              <a className='px-4 py-2 rounded text-white bg-sky-700'>Review Transaction</a>
-            </Link>
-          }
+          <TransactionReviewButton className='px-4 py-2 rounded' result={transactionResult} />
         </nav>
       </footer>
     </Panel>
+  )
+}
+
+const TransactionReviewButton: NextPage<{
+  className?: string
+  result: Result<Transaction>
+}> = ({ className, result }) => {
+  if (!result.isOk) return (
+    <div className={['text-gray-400 bg-gray-100 border cursor-not-allowed', className].join(' ')}>Review Transaction</div>
+  )
+
+  return (
+    <Link href={getTransactionPath(result.data)}>
+      <a className={['text-white bg-sky-700', className].join(' ')}>Review Transaction</a>
+    </Link>
   )
 }
 
