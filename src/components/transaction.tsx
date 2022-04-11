@@ -696,6 +696,7 @@ const SubmitTxButton: NextPage<{
   const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDisabled, setIsDisabled] = useState(false)
   const URL = config.submitAPI
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
@@ -705,8 +706,21 @@ const SubmitTxButton: NextPage<{
       headers: { 'Content-Type': 'application/cbor' },
       body: transaction.to_bytes()
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to submit.')
+      .then(async (response) => {
+        if (!response.ok) {
+          const message = await response.text()
+          if (message.search(/\(ScriptWitnessNotValidatingUTXOW /) !== -1) {
+            notify('error', 'The signatures are invalid.')
+            return
+          }
+          if (message.search(/\(BadInputsUTxO /) !== -1) {
+            notify('error', 'The UTxOs have been spent.')
+            setIsDisabled(true)
+            return
+          }
+          notify('error', 'Failed to submit.')
+          return
+        }
         notify('success', 'The transaction is submitted.')
       })
       .catch((reason) => {
@@ -717,7 +731,7 @@ const SubmitTxButton: NextPage<{
   }
 
   return (
-    <button onClick={clickHandle} className={className} disabled={isSubmitting}>
+    <button onClick={clickHandle} className={className} disabled={isDisabled || isSubmitting}>
       {isSubmitting ? 'Submitting' : children}
     </button>
   )
