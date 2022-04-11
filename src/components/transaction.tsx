@@ -1,4 +1,4 @@
-import { MouseEventHandler, useContext, useEffect, useState } from 'react'
+import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getAssetName, getBalanceByUTxOs, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
@@ -217,6 +217,28 @@ const Recipient: NextPage<{
   )
 }
 
+const TransactionMessageInput: NextPage<{
+  className?: string
+  messageLines: string[]
+  onChange: (messageLines: string[]) => void
+}> = ({ className, messageLines, onChange }) => {
+  const getLines = (text: string): string[] => text.split(/\r?\n/g)
+  const changeHandle: ChangeEventHandler<HTMLTextAreaElement> = (event) => {
+    onChange(getLines(event.target.value))
+  }
+  const isValid = messageLines.every((line) => new TextEncoder().encode(line).length <= 64)
+
+  return (
+    <textarea
+      className={[className, isValid ? '' : 'text-red-500'].join(' ')}
+      placeholder='Optional transaction message'
+      rows={4}
+      value={messageLines.join("\n")}
+      onChange={changeHandle}>
+    </textarea>
+  )
+}
+
 const NewTransaction: NextPage<{
   cardano: Cardano
   changeAddress?: Address
@@ -226,7 +248,7 @@ const NewTransaction: NextPage<{
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
   const txBuilder = cardano.createTxBuilder(protocolParameters)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState<string[]>([])
 
   const getMinLovelace = (recipient: Recipient): bigint => {
     const coinsPerUtxoWord = protocolParameters.coinsPerUtxoWord
@@ -313,9 +335,9 @@ const NewTransaction: NextPage<{
       txBuilder.set_native_scripts(nativeScriptSet)
     }
 
-    if (message) {
+    if (message.length > 0) {
       const value = JSON.stringify({
-        msg: message.split(/\r?\n/g)
+        msg: message
       })
       txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
     }
@@ -358,16 +380,14 @@ const NewTransaction: NextPage<{
         )}
       </ul>
       <div>
-        <header className='flex px-4 py-2 bg-gray-100'>
-          <h2 className='grow font-semibold'>Message</h2>
+        <header className='px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Message</h2>
+          <p className='text-sm'>Cannot exceed 64 bytes each line</p>
         </header>
-        <textarea
+        <TransactionMessageInput
           className='p-4 block w-full outline-none'
-          placeholder='Optional transaction message'
-          rows={4}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}>
-        </textarea>
+          onChange={setMessage}
+          messageLines={message} />
       </div>
       <footer className='flex p-4 bg-gray-100 items-center'>
         <div className='grow'>
