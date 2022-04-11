@@ -602,6 +602,7 @@ type Wallet = {
   enable(): Promise<WalletAPI>
   name: string
   icon: string
+  apiVersion: string
 }
 
 const WalletIcon: NextPage<{
@@ -747,6 +748,36 @@ const SubmitTxButton: NextPage<{
   )
 }
 
+const WalletInfo: NextPage<{
+  className?: string
+  name: WalletName
+  src: string
+}> = ({ name, className, children, src }) => {
+  const [wallet, setWallet] = useState<Wallet | undefined>(undefined)
+
+  useEffect(() => {
+    let isMounted = true
+
+    isMounted && setWallet(getWallet(name))
+
+    return () => {
+      isMounted = false
+    }
+  }, [name])
+
+  return (
+    <li className={className}>
+      <div className='h-9'>
+        <Image src={src} width={36} height={36} alt={name} />
+      </div>
+      <div>
+        <div className='font-semibold'>{children}</div>
+        <div className='text-sm text-gray-700'>{wallet?.apiVersion ?? 'Not Installed'}</div>
+      </div>
+    </li>
+  )
+}
+
 const SaveTreasuryButton: NextPage<{
   cardano: Cardano
   className?: string
@@ -856,4 +887,4 @@ const CopyVkeysButton: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton }
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo }
