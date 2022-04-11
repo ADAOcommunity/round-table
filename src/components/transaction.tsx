@@ -693,9 +693,10 @@ const SubmitTxButton: NextPage<{
   className?: string
   transaction: Transaction
 }> = ({ className, children, transaction }) => {
+  const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const URL = 'https://testrelay1.panl.org/'
+  const URL = config.submitAPI
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
     setIsSubmitting(true)
