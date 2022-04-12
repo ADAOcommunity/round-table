@@ -152,25 +152,25 @@ const GetTransaction: NextPage = () => {
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
-            wallet='nami'
+            name='nami'
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
-            wallet='gero'
+            name='gero'
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
-            wallet='eternl'
+            name='eternl'
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <SignTxButton
             transaction={transaction}
             partialSign={true}
             signHandle={signHandle}
-            wallet='flint'
+            name='flint'
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
           <div className='flex grow justify-end items-center space-x-4'>
             <SubmitTxButton

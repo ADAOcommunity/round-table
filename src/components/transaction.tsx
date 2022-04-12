@@ -1,6 +1,6 @@
-import { useContext, useEffect, useState } from 'react'
+import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
-import { getAssetName, getBalanceByUTxOs, getPolicyId, Value } from '../cardano/query-api'
+import { getAssetName, getBalanceByUTxOs, Value } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
@@ -18,7 +18,7 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { getTreasuriesPath, getTreasuryPath } from '../route'
+import { getTransactionPath, getTreasuriesPath, getTreasuryPath } from '../route'
 import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
 
 type Recipient = {
@@ -46,21 +46,23 @@ const LabeledCurrencyInput: NextPage<{
   symbol: string
   decimal: number
   value: bigint
+  min?: bigint
   max: bigint
   maxButton?: boolean
   onChange: (_: bigint) => void
   placeholder?: string
 }> = (props) => {
-  const { decimal, value, onChange, max, maxButton, symbol, placeholder } = props
+  const { decimal, value, onChange, min, max, maxButton, symbol, placeholder } = props
   const changeHandle = (value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
   }
+  const isValid = value > 0 && value <= max && (min ? value >= min : true)
 
   return (
     <label className='flex grow border rounded overflow-hidden'>
       <CurrencyInput
-        className='p-2 block w-full outline-none'
+        className={['p-2 block w-full outline-none', isValid ? '' : 'text-red-500'].join(' ')}
         decimals={decimal}
         value={value}
         onChange={changeHandle}
@@ -120,11 +122,18 @@ const AddAssetButton: NextPage<{
   )
 }
 
+const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
+  const networkId = address.network_id()
+  return config.isMainnet ? networkId === 1 : networkId === 0
+}
+
 const Recipient: NextPage<{
+  cardano: Cardano
   recipient: Recipient
   budget: Value
+  getMinLovelace: (recipient: Recipient) => bigint
   onChange: (recipient: Recipient) => void
-}> = ({ recipient, budget, onChange }) => {
+}> = ({ cardano, recipient, budget, getMinLovelace, onChange }) => {
 
   const [config, _] = useContext(ConfigContext)
   const { address, value } = recipient
@@ -155,25 +164,45 @@ const Recipient: NextPage<{
     })
   }
 
+  const minLovelace = getMinLovelace(recipient)
+  const addressResult = getResult(() => {
+    const addressObject = cardano.lib.Address.from_bech32(address)
+    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('This address is from a wrong network')
+    return addressObject
+  })
+
   return (
     <div className='p-4 space-y-2'>
       <div>
         <label className='flex block border rounded overflow-hidden'>
           <span className='p-2 bg-gray-100 border-r'>To</span>
           <input
-            className='p-2 block w-full outline-none'
+            className={['p-2 block w-full outline-none', addressResult.isOk ? '' : 'text-red-500'].join(' ')}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder='Address' />
         </label>
+        {address && !addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
       </div>
-      <LabeledCurrencyInput
-        symbol={getADASymbol(config)}
-        decimal={6}
-        value={value.lovelace}
-        max={value.lovelace + budget.lovelace}
-        onChange={setLovelace}
-        placeholder='0.000000' />
+      <div>
+        <LabeledCurrencyInput
+          symbol={getADASymbol(config)}
+          decimal={6}
+          value={value.lovelace}
+          min={minLovelace}
+          max={value.lovelace + budget.lovelace}
+          onChange={setLovelace}
+          placeholder='0.000000' />
+        <p className='text-sm space-x-1'>
+          <span>At least</span>
+          <button
+            onClick={() => setLovelace(minLovelace)}
+            className='text-sky-700 font-semibold'>
+            <ADAAmount lovelace={minLovelace} />
+          </button>
+          <span>is required</span>
+        </p>
+      </div>
       <ul className='space-y-2'>
         {Array.from(value.assets).map(([id, quantity]) => {
           const symbol = decodeASCII(getAssetName(id))
@@ -200,6 +229,28 @@ const Recipient: NextPage<{
   )
 }
 
+const TransactionMessageInput: NextPage<{
+  className?: string
+  messageLines: string[]
+  onChange: (messageLines: string[]) => void
+}> = ({ className, messageLines, onChange }) => {
+  const getLines = (text: string): string[] => text.split(/\r?\n/g)
+  const changeHandle: ChangeEventHandler<HTMLTextAreaElement> = (event) => {
+    onChange(getLines(event.target.value))
+  }
+  const isValid = messageLines.every((line) => new TextEncoder().encode(line).length <= 64)
+
+  return (
+    <textarea
+      className={[className, isValid ? '' : 'text-red-500'].join(' ')}
+      placeholder='Optional transaction message'
+      rows={4}
+      value={messageLines.join("\n")}
+      onChange={changeHandle}>
+    </textarea>
+  )
+}
+
 const NewTransaction: NextPage<{
   cardano: Cardano
   changeAddress?: Address
@@ -207,42 +258,29 @@ const NewTransaction: NextPage<{
   nativeScriptSet?: NativeScripts
   utxos: GraphQLTransactionOutput[]
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
-
+  const txBuilder = cardano.createTxBuilder(protocolParameters)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState<string[]>([])
+  const [config, _] = useContext(ConfigContext)
+
+  const getMinLovelace = (recipient: Recipient): bigint => {
+    const coinsPerUtxoWord = protocolParameters.coinsPerUtxoWord
+    if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
+    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoWord)
+  }
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
-    const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = cardano.lib
-    const addressResult = cardano.parseAddress(recipient.address)
-
-    if (!addressResult?.isOk) return {
-      isOk: false,
-      message: 'Invalid address'
-    }
-
-    const address = addressResult.data
-
-    const build = (): TransactionOutput => {
+    const { TransactionOutputBuilder } = cardano.lib
+    return getResult(() => {
+      const address = cardano.lib.Address.from_bech32(recipient.address)
+      if (!isAddressNetworkCorrect(config, address)) throw new Error('Wrong network')
       const builder = TransactionOutputBuilder
         .new()
         .with_address(address)
         .next()
-      const { lovelace, assets } = recipient.value
-      const value = cardano.lib.Value.new(BigNum.from_str(lovelace.toString()))
-      if (assets.size > 0) {
-        const multiAsset = MultiAsset.new()
-        assets.forEach((quantity, id, _) => {
-          const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
-          const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
-          const value = BigNum.from_str(quantity.toString())
-          multiAsset.set_asset(policyId, assetName, value)
-        })
-        value.set_multiasset(multiAsset)
-      }
+      const value = cardano.getCardanoValue(recipient.value)
       return builder.with_value(value).build()
-    }
-
-    return getResult(() => build())
+    })
   }
 
   const txOutputResults = recipients.map(buildTxOutput)
@@ -290,7 +328,6 @@ const NewTransaction: NextPage<{
   }
 
   const transactionResult = getResult(() => {
-    const txBuilder = cardano.createTxBuilder(protocolParameters)
     const { Address } = cardano.lib
 
     txOutputResults.forEach((txOutputResult) => {
@@ -302,9 +339,9 @@ const NewTransaction: NextPage<{
       txBuilder.set_native_scripts(nativeScriptSet)
     }
 
-    if (message) {
+    if (message.length > 0) {
       const value = JSON.stringify({
-        msg: message.split(/\r?\n/g)
+        msg: message
       })
       txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
     }
@@ -323,8 +360,6 @@ const NewTransaction: NextPage<{
     setRecipients(recipients.filter(({ id }) => id !== recipient.id))
   }
 
-  const base64Transaction = transactionResult.isOk && Buffer.from(transactionResult.data.to_bytes()).toString('base64')
-
   return (
     <Panel>
       <ul>
@@ -340,21 +375,24 @@ const NewTransaction: NextPage<{
                 }
               </nav>
             </header>
-            <Recipient recipient={recipient} budget={budget} onChange={handleRecipientChange} />
+            <Recipient
+              cardano={cardano}
+              recipient={recipient}
+              budget={budget}
+              getMinLovelace={getMinLovelace}
+              onChange={handleRecipientChange} />
           </li>
         )}
       </ul>
       <div>
-        <header className='flex px-4 py-2 bg-gray-100'>
-          <h2 className='grow font-semibold'>Message</h2>
+        <header className='px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Message</h2>
+          <p className='text-sm'>Cannot exceed 64 bytes each line</p>
         </header>
-        <textarea
+        <TransactionMessageInput
           className='p-4 block w-full outline-none'
-          placeholder='Optional transaction message'
-          rows={4}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}>
-        </textarea>
+          onChange={setMessage}
+          messageLines={message} />
       </div>
       <footer className='flex p-4 bg-gray-100 items-center'>
         <div className='grow'>
@@ -365,21 +403,32 @@ const NewTransaction: NextPage<{
             </p>
           }
         </div>
-        <nav className='space-x-2'>
+        <nav className='flex justify-end space-x-2'>
           <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
           <button
             className='p-2 rounded text-sky-700 border'
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
           </button>
-          {base64Transaction &&
-            <Link href={`/transactions/${encodeURIComponent(base64Transaction)}`}>
-              <a className='px-4 py-2 rounded text-white bg-sky-700'>Review Transaction</a>
-            </Link>
-          }
+          <TransactionReviewButton className='px-4 py-2 rounded' result={transactionResult} />
         </nav>
       </footer>
     </Panel>
+  )
+}
+
+const TransactionReviewButton: NextPage<{
+  className?: string
+  result: Result<Transaction>
+}> = ({ className, result }) => {
+  if (!result.isOk) return (
+    <div className={['text-gray-400 bg-gray-100 border cursor-not-allowed', className].join(' ')}>Review Transaction</div>
+  )
+
+  return (
+    <Link href={getTransactionPath(result.data)}>
+      <a className={['text-white bg-sky-700', className].join(' ')}>Review Transaction</a>
+    </Link>
   )
 }
 
@@ -595,12 +644,14 @@ const NativeScriptViewer: NextPage<{
 type WalletAPI = {
   signTx(tx: string, partialSign: boolean): Promise<string>
   submitTx(tx: string): Promise<string>
+  getNetworkId(): Promise<number>
 }
 
 type Wallet = {
   enable(): Promise<WalletAPI>
   name: string
   icon: string
+  apiVersion: string
 }
 
 const WalletIcon: NextPage<{
@@ -621,63 +672,79 @@ const WalletIcon: NextPage<{
   )
 }
 
+type WalletName = 'eternl' | 'nami' | 'gero' | 'flint'
+
+const getWallet = (name: WalletName): Wallet | undefined => {
+  const cardano = (window as any).cardano
+  switch (name) {
+    case 'eternl': return cardano?.eternl
+    case 'nami': return cardano?.nami
+    case 'gero': return cardano?.gerowallet
+    case 'flint': return cardano?.flint
+  }
+}
+
+type TxSignError = {
+  code: 1 | 2
+  info: string
+}
+
 const SignTxButton: NextPage<{
   className?: string,
   transaction: Transaction,
   partialSign: boolean,
   signHandle: (_: string) => void,
-  wallet: 'eternl' | 'nami' | 'gero' | 'flint'
-}> = ({ wallet, transaction, partialSign, signHandle, className }) => {
+  name: WalletName
+}> = ({ name, transaction, partialSign, signHandle, className }) => {
 
-  const [run, setRun] = useState(false)
-  const [_wallet, setWallet] = useState<Wallet | undefined>(undefined)
-  const isDisabled = !_wallet
+  const [config, _] = useContext(ConfigContext)
+  const { notify } = useContext(NotificationContext)
+  const [wallet, setWallet] = useState<Wallet | undefined>(undefined)
 
   useEffect(() => {
     let isMounted = true
 
-    const chooseWallet = () => {
-      const cardano = (window as any).cardano
-      switch (wallet) {
-        case 'eternl': return cardano?.eternl
-        case 'nami': return cardano?.nami
-        case 'gero': return cardano?.gerowallet
-        case 'flint': return cardano?.flint
-      }
-    }
-
-    isMounted && setWallet(chooseWallet())
+    isMounted && setWallet(getWallet(name))
 
     return () => {
       isMounted = false
     }
-  }, [wallet])
+  }, [name])
 
-  useEffect(() => {
-    if (run && _wallet) {
-      _wallet
-        .enable()
-        .then((walletAPI: WalletAPI) => {
-          const hex = toHex(transaction)
-          walletAPI
-            .signTx(hex, partialSign)
-            .then(signHandle)
-            .catch((error) => console.error(error))
-        })
-        .catch((error) => console.error(error))
-        .finally(() => setRun(false))
+  if (!wallet) return null
+
+  const errorHandle = (reason: Error | TxSignError) => {
+    if ('info' in reason) {
+      notify('error', reason.info)
+      return
     }
-  })
+    if ('message' in reason) {
+      notify('error', reason.message)
+      return
+    }
+    console.error(reason)
+  }
+
+  const clickHandle: MouseEventHandler<HTMLButtonElement> = async () => {
+    const walletAPI = await wallet.enable().catch(errorHandle)
+    if (!walletAPI) return;
+    const networkId = await walletAPI.getNetworkId()
+    if (config.isMainnet ? networkId !== 1 : networkId !== 0) {
+      notify('error', `${name} is on wrong network.`)
+      return
+    }
+    walletAPI
+      .signTx(toHex(transaction), partialSign)
+      .then(signHandle)
+      .catch(errorHandle)
+  }
 
   return (
-    <button className={className} onClick={() => setRun(true)} disabled={isDisabled}>
-      {_wallet &&
-        <>
-          <WalletIcon wallet={_wallet} className='object-contain' />
-          <span>{_wallet.name}</span>
-        </>
-      }
-      {!_wallet && `${wallet} not installed`}
+    <button className={className} onClick={clickHandle}>
+      <span className='flex items-center space-x-1'>
+        <WalletIcon wallet={wallet} className='w-4' />
+        <span>Sign with {name}</span>
+      </span>
     </button>
   )
 }
@@ -686,44 +753,77 @@ const SubmitTxButton: NextPage<{
   className?: string
   transaction: Transaction
 }> = ({ className, children, transaction }) => {
-
-  const [run, setRun] = useState(false)
+  const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
-  const [wallet, setWallet] = useState<Wallet | undefined>()
-  const isDisabled = !wallet
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDisabled, setIsDisabled] = useState(false)
+  const URL = config.submitAPI
+
+  const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
+    setIsSubmitting(true)
+    fetch(URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/cbor' },
+      body: transaction.to_bytes()
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const message = await response.text()
+          if (message.search(/\(ScriptWitnessNotValidatingUTXOW /) !== -1) {
+            notify('error', 'The signatures are invalid.')
+            return
+          }
+          if (message.search(/\(BadInputsUTxO /) !== -1) {
+            notify('error', 'The UTxOs have been spent.')
+            setIsDisabled(true)
+            return
+          }
+          notify('error', 'Failed to submit.')
+          return
+        }
+        notify('success', 'The transaction is submitted.')
+      })
+      .catch((reason) => {
+        notify('error', 'Failed to connect.')
+        console.error(reason)
+      })
+      .finally(() => setIsSubmitting(false))
+  }
+
+  return (
+    <button onClick={clickHandle} className={className} disabled={isDisabled || isSubmitting}>
+      {isSubmitting ? 'Submitting' : children}
+    </button>
+  )
+}
+
+const WalletInfo: NextPage<{
+  className?: string
+  name: WalletName
+  src: string
+}> = ({ name, className, children, src }) => {
+  const [wallet, setWallet] = useState<Wallet | undefined>(undefined)
 
   useEffect(() => {
     let isMounted = true
 
-    const cardano = (window as any).cardano
-    isMounted && setWallet(cardano?.nami || cardano?.eternl || cardano?.gerowallet)
+    isMounted && setWallet(getWallet(name))
 
     return () => {
       isMounted = false
     }
-  }, [wallet])
-
-  useEffect(() => {
-    if (run && wallet) {
-      const walletAPI: Promise<WalletAPI> = wallet.enable()
-      walletAPI.then((api) => {
-        api.submitTx(toHex(transaction))
-          .then(() => {
-            notify('success', 'The transaction is submitted.')
-          })
-          .catch((reason) => {
-            notify('error', reason.info)
-          })
-      })
-        .catch((reason) => console.error(reason))
-        .finally(() => setRun(false))
-    }
-  })
+  }, [name])
 
   return (
-    <button onClick={() => setRun(true)} className={className} disabled={isDisabled}>
-      {isDisabled ? 'No wallet to submit' : children}
-    </button>
+    <li className={className}>
+      <div className='h-9'>
+        <Image src={src} width={36} height={36} alt={name} />
+      </div>
+      <div>
+        <div className='font-semibold'>{children}</div>
+        <div className='text-sm text-gray-700'>{wallet?.apiVersion ?? 'Not Installed'}</div>
+      </div>
+    </li>
   )
 }
 
@@ -836,4 +936,4 @@ const CopyVkeysButton: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton }
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, isAddressNetworkCorrect }

@@ -1,4 +1,4 @@
-import { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, Transaction } from '@dcspark/cardano-multiplatform-lib-browser'
 import { encodeCardanoData } from './cardano/multiplatform-lib'
 
 function getTreasuriesPath(subPath?: string): string {
@@ -10,4 +10,9 @@ function getTreasuryPath(script: NativeScript, subPath?: string): string {
   return getTreasuriesPath([encodeURIComponent(base64CBOR), subPath].join('/'))
 }
 
-export { getTreasuriesPath, getTreasuryPath }
+function getTransactionPath(transcation: Transaction): string {
+  const base64CBOR = encodeCardanoData(transcation, 'base64')
+  return ['/transactions', encodeURIComponent(base64CBOR)].join('/')
+}
+
+export { getTreasuriesPath, getTreasuryPath, getTransactionPath }
