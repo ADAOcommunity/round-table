@@ -128,11 +128,12 @@ const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
 }
 
 const Recipient: NextPage<{
+  cardano: Cardano
   recipient: Recipient
   budget: Value
   getMinLovelace: (recipient: Recipient) => bigint
   onChange: (recipient: Recipient) => void
-}> = ({ recipient, budget, getMinLovelace, onChange }) => {
+}> = ({ cardano, recipient, budget, getMinLovelace, onChange }) => {
 
   const [config, _] = useContext(ConfigContext)
   const { address, value } = recipient
@@ -164,6 +165,11 @@ const Recipient: NextPage<{
   }
 
   const minLovelace = getMinLovelace(recipient)
+  const addressResult = getResult(() => {
+    const addressObject = cardano.lib.Address.from_bech32(address)
+    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('This address is from a wrong network')
+    return addressObject
+  })
 
   return (
     <div className='p-4 space-y-2'>
@@ -171,11 +177,12 @@ const Recipient: NextPage<{
         <label className='flex block border rounded overflow-hidden'>
           <span className='p-2 bg-gray-100 border-r'>To</span>
           <input
-            className='p-2 block w-full outline-none'
+            className={['p-2 block w-full outline-none', addressResult.isOk ? '' : 'text-red-500'].join(' ')}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder='Address' />
         </label>
+        {!addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
       </div>
       <div>
         <LabeledCurrencyInput
@@ -369,6 +376,7 @@ const NewTransaction: NextPage<{
               </nav>
             </header>
             <Recipient
+              cardano={cardano}
               recipient={recipient}
               budget={budget}
               getMinLovelace={getMinLovelace}
