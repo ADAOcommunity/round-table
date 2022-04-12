@@ -8,15 +8,19 @@ import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { SaveTreasuryButton } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
+import { ConfigContext } from '../../cardano/config'
 
 const AddAddress: NextPage<{
   cardano: Cardano
   onAdd: (address: string) => void
 }> = ({ cardano, onAdd }) => {
   const [address, setAddress] = useState('')
+  const [config, _] = useContext(ConfigContext)
 
   const result = getResult(() => {
     const addressObject = cardano.lib.Address.from_bech32(address)
+    if (config.isMainnet && addressObject.network_id() !== 1) return
+    if (!config.isMainnet && addressObject.network_id() !== 0) return
     return addressObject.as_base()?.payment_cred().to_keyhash()
   })
 
@@ -146,6 +150,7 @@ const NewTreasury: NextPage = () => {
   const [required, setRequired] = useState(1)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
@@ -158,12 +163,15 @@ const NewTreasury: NextPage = () => {
     return cardano.buildMultiSigScript(keyHashes, scriptType, required)
   }
 
-  const addAddress = (bech32Address: string) => {
+  const addAddress = (address: string) => {
     const result = getResult(() => {
-      return cardano.lib.Address.from_bech32(bech32Address).as_base()?.payment_cred().to_keyhash()
+      const addressObject = cardano.lib.Address.from_bech32(address)
+      if (config.isMainnet && addressObject.network_id() !== 1) return
+      if (!config.isMainnet && addressObject.network_id() !== 0) return
+      return cardano.lib.Address.from_bech32(address).as_base()?.payment_cred().to_keyhash()
     })
     if (result.isOk && result.data) {
-      setKeyHashMap(new Map(keyHashMap).set(result.data.to_hex(), bech32Address))
+      setKeyHashMap(new Map(keyHashMap).set(result.data.to_hex(), address))
       return
     }
     notify('error', 'Invalid address.')
