@@ -6,7 +6,7 @@ import type { Cardano, MultiSigType } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
-import { SaveTreasuryButton } from '../../components/transaction'
+import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { ConfigContext } from '../../cardano/config'
 
@@ -19,8 +19,7 @@ const AddAddress: NextPage<{
 
   const result = getResult(() => {
     const addressObject = cardano.lib.Address.from_bech32(address)
-    if (config.isMainnet && addressObject.network_id() !== 1) return
-    if (!config.isMainnet && addressObject.network_id() !== 0) return
+    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('Wrong network')
     return addressObject.as_base()?.payment_cred().to_keyhash()
   })
 
@@ -166,8 +165,7 @@ const NewTreasury: NextPage = () => {
   const addAddress = (address: string) => {
     const result = getResult(() => {
       const addressObject = cardano.lib.Address.from_bech32(address)
-      if (config.isMainnet && addressObject.network_id() !== 1) return
-      if (!config.isMainnet && addressObject.network_id() !== 0) return
+      if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('Wrong network')
       return cardano.lib.Address.from_bech32(address).as_base()?.payment_cred().to_keyhash()
     })
     if (result.isOk && result.data) {

@@ -936,4 +936,4 @@ const CopyVkeysButton: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo }
+export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, isAddressNetworkCorrect }
