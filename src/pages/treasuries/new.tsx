@@ -4,68 +4,10 @@ import { Hero, Layout, Panel } from '../../components/layout'
 import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano, MultiSigType } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
-import type { Address, NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { SaveTreasuryButton } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
-
-const AddAddressButton: NextPage<{
-  address: string
-  cardano: Cardano
-  className?: string
-  onClick: (address: Address) => void
-}> = ({ address, cardano, className, children, onClick }) => {
-  const parseResult = cardano.parseAddress(address)
-  const isDisabled = !parseResult.isOk
-
-  const submitHandle = () => {
-    parseResult.isOk && onClick(parseResult.data)
-  }
-
-  return (
-    <button
-      disabled={isDisabled}
-      onClick={submitHandle}
-      className={className}>
-      {children}
-    </button>
-  )
-}
-
-const AddressInput: NextPage<{
-  cardano: Cardano
-  address: string
-  onEnterPress?: (address: Address) => void
-  onChange: (address: string) => void
-}> = ({ address, cardano, onChange, onEnterPress }) => {
-  const parsedAddress = cardano.parseAddress(address)
-
-  const changeHandle: ChangeEventHandler<HTMLTextAreaElement> = (event) => {
-    onChange(event.target.value)
-  }
-
-  const enterPressHandle: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
-    if (event.shiftKey == false && event.key === 'Enter') {
-      event.preventDefault()
-      parsedAddress.isOk && onEnterPress && onEnterPress(parsedAddress.data)
-    }
-  }
-
-  const base = 'block w-full border p-2 rounded'
-  const textColor = parsedAddress.isOk || (!address) ? '' : 'text-red-500'
-  const className = [base, textColor].join(' ')
-
-  return (
-    <textarea
-      className={className}
-      onChange={changeHandle}
-      onKeyDown={enterPressHandle}
-      rows={1}
-      value={address}
-      placeholder="Add signer address and press enter">
-    </textarea>
-  )
-}
 
 const AddAddress: NextPage<{
   cardano: Cardano
@@ -73,28 +15,46 @@ const AddAddress: NextPage<{
 }> = ({ cardano, onAdd }) => {
   const [address, setAddress] = useState('')
 
-  const submitHandle = (address: Address) => {
-    onAdd(address.to_bech32())
-    setAddress('')
+  const result = getResult(() => {
+    const addressObject = cardano.lib.Address.from_bech32(address)
+    return addressObject.as_base()?.payment_cred().to_keyhash()
+  })
+
+  const isValid = result.isOk && !!result.data
+
+  const submit = () => {
+    if (isValid) {
+      onAdd(address)
+      setAddress('')
+    }
+  }
+
+  const enterPressHandle: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
+    if (event.shiftKey == false && event.key === 'Enter') {
+      event.preventDefault()
+      submit()
+    }
   }
 
   return (
     <label className='block space-y-1'>
       <div>New Signer (min. 2)</div>
-      <div className='flex space-x-2 items-center'>
-        <AddressInput
-          cardano={cardano}
-          onChange={setAddress}
-          onEnterPress={submitHandle}
-          address={address} />
-        <AddAddressButton
-          className='flex p-2 items-center space-x-1 border rounded text-sky-700 disabled:text-gray-400'
-          address={address}
-          onClick={submitHandle}
-          cardano={cardano}>
+      <div className='flex space-x-2 items-start'>
+        <textarea
+          className={['block w-full border p-2 rounded', isValid ? '' : 'text-red-500'].join(' ')}
+          onChange={(e) => setAddress(e.target.value)}
+          onKeyDown={enterPressHandle}
+          rows={1}
+          value={address}
+          placeholder="Add signer address and press enter">
+        </textarea>
+        <button
+          disabled={!isValid}
+          onClick={submit}
+          className='flex p-2 items-center space-x-1 border rounded text-sky-700 disabled:text-gray-400'>
           <PlusIcon className='h-4' />
           <span>Add</span>
-        </AddAddressButton>
+        </button>
       </div>
     </label>
   )
