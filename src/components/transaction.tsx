@@ -122,6 +122,11 @@ const AddAssetButton: NextPage<{
   )
 }
 
+const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
+  const networkId = address.network_id()
+  return config.isMainnet ? networkId === 1 : networkId === 0
+}
+
 const Recipient: NextPage<{
   recipient: Recipient
   budget: Value
@@ -249,6 +254,7 @@ const NewTransaction: NextPage<{
   const txBuilder = cardano.createTxBuilder(protocolParameters)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
+  const [config, _] = useContext(ConfigContext)
 
   const getMinLovelace = (recipient: Recipient): bigint => {
     const coinsPerUtxoWord = protocolParameters.coinsPerUtxoWord
@@ -258,25 +264,16 @@ const NewTransaction: NextPage<{
 
   const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
     const { TransactionOutputBuilder } = cardano.lib
-    const addressResult = cardano.parseAddress(recipient.address)
-
-    if (!addressResult?.isOk) return {
-      isOk: false,
-      message: 'Invalid address'
-    }
-
-    const address = addressResult.data
-
-    const build = (): TransactionOutput => {
+    return getResult(() => {
+      const address = cardano.lib.Address.from_bech32(recipient.address)
+      if (!isAddressNetworkCorrect(config, address)) throw new Error('Wrong network')
       const builder = TransactionOutputBuilder
         .new()
         .with_address(address)
         .next()
       const value = cardano.getCardanoValue(recipient.value)
       return builder.with_value(value).build()
-    }
-
-    return getResult(() => build())
+    })
   }
 
   const txOutputResults = recipients.map(buildTxOutput)
