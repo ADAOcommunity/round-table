@@ -2,6 +2,9 @@ name: Cypress Tests
 
 on: [push]
 
+env:
+  NEXT_PUBLIC_TESTNET: y
+
 jobs:
   cypress-run:
     runs-on: ubuntu-latest

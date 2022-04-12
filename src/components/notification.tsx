@@ -103,10 +103,10 @@ const Notification: NextPage<{
 
   return (
     <div className={getClassName()} onMouseEnter={pauseTimerHandle} onMouseLeave={startTimerHandle}>
-      <div className='p-2 flex items-center space-x-1'>
-        <div><NotificationIcon type={type} /></div>
+      <div className='p-2 flex items-start space-x-2'>
+        <div className='py-1'><NotificationIcon type={type} /></div>
         <div className='grow break-all'>{message}</div>
-        <button onClick={() => dismissHandle(id)}><XIcon className='h-4 w-4' /></button>
+        <button className='py-1' onClick={() => dismissHandle(id)}><XIcon className='h-4 w-4' /></button>
       </div>
       <div className='absolute bottom-0 left-0 right-0'>
         <ProgressBar className={getProgressBarClassName()} value={progress} max={100} />

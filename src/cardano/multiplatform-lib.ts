@@ -1,6 +1,8 @@
 import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
+import type { Value } from './query-api'
+import { getAssetName, getPolicyId } from './query-api'
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
@@ -74,6 +76,32 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public getMinLovelace(value: Value, hasDataHash: boolean, coinsPerUtxoWord: number): bigint {
+    const minimum = this.lib.min_ada_required(
+      this.getCardanoValue(value),
+      hasDataHash,
+      this.lib.BigNum.from_str(coinsPerUtxoWord.toString())
+    )
+    return BigInt(minimum.to_str())
+  }
+
+  public getCardanoValue(value: Value): CardanoValue {
+    const { AssetName, BigNum, MultiAsset, ScriptHash } = this.lib
+    const { lovelace, assets } = value
+    const cardanoValue = this.lib.Value.new(BigNum.from_str(lovelace.toString()))
+    if (assets.size > 0) {
+      const multiAsset = MultiAsset.new()
+      assets.forEach((quantity, id, _) => {
+        const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
+        const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
+        const value = BigNum.from_str(quantity.toString())
+        multiAsset.set_asset(policyId, assetName, value)
+      })
+      cardanoValue.set_multiasset(multiAsset)
+    }
+    return cardanoValue
   }
 
   public getMessageLabel(): BigNum {
