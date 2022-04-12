@@ -188,7 +188,7 @@ const Recipient: NextPage<{
             className='text-sky-700 font-semibold'>
             <ADAAmount lovelace={minLovelace} />
           </button>
-          <span>is required.</span>
+          <span>is required</span>
         </p>
       </div>
       <ul className='space-y-2'>
