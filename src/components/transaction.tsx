@@ -182,7 +182,7 @@ const Recipient: NextPage<{
             onChange={(e) => setAddress(e.target.value)}
             placeholder='Address' />
         </label>
-        {!addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
+        {address && !addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
       </div>
       <div>
         <LabeledCurrencyInput
