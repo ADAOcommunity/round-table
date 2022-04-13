@@ -181,16 +181,6 @@ const NewTreasury: NextPage = () => {
     setKeyHashMap(newMap)
   }
 
-  const limitRequired = (input: string) => {
-    let requiredAmount = 0;
-    if (parseInt(input == "" ? "0" : input) <= addresses.size) {
-      requiredAmount = parseInt(input)
-    } else {
-      requiredAmount = addresses.size
-    }
-    return requiredAmount
-  }
-
   return (
     <Layout>
       <div className='space-y-2'>
