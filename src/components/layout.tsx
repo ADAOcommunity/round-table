@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
-import { CogIcon, HomeIcon, PlusIcon } from '@heroicons/react/solid'
+import { CogIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -9,7 +9,11 @@ import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getTreasuriesPath } from '../route'
-import { encodeCardanoData } from '../cardano/multiplatform-lib'
+import { encodeCardanoData, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
+import type { Cardano } from '../cardano/multiplatform-lib'
+import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
+import type { Value } from '../cardano/query-api'
+import { ADAAmount } from './currency'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -143,25 +147,58 @@ const PrimaryBar: NextPage = () => {
 
 const TreasuryListing: NextPage<{
   treasury: Treasury
-}> = ({ treasury }) => {
+  balance?: Value
+}> = ({ treasury, balance }) => {
   const { name, script } = treasury
   const base64CBOR = encodeCardanoData(script, 'base64')
+  const lovelace = balance?.lovelace
   return (
     <NavLink
       href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-sky-700'>
-      {name}
+      <div>{name}</div>
+      <div className='text-sm font-normal'>{lovelace ? <ADAAmount lovelace={lovelace} /> : <RefreshIcon className='w-4 animate-spin' />}</div>
     </NavLink>
+  )
+}
+
+const TreasuryList: NextPage<{
+  cardano: Cardano
+  treasuries: Treasury[]
+}> = ({ cardano, treasuries }) => {
+  const [config, _] = useContext(ConfigContext)
+  const addresses = cardano && treasuries && treasuries.map((treasury) => {
+    const script = cardano.lib.NativeScript.from_bytes(treasury.script)
+    return cardano.getScriptAddress(script, config.isMainnet).to_bech32()
+  })
+  const { data } = usePaymentAddressesQuery({
+    variables: { addresses },
+    fetchPolicy: 'cache-first',
+    pollInterval: 10000
+  })
+  const balanceMap = new Map<string, Value>()
+  data?.paymentAddresses.forEach((paymentAddress) => {
+    const address = paymentAddress.address
+    const balance = getBalanceByPaymentAddresses([paymentAddress])
+    balanceMap.set(address, balance)
+  })
+  const balances = (addresses ?? []).map((address) => balanceMap.get(address))
+
+  return (
+    <nav className='block w-full'>
+      {treasuries.map((treasury, index) => <TreasuryListing key={index} treasury={treasury} balance={balances[index]} />)}
+    </nav>
   )
 }
 
 const SecondaryBar: NextPage = () => {
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
+  const cardano = useCardanoMultiplatformLib()
 
   return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
-      <div className='w-full bg-sky-900 font-semibold'>
+      <nav className='w-full bg-sky-900 font-semibold'>
         <NavLink
           href='/treasuries/new'
           onPageClassName='bg-sky-700'
@@ -169,8 +206,8 @@ const SecondaryBar: NextPage = () => {
           <PlusIcon className='w-4' />
           <span>New Treasury</span>
         </NavLink>
-      </div>
-      {treasuries && treasuries.map((treasury, index) => <TreasuryListing key={index} treasury={treasury} />)}
+      </nav>
+      {cardano && treasuries && <TreasuryList cardano={cardano} treasuries={treasuries} />}
     </aside>
   )
 }
