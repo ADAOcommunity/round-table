@@ -1,6 +1,6 @@
 import type { NextPage } from 'next'
 import Link from 'next/link'
-import { CogIcon, HomeIcon, PlusIcon } from '@heroicons/react/solid'
+import { CogIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -158,6 +158,7 @@ const TreasuryListing: NextPage<{
       className='block w-full p-4 truncate hover:bg-sky-700'>
       <div>{name}</div>
       {lovelace && <div className='text-sm font-normal'><ADAAmount lovelace={lovelace} /></div>}
+      {!lovelace && <div className='py-1'><RefreshIcon className='w-3 animate-spin' /></div>}
     </NavLink>
   )
 }
