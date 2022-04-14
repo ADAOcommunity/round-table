@@ -9,7 +9,7 @@ import { db, Treasury } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getTreasuriesPath } from '../route'
-import { encodeCardanoData, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
+import { Cardano, encodeCardanoData, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
@@ -163,9 +163,14 @@ const TreasuryListing: NextPage<{
 }
 
 const TreasuryList: NextPage<{
-  addresses: string[]
+  cardano: Cardano
   treasuries: Treasury[]
-}> = ({ addresses, treasuries }) => {
+}> = ({ cardano, treasuries }) => {
+  const [config, _] = useContext(ConfigContext)
+  const addresses = cardano && treasuries && treasuries.map((treasury) => {
+    const script = cardano.lib.NativeScript.from_bytes(treasury.script)
+    return cardano.getScriptAddress(script, config.isMainnet).to_bech32()
+  })
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
@@ -187,13 +192,8 @@ const TreasuryList: NextPage<{
 }
 
 const SecondaryBar: NextPage = () => {
-  const [config, _] = useContext(ConfigContext)
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
   const cardano = useCardanoMultiplatformLib()
-  const addresses = cardano && treasuries && treasuries.map((treasury) => {
-    const script = cardano.lib.NativeScript.from_bytes(treasury.script)
-    return cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  })
 
   return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
@@ -206,7 +206,7 @@ const SecondaryBar: NextPage = () => {
           <span>New Treasury</span>
         </NavLink>
       </nav>
-      {addresses && treasuries && <TreasuryList addresses={addresses} treasuries={treasuries} />}
+      {cardano && treasuries && <TreasuryList cardano={cardano} treasuries={treasuries} />}
     </aside>
   )
 }
