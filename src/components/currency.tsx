@@ -51,12 +51,18 @@ const AssetAmount: NextPage<{
   decimals: number
   symbol: string
   className?: string
-}> = ({ quantity, decimals, symbol, className }) => {
-  const value = toDecimal(quantity, decimals).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, "$1")
-  return (
-    <span className={className}>{`${value} ${symbol}`}</span>
-  )
-}
+}> = ({ quantity, decimals, symbol, className }) => (
+  <NumberFormat
+    className={className}
+    value={toDecimal(quantity, decimals)}
+    decimalSeparator='.'
+    isNumericString={true}
+    thousandSeparator={false}
+    allowNegative={false}
+    decimalScale={decimals}
+    suffix={` ${symbol}`}
+    displayType='text' />
+)
 
 const ADAAmount: NextPage<{
   lovelace: bigint
