@@ -157,8 +157,7 @@ const TreasuryListing: NextPage<{
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 truncate hover:bg-sky-700'>
       <div>{name}</div>
-      {lovelace && <div className='text-sm font-normal'><ADAAmount lovelace={lovelace} /></div>}
-      {!lovelace && <div className='py-1'><RefreshIcon className='w-3 animate-spin' /></div>}
+      <div className='text-sm font-normal'>{lovelace ? <ADAAmount lovelace={lovelace} /> : <RefreshIcon className='w-4 animate-spin' />}</div>
     </NavLink>
   )
 }
