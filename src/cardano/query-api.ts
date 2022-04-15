@@ -1,7 +1,8 @@
 import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
-import type { Cardano, PaymentAddress, TransactionOutput } from '@cardano-graphql/client-ts'
+import type { Cardano, Delegation, PaymentAddress, StakePool, StakeRegistration, TransactionOutput } from '@cardano-graphql/client-ts'
 import { Config } from './config'
+import { StakeDeregistration } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -121,5 +122,101 @@ const createApolloClient = (config: Config) => new ApolloClient({
   })
 })
 
+const GetStakePoolsQuery = gql`
+query getStakePools($id: StakePoolID, $limit: Int!, $offset: Int!) {
+  stakePools(
+    limit: $limit
+    offset: $offset
+    order_by: { margin: asc, fixedCost: asc, pledge: desc }
+    where: {
+      retirements: { inEffectFrom: { _is_null: false } }
+      id: { _eq: $id }
+    }
+  ) {
+    id
+    margin
+    fixedCost
+    pledge
+    hash
+    metadataHash
+    activeStake_aggregate {
+      aggregate {
+        sum {
+          amount
+        }
+      }
+    }
+    blocks_aggregate {
+      aggregate {
+        count
+      }
+    }
+  }
+}`
+
+const useGetStakePoolsQuery: Query<
+  { stakePools: StakePool[] },
+  { id?: string, limit: number, offset: number }
+> = (options) => useQuery(GetStakePoolsQuery, options)
+
+const GetDelegationQuery = gql`
+query getDelegation($address: String!, $rewardAddress: StakeAddress!) {
+  stakeRegistrations(where: { address: { _eq: $rewardAddress } }) {
+    address
+  }
+  stakeDeregistrations(where: { address: { _eq: $rewardAddress } }) {
+    address
+  }
+  delegations(
+    limit: 1
+    order_by: {
+      transaction: { block: { slotNo: desc, epoch: { number: desc } } }
+    }
+    where: { address: { _eq: $rewardAddress } }
+  ) {
+    stakePool {
+      id
+    }
+  }
+  utxos(where: { address: { _eq: $address } }) {
+    address
+    txHash
+    index
+    value
+    tokens {
+      asset {
+        policyId
+        assetName
+      }
+      quantity
+    }
+  }
+  cardano {
+    currentEpoch {
+      protocolParams {
+        minFeeA
+        minFeeB
+        poolDeposit
+        keyDeposit
+        coinsPerUtxoWord
+        maxValSize
+        maxTxSize
+      }
+    }
+  }
+}`
+
+const useGetDelegationQuery: Query<
+  {
+    stakeRegistrations: StakeRegistration[],
+    stakeDeregistrations: StakeDeregistration[],
+    delegations: Delegation[],
+    utxos: TransactionOutput[],
+    cardano: Cardano
+  },
+  { address: string, rewardAddress: string }
+> = (options) => useQuery(GetDelegationQuery, options)
+
+
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }
+export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useGetStakePoolsQuery, useGetDelegationQuery }

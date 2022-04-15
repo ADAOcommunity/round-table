@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-04-17T01:46:57.571Z',
+        createdAt: '2022-04-17T01:47:03.868Z',
         host: 'https://graphql-api.testnet.dandelion.link',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -17,20 +17,19 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'getUTxOsToSpend',
+            operationName: 'getDelegation',
             variables: {
-                addresses: [
-                    'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                ],
+                address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
+                rewardAddress: 'stake_test1uru4xcs2s86pwhwkvytnpkg0u77usnv4rwpd77ju9f7xepgv569he',
             },
-            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'query getDelegation($address: String!, $rewardAddress: StakeAddress!) {\n  stakeRegistrations(where: {address: {_eq: $rewardAddress}}) {\n    address\n    __typename\n  }\n  stakeDeregistrations(where: {address: {_eq: $rewardAddress}}) {\n    address\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc, epoch: {number: desc}}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    stakePool {\n      id\n      __typename\n    }\n    __typename\n  }\n  utxos(where: {address: {_eq: $address}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        policyId\n        assetName\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Sun, 17 Apr 2022 01:46:58 GMT',
+                'Sun, 17 Apr 2022 01:47:05 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -42,7 +41,7 @@
                 'close',
             ],
             'cf-ray': [
-                '6fd17d73cd2a91a2-SIN',
+                '6fd17d998bf64a1d-SIN',
             ],
             'access-control-allow-origin': [
                 '*',
@@ -51,7 +50,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"46a-t4TgPtd05X3K51B7mIRpga8Vk2s"',
+                'W/"5be-Lk7ohGl8BBBeV7O5lUhTDFiEuG4"',
             ],
             'set-cookie': [
                 'network=core; path=/',
@@ -69,7 +68,7 @@
                 'Express',
             ],
             'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=HuguuMRXTEOgvYQDXqA0jbTArF%2BFP98awA9NHQ8g5GbGeGpb3zqvbB%2F6SgDWEWHxqQx80B3ez6%2B%2Bri3Y1alzUp3tF7NaN3gbHluZSDMzRj6urKoZshMphgfaoHBDGhIzkES%2BaZXZYmAtoKzS1Umx%2FnpYC%2FKl"}],"group":"cf-nel","max_age":604800}',
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=nCok73uMkIdMy1X8Mi3Au6WkAFqX2aMMKEjk2UNj8jREPReCRjQ0lnWWVZZ3pT%2BOmmrH1f3CBUw8zb0jrlav5RoaIpfT9j5BnAaNjBJ7T9h9xgsqEO8ixf7qRxt%2FxF2e0hHeqiGoezpNZvxCkilpGm1UssDN"}],"group":"cf-nel","max_age":604800}',
             ],
             nel: [
                 '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
@@ -86,15 +85,23 @@
         },
         body: {
             data: {
-                utxos: [
+                stakeRegistrations: [
                     {
-                        address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                        txHash: '2c79557ef628dbc64f438c80a1fe761ea2b84a999cf82808bf550651b5d0fc13',
-                        index: 0,
-                        value: '10000000',
-                        tokens: [],
-                        __typename: 'TransactionOutput',
+                        address: 'stake_test1uru4xcs2s86pwhwkvytnpkg0u77usnv4rwpd77ju9f7xepgv569he',
+                        __typename: 'StakeRegistration',
                     },
+                ],
+                stakeDeregistrations: [],
+                delegations: [
+                    {
+                        stakePool: {
+                            id: 'pool1etruvyk2lgj4nm4jyf2qf4d7mecv7w3h2r8xtu3nvz7rgpm6wfd',
+                            __typename: 'StakePool',
+                        },
+                        __typename: 'Delegation',
+                    },
+                ],
+                utxos: [
                     {
                         address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
                         txHash: 'b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd',
@@ -103,7 +110,8 @@
                         tokens: [
                             {
                                 asset: {
-                                    assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
+                                    policyId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f',
+                                    assetName: '7453554e444145',
                                     __typename: 'Asset',
                                 },
                                 quantity: '3',
@@ -111,13 +119,22 @@
                             },
                             {
                                 asset: {
-                                    assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f744d494e',
+                                    policyId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f',
+                                    assetName: '744d494e',
                                     __typename: 'Asset',
                                 },
                                 quantity: '4',
                                 __typename: 'Token',
                             },
                         ],
+                        __typename: 'TransactionOutput',
+                    },
+                    {
+                        address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
+                        txHash: '2c79557ef628dbc64f438c80a1fe761ea2b84a999cf82808bf550651b5d0fc13',
+                        index: 0,
+                        value: '10000000',
+                        tokens: [],
                         __typename: 'TransactionOutput',
                     },
                 ],

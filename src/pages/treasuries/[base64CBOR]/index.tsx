@@ -75,6 +75,9 @@ const ShowTreasury: NextPage<{
         <Link href={getTreasuryPath(script, 'edit')}>
           <a className='px-4 py-2 border text-sky-700 rounded'>Edit Info</a>
         </Link>
+        <Link href={getTreasuryPath(script, 'stake')}>
+          <a className='px-4 py-2 border text-sky-700 rounded'>Stake</a>
+        </Link>
         <Link href={getTreasuryPath(script, 'new')}>
           <a className='px-4 py-2 border text-white bg-sky-700 rounded'>Create Transaction</a>
         </Link>
@@ -96,7 +99,9 @@ const GetTreasury: NextPage = () => {
 
   return (
     <Layout>
-      <ShowTreasury cardano={cardano} script={script} />
+      <div className='space-y-2'>
+        <ShowTreasury cardano={cardano} script={script} />
+      </div>
     </Layout>
   )
 }

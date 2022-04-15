@@ -1,0 +1,145 @@
+{
+    meta: {
+        createdAt: '2022-04-17T01:46:59.924Z',
+        host: 'https://graphql-api.testnet.dandelion.link',
+        reqHumanReadable: true,
+        resHumanReadable: true,
+        resUncompressed: true,
+    },
+    req: {
+        headers: {
+            accept: '*/*',
+            'content-type': 'application/json',
+            'user-agent': 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)',
+            'accept-encoding': 'gzip,deflate',
+            connection: 'close',
+        },
+        url: '/',
+        method: 'POST',
+        body: {
+            operationName: 'getStakePools',
+            variables: {
+                offset: 0,
+                limit: 2,
+            },
+            query: 'query getStakePools($id: StakePoolID, $limit: Int!, $offset: Int!) {\n  stakePools(\n    limit: $limit\n    offset: $offset\n    order_by: {margin: asc, fixedCost: asc, pledge: desc}\n    where: {retirements: {inEffectFrom: {_is_null: false}}, id: {_eq: $id}}\n  ) {\n    id\n    margin\n    fixedCost\n    pledge\n    hash\n    metadataHash\n    activeStake_aggregate {\n      aggregate {\n        sum {\n          amount\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    blocks_aggregate {\n      aggregate {\n        count\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+        },
+    },
+    res: {
+        status: 200,
+        headers: {
+            date: [
+                'Sun, 17 Apr 2022 01:47:03 GMT',
+            ],
+            'content-type': [
+                'application/json; charset=utf-8',
+            ],
+            'transfer-encoding': [
+                'chunked',
+            ],
+            connection: [
+                'close',
+            ],
+            'cf-ray': [
+                '6fd17d80ea6c87a7-SIN',
+            ],
+            'access-control-allow-origin': [
+                '*',
+            ],
+            'cache-control': [
+                'max-age=20, public',
+            ],
+            etag: [
+                'W/"4e3-tfmxMRDkajGhvZg/rl/JJZ68oAI"',
+            ],
+            'set-cookie': [
+                'network=core; path=/',
+            ],
+            vary: [
+                'Origin, Accept-Encoding',
+            ],
+            'cf-cache-status': [
+                'DYNAMIC',
+            ],
+            'expect-ct': [
+                'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
+            ],
+            'x-powered-by': [
+                'Express',
+            ],
+            'report-to': [
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=3V7eN4OtcWXn0jBqjSdSSLWT3v7L9uMMZJp5x7pTZE5wvAE6TS08XnGxZXRWKFyVqBnujdrb1hjoGSNlCqvyV1Bxr2JN%2BTswnA07mqxhwaSoGremMXzNdU7nVh%2Bg4ozJlEK6%2BscXkq8HRaJdOSZCRgddvxHH"}],"group":"cf-nel","max_age":604800}',
+            ],
+            nel: [
+                '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
+            ],
+            server: [
+                'cloudflare',
+            ],
+            'content-encoding': [
+                'gzip',
+            ],
+            'alt-svc': [
+                'h3=":443"; ma=86400, h3-29=":443"; ma=86400',
+            ],
+        },
+        body: {
+            data: {
+                stakePools: [
+                    {
+                        id: 'pool1v7w7rdtd7ay5lzeauvnur4jdjgk9gmlfk86vwrr4tfvnq97e60s',
+                        margin: 0,
+                        fixedCost: '340000000',
+                        pledge: '80000000000000',
+                        hash: '679de1b56df7494f8b3de327c1d64d922c546fe9b1f4c70c755a5930',
+                        metadataHash: '0096eaaee853d2ed5ebeef89190c814d1d8d071c383f1496bab8a0e8d62ac421',
+                        activeStake_aggregate: {
+                            aggregate: {
+                                sum: {
+                                    amount: '480812843085374',
+                                    __typename: 'ActiveStake_sum_fields',
+                                },
+                                __typename: 'ActiveStake_aggregate_fields',
+                            },
+                            __typename: 'ActiveStake_aggregate',
+                        },
+                        blocks_aggregate: {
+                            aggregate: {
+                                count: '57',
+                                __typename: 'Block_aggregate_fields',
+                            },
+                            __typename: 'Block_aggregate',
+                        },
+                        __typename: 'StakePool',
+                    },
+                    {
+                        id: 'pool1kfjtqk5elh4m3s2unf02cdjxlqyvpj6hczuh29txt9qgjks2why',
+                        margin: 0,
+                        fixedCost: '340000000',
+                        pledge: '10000000000000',
+                        hash: 'b264b05a99fdebb8c15c9a5eac3646f808c0cb57c0b9751566594089',
+                        metadataHash: '5c61bce6035c71a81e37de99ecef1318e58cbf9db1eb7c3e55c86d5e5513fac8',
+                        activeStake_aggregate: {
+                            aggregate: {
+                                sum: {
+                                    amount: '2593072269705222',
+                                    __typename: 'ActiveStake_sum_fields',
+                                },
+                                __typename: 'ActiveStake_aggregate_fields',
+                            },
+                            __typename: 'ActiveStake_aggregate',
+                        },
+                        blocks_aggregate: {
+                            aggregate: {
+                                count: '3977',
+                                __typename: 'Block_aggregate_fields',
+                            },
+                            __typename: 'Block_aggregate',
+                        },
+                        __typename: 'StakePool',
+                    },
+                ],
+            },
+        },
+    },
+}
