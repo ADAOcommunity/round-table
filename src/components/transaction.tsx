@@ -255,7 +255,7 @@ const NewTransaction: NextPage<{
   cardano: Cardano
   changeAddress?: Address
   protocolParameters: ShelleyProtocolParams
-  nativeScriptSet?: NativeScripts
+  nativeScriptSet: NativeScripts
   utxos: GraphQLTransactionOutput[]
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
   const txBuilder = cardano.createTxBuilder(protocolParameters)
