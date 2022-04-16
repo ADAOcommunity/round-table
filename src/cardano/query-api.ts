@@ -18,10 +18,9 @@ const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
 
   utxos && utxos.forEach((utxo) => {
     utxo.tokens.forEach(({ asset, quantity }) => {
-      const { policyId, assetName } = asset
-      const id = policyId + assetName
-      const value = (assets.get(id) ?? BigInt(0)) + BigInt(quantity)
-      assets.set(id, value)
+      const { assetId } = asset
+      const value = (assets.get(assetId) ?? BigInt(0)) + BigInt(quantity)
+      assets.set(assetId, value)
     })
   })
 
@@ -42,8 +41,7 @@ query getUTxOsToSpend($addresses: [String]!) {
     value
     tokens {
       asset {
-        policyId
-        assetName
+        assetId
       }
       quantity
     }

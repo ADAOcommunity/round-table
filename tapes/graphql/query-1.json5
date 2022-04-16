@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-04-16T22:44:21.888Z',
+        createdAt: '2022-04-16T23:11:29.058Z',
         host: 'https://graphql-api.testnet.dandelion.link',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -23,14 +23,14 @@
                     'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
                 ],
             },
-            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        policyId\n        assetName\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Sat, 16 Apr 2022 22:44:23 GMT',
+                'Sat, 16 Apr 2022 23:11:30 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -42,7 +42,7 @@
                 'close',
             ],
             'cf-ray': [
-                '6fd071fd7a23492f-SIN',
+                '6fd099b62d022e9e-SIN',
             ],
             'access-control-allow-origin': [
                 '*',
@@ -51,7 +51,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"48a-cZbUVxNo/oat45zjNGH9Cl7JXBQ"',
+                'W/"46a-t4TgPtd05X3K51B7mIRpga8Vk2s"',
             ],
             'set-cookie': [
                 'network=core; path=/',
@@ -69,7 +69,7 @@
                 'Express',
             ],
             'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=Cf4dEbKOedZ6Dlcds6ieQXLm%2FgPUrLcc10I9efL4bg544ZJOrwGGMccD6X79BUVO%2FkVo89wV7CcpA6C1KjEaAt7FwlW%2B%2F2n8qKcv%2BZtd7usBLW0eIyEZ3XRIeknMtRtCboTwCKmEGzthxBfIxn3teekLuz0O"}],"group":"cf-nel","max_age":604800}',
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=3nI3eKW8weSW5oiaq%2BEzRFOSV7txsvcvqkVd0Wk8IYNiguLFNGLL1maeGahjp0uvKo%2FP4ZK%2F8C6881WfmjmmZmJx4LUsMAbxSbSydJDRMurOO1zLRfxAafrQWapAaju0Ee%2BqojYCWQ1mqqdyejO9cSzwGKmG"}],"group":"cf-nel","max_age":604800}',
             ],
             nel: [
                 '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
@@ -103,8 +103,7 @@
                         tokens: [
                             {
                                 asset: {
-                                    policyId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f',
-                                    assetName: '7453554e444145',
+                                    assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
                                     __typename: 'Asset',
                                 },
                                 quantity: '3',
@@ -112,8 +111,7 @@
                             },
                             {
                                 asset: {
-                                    policyId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f',
-                                    assetName: '744d494e',
+                                    assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f744d494e',
                                     __typename: 'Asset',
                                 },
                                 quantity: '4',
