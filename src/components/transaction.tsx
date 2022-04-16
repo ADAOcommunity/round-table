@@ -305,9 +305,7 @@ const NewTransaction: NextPage<{
       txBuilder.add_output(txOutputResult.data)
     })
 
-    if (nativeScriptSet) {
-      txBuilder.set_native_scripts(nativeScriptSet)
-    }
+    txBuilder.set_native_scripts(nativeScriptSet)
 
     if (message.length > 0) {
       const value = JSON.stringify({
