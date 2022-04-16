@@ -297,36 +297,6 @@ const NewTransaction: NextPage<{
       return { lovelace, assets }
     }, getBalanceByUTxOs(utxos))
 
-  const buildUTxOSet = () => {
-    const { Address, AssetName, BigNum, MultiAsset, ScriptHash,
-      TransactionInput, TransactionHash, TransactionOutput,
-      TransactionUnspentOutput, TransactionUnspentOutputs } = cardano.lib
-
-    const utxosSet = TransactionUnspentOutputs.new()
-    utxos.forEach((utxo) => {
-      const value = cardano.lib.Value.new(BigNum.from_str(utxo.value.toString()))
-      const address = Address.from_bech32(utxo.address)
-      if (utxo.tokens.length > 0) {
-        const multiAsset = MultiAsset.new()
-        utxo.tokens.forEach((token) => {
-          const asset = token.asset
-          const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
-          const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
-          const quantity = BigNum.from_str(token.quantity.toString())
-          multiAsset.set_asset(policyId, assetName, quantity)
-        })
-        value.set_multiasset(multiAsset)
-      }
-      const txUnspentOutput = TransactionUnspentOutput.new(
-        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(utxo.txHash, 'hex')), BigNum.from_str(utxo.index.toString())),
-        TransactionOutput.new(address, value)
-      )
-      utxosSet.add(txUnspentOutput)
-    })
-
-    return utxosSet
-  }
-
   const transactionResult = getResult(() => {
     const { Address } = cardano.lib
 
@@ -347,7 +317,7 @@ const NewTransaction: NextPage<{
     }
 
     const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
-    cardano.chainCoinSelection(txBuilder, buildUTxOSet(), address)
+    cardano.chainCoinSelection(txBuilder, cardano.buildUTxOSet(utxos), address)
 
     return txBuilder.build_tx()
   })
@@ -936,4 +906,4 @@ const CopyVkeysButton: NextPage<{
   )
 }
 
-export { SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, isAddressNetworkCorrect }
+export { AddressViewer, SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, isAddressNetworkCorrect }
