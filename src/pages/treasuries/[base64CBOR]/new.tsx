@@ -7,28 +7,27 @@ import { ErrorMessage, Loading } from '../../../components/status'
 import { useContext } from 'react'
 import { ConfigContext } from '../../../cardano/config'
 import { NativeScriptInfoViewer, NewTransaction } from '../../../components/transaction'
-import { useAddressUTxOsQuery, useProtocolParametersQuery } from '../../../cardano/query-api'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
+import { useGetUTxOsToSpendQuery } from '../../../cardano/query-api'
 
-const NewMultiSigTransaction: NextPage<{
+const GetUTxOsToSpend: NextPage<{
   cardano: Cardano
-  protocolParameters: ShelleyProtocolParams
   script: NativeScript
-}> = ({ cardano, protocolParameters, script }) => {
+}> = ({ cardano, script }) => {
 
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
-  const { loading, error, data } = useAddressUTxOsQuery({
-    variables: { address: address.to_bech32() },
+  const { loading, error, data } = useGetUTxOsToSpendQuery({
+    variables: { addresses: [address.to_bech32()] },
     fetchPolicy: 'network-only'
   })
 
   if (loading) return <Loading />;
   if (error) return <ErrorMessage>An error happened when query balance.</ErrorMessage>;
 
-  const utxos = data?.utxos
-  if (!utxos) return <Loading />;
+  if (!data) return <Loading />;
+  const protocolParameters = data.cardano.currentEpoch.protocolParams
+  if (!protocolParameters) return <ErrorMessage>An error happend when query protocol parameters.</ErrorMessage>;
 
   const nativeScriptSet = cardano.lib.NativeScripts.new()
   nativeScriptSet.add(script)
@@ -43,7 +42,7 @@ const NewMultiSigTransaction: NextPage<{
         <NewTransaction
           changeAddress={address}
           cardano={cardano}
-          utxos={utxos}
+          utxos={data.utxos}
           nativeScriptSet={nativeScriptSet}
           protocolParameters={protocolParameters} />
       </div>
@@ -55,22 +54,15 @@ const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
   const cardano = useCardanoMultiplatformLib()
-  const { loading, error, data } = useProtocolParametersQuery()
 
   if (!cardano) return <Loading />;
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid script</ErrorMessage>;
   const parseResult = getResult(() => cardano.lib.NativeScript.from_bytes(Buffer.from(base64CBOR, 'base64')))
   if (!parseResult.isOk) return <ErrorMessage>Invalid script</ErrorMessage>;
   const script = parseResult.data
-  if (loading) return <Loading />;
-  if (error) return <ErrorMessage>An error happened when query protocol parameters.</ErrorMessage>;
 
-  const params = data?.cardano?.currentEpoch?.protocolParams
-  if (!params) return <Loading />;
-
-  return <NewMultiSigTransaction
+  return <GetUTxOsToSpend
     cardano={cardano}
-    protocolParameters={params}
     script={script} />
 }
 
