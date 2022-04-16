@@ -1,4 +1,4 @@
-import { ShelleyProtocolParams } from '@cardano-graphql/client-ts'
+import type { ShelleyProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
 import type { Value } from './query-api'
@@ -235,6 +235,36 @@ class Cardano {
         if (!nofK) throw new Error('cannot convert to ScriptNofK')
         return nofK.n()
     }
+  }
+
+  public buildUTxOSet(utxos: TransactionOutput[]): TransactionUnspentOutputs {
+    const { Address, AssetName, BigNum, MultiAsset, ScriptHash,
+      TransactionInput, TransactionHash, TransactionOutput,
+      TransactionUnspentOutput, TransactionUnspentOutputs } = this.lib
+
+    const utxosSet = TransactionUnspentOutputs.new()
+    utxos.forEach((utxo) => {
+      const value = this.lib.Value.new(BigNum.from_str(utxo.value.toString()))
+      const address = Address.from_bech32(utxo.address)
+      if (utxo.tokens.length > 0) {
+        const multiAsset = MultiAsset.new()
+        utxo.tokens.forEach((token) => {
+          const asset = token.asset
+          const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
+          const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
+          const quantity = BigNum.from_str(token.quantity.toString())
+          multiAsset.set_asset(policyId, assetName, quantity)
+        })
+        value.set_multiasset(multiAsset)
+      }
+      const txUnspentOutput = TransactionUnspentOutput.new(
+        TransactionInput.new(TransactionHash.from_bytes(Buffer.from(utxo.txHash, 'hex')), BigNum.from_str(utxo.index.toString())),
+        TransactionOutput.new(address, value)
+      )
+      utxosSet.add(txUnspentOutput)
+    })
+
+    return utxosSet
   }
 
   private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
