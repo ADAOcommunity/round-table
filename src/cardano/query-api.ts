@@ -18,10 +18,9 @@ const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
 
   utxos && utxos.forEach((utxo) => {
     utxo.tokens.forEach(({ asset, quantity }) => {
-      const { policyId, assetName } = asset
-      const id = policyId + assetName
-      const value = (assets.get(id) ?? BigInt(0)) + BigInt(quantity)
-      assets.set(id, value)
+      const { assetId } = asset
+      const value = (assets.get(assetId) ?? BigInt(0)) + BigInt(quantity)
+      assets.set(assetId, value)
     })
   })
 
@@ -32,29 +31,40 @@ const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
 }
 
 type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
-type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
-const UTxOsQuery = gql`
-query UTxOsByAddress($address: String!) {
-  utxos(where: { address: { _eq: $address } }) {
+const GetUTxOsToSpendQuery = gql`
+query getUTxOsToSpend($addresses: [String]!) {
+  utxos(where: { address: { _in: $addresses } }) {
     address
     txHash
     index
     value
     tokens {
       asset {
-        policyId
-        assetName
+        assetId
       }
       quantity
     }
   }
+  cardano {
+    currentEpoch {
+      protocolParams {
+        minFeeA
+        minFeeB
+        poolDeposit
+        keyDeposit
+        coinsPerUtxoWord
+        maxValSize
+        maxTxSize
+      }
+    }
+  }
 }`
 
-const useAddressUTxOsQuery: Query<
-  { utxos: TransactionOutput[] },
-  { address: string }
-> = (options) => useQuery(UTxOsQuery, options)
+const useGetUTxOsToSpendQuery: Query<
+  { utxos: TransactionOutput[], cardano: Cardano },
+  { addresses: string[] }
+> = (options) => useQuery(GetUTxOsToSpendQuery, options)
 
 const PaymentAddressesQuery = gql`
 query PaymentAddressByAddresses($addresses: [String]!) {
@@ -100,25 +110,6 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
   return balance
 }
 
-const ProtocolParametersQuery = gql`
-query getProtocolParameters {
-  cardano {
-    currentEpoch {
-      protocolParams {
-        minFeeA
-        minFeeB
-        poolDeposit
-        keyDeposit
-        coinsPerUtxoWord
-        maxValSize
-        maxTxSize
-      }
-    }
-  }
-}`
-
-const useProtocolParametersQuery: OptionalQuery<{ cardano: Cardano }, {}> = () => useQuery(ProtocolParametersQuery)
-
 const createApolloClient = (config: Config) => new ApolloClient({
   uri: config.queryAPI.URI,
   cache: new InMemoryCache({
@@ -131,4 +122,4 @@ const createApolloClient = (config: Config) => new ApolloClient({
 })
 
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useAddressUTxOsQuery, useProtocolParametersQuery, usePaymentAddressesQuery }
+export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }

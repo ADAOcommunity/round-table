@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-04-01T21:48:59.530Z',
+        createdAt: '2022-04-16T23:11:30.860Z',
         host: 'https://graphql-api.testnet.dandelion.link',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -17,18 +17,20 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'UTxOsByAddress',
+            operationName: 'PaymentAddressByAddresses',
             variables: {
-                address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
+                addresses: [
+                    'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
+                ],
             },
-            query: 'query UTxOsByAddress($address: String!) {\n  utxos(where: {address: {_eq: $address}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        policyId\n        assetName\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'query PaymentAddressByAddresses($addresses: [String]!) {\n  paymentAddresses(addresses: $addresses) {\n    address\n    summary {\n      assetBalances {\n        asset {\n          assetId\n          __typename\n        }\n        quantity\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Fri, 01 Apr 2022 21:49:00 GMT',
+                'Sat, 16 Apr 2022 23:11:32 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -40,13 +42,19 @@
                 'close',
             ],
             'cf-ray': [
-                '6f54883aa8864987-SIN',
+                '6fd099be3eb94d51-SIN',
+            ],
+            'access-control-allow-origin': [
+                '*',
             ],
             'cache-control': [
                 'max-age=20, public',
             ],
             etag: [
-                'W/"37f-zvpdO4E5j+xTQzg3nJAcbdxN1ss"',
+                'W/"297-HnLO8cOYCJB3kV+LCzRbxvjG1Lk"',
+            ],
+            'set-cookie': [
+                'network=core; path=/',
             ],
             vary: [
                 'Origin, Accept-Encoding',
@@ -61,7 +69,7 @@
                 'Express',
             ],
             'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=fmR6EcPlrKBHiuK5l1dgLG1QU4FDKpY60gPhypPyERD8FtRWuvIHrv%2BCteGGa5WNlnWwaIaThonsmcDe9%2Byw08xEi0Il3GoiF7qK1uY98B7ujj6CdTbRsgQ39vDMVVBpIRwwXrhkMsO8Qvt88hBeLN0HWZtH"}],"group":"cf-nel","max_age":604800}',
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=tmKrOk4WbEQE%2B3Wk9O5Q7kd15u9nzN9Qdh54FWjPV4oPlBC1%2Fb22FFXwHpMbJ9jIQ1z5RmPO1Vw9Y38FgK35uNPEwzY8PL8iIH53XlfevJQfg2CJ%2BkxgiQxnOz1JCjPVOd4LrjTsz6B06KotcCbH7mCYHB0p"}],"group":"cf-nel","max_age":604800}',
             ],
             nel: [
                 '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
@@ -78,41 +86,39 @@
         },
         body: {
             data: {
-                utxos: [
+                paymentAddresses: [
                     {
                         address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                        txHash: 'b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd',
-                        index: 0,
-                        value: '1413762',
-                        tokens: [
-                            {
-                                asset: {
-                                    policyId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f',
-                                    assetName: '7453554e444145',
-                                    __typename: 'Asset',
+                        summary: {
+                            assetBalances: [
+                                {
+                                    asset: {
+                                        assetId: 'ada',
+                                        __typename: 'Asset',
+                                    },
+                                    quantity: '11413762',
+                                    __typename: 'AssetBalance',
                                 },
-                                quantity: '3',
-                                __typename: 'Token',
-                            },
-                            {
-                                asset: {
-                                    policyId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f',
-                                    assetName: '744d494e',
-                                    __typename: 'Asset',
+                                {
+                                    asset: {
+                                        assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
+                                        __typename: 'Asset',
+                                    },
+                                    quantity: '3',
+                                    __typename: 'AssetBalance',
                                 },
-                                quantity: '4',
-                                __typename: 'Token',
-                            },
-                        ],
-                        __typename: 'TransactionOutput',
-                    },
-                    {
-                        address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                        txHash: '2c79557ef628dbc64f438c80a1fe761ea2b84a999cf82808bf550651b5d0fc13',
-                        index: 0,
-                        value: '10000000',
-                        tokens: [],
-                        __typename: 'TransactionOutput',
+                                {
+                                    asset: {
+                                        assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f744d494e',
+                                        __typename: 'Asset',
+                                    },
+                                    quantity: '4',
+                                    __typename: 'AssetBalance',
+                                },
+                            ],
+                            __typename: 'PaymentAddressSummary',
+                        },
+                        __typename: 'PaymentAddress',
                     },
                 ],
             },
