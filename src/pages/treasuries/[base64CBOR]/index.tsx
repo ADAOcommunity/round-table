@@ -12,6 +12,7 @@ import { ConfigContext } from '../../../cardano/config'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
+import { RefreshIcon } from '@heroicons/react/solid'
 
 const ShowBalance: NextPage<{
   cardano: Cardano
@@ -32,7 +33,7 @@ const ShowBalance: NextPage<{
     return getBalanceByPaymentAddresses(paymentAddresses)
   }, [data])
 
-  if (!balance) return null
+  if (!balance) return <RefreshIcon className='w-4 animate-spin transform rotate-180' />;
 
   return (
     <ul className={className}>
