@@ -249,9 +249,9 @@ class Cardano {
       if (utxo.tokens.length > 0) {
         const multiAsset = MultiAsset.new()
         utxo.tokens.forEach((token) => {
-          const asset = token.asset
-          const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
-          const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
+          const { assetId } = token.asset
+          const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(assetId), 'hex'))
+          const assetName = AssetName.new(Buffer.from(getAssetName(assetId), 'hex'))
           const quantity = BigNum.from_str(token.quantity.toString())
           multiAsset.set_asset(policyId, assetName, quantity)
         })
