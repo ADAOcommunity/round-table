@@ -7,11 +7,12 @@ import { Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import { NativeScriptInfoViewer, NativeScriptViewer } from '../../../components/transaction'
 import Link from 'next/link'
-import { useContext } from 'react'
+import { useContext, useMemo } from 'react'
 import { ConfigContext } from '../../../cardano/config'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
+import { RefreshIcon } from '@heroicons/react/solid'
 
 const ShowBalance: NextPage<{
   cardano: Cardano
@@ -20,42 +21,39 @@ const ShowBalance: NextPage<{
 }> = ({ cardano, script, className }) => {
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  const { loading, error, data } = usePaymentAddressesQuery({
+  const { data } = usePaymentAddressesQuery({
     variables: { addresses: [address] },
     fetchPolicy: 'cache-first',
-    pollInterval: 2000
+    pollInterval: 5000
   })
 
-  if (loading) return null
-  if (error) return null
+  const balance = useMemo(() => {
+    const paymentAddresses = data?.paymentAddresses
+    if (!paymentAddresses) return
+    return getBalanceByPaymentAddresses(paymentAddresses)
+  }, [data])
 
-  const paymentAddresses = data?.paymentAddresses
-  if (!paymentAddresses) return null
-
-  const balance = getBalanceByPaymentAddresses(paymentAddresses)
+  if (!balance) return <RefreshIcon className='w-4 animate-spin transform rotate-180' />;
 
   return (
-    <div className={className}>
-      <div className='font-semibold'>Balance</div>
-      <ul className='divide-y rounded border'>
-        <li className='p-2'><ADAAmount lovelace={balance.lovelace} /></li>
-        {Array.from(balance.assets).map(([id, quantity]) => {
-          const symbol = Buffer.from(getAssetName(id), 'hex').toString('ascii')
-          return (
-            <li key={id} className='p-2'>
-              <AssetAmount
-                quantity={quantity}
-                decimals={0}
-                symbol={symbol} />
-              <div className='space-x-1'>
-                <span>Policy ID:</span>
-                <span>{getPolicyId(id)}</span>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-    </div>
+    <ul className={className}>
+      <li className='p-2'><ADAAmount lovelace={balance.lovelace} /></li>
+      {Array.from(balance.assets).map(([id, quantity]) => {
+        const symbol = Buffer.from(getAssetName(id), 'hex').toString('ascii')
+        return (
+          <li key={id} className='p-2'>
+            <AssetAmount
+              quantity={quantity}
+              decimals={0}
+              symbol={symbol} />
+            <div className='space-x-1'>
+              <span>Policy ID:</span>
+              <span>{getPolicyId(id)}</span>
+            </div>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -68,7 +66,10 @@ const ShowTreasury: NextPage<{
       <div className='p-4 space-y-2'>
         <NativeScriptInfoViewer cardano={cardano} className='space-y-1' script={script} />
         <NativeScriptViewer className='space-y-2' cardano={cardano} script={script} />
-        <ShowBalance cardano={cardano} script={script} />
+        <div>
+          <div className='font-semibold'>Balance</div>
+          <ShowBalance className='divide-y rounded border' cardano={cardano} script={script} />
+        </div>
       </div>
       <footer className='flex justify-end p-4 bg-gray-100 space-x-2'>
         <Link href={getTreasuryPath(script, 'edit')}>
