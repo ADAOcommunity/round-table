@@ -23,7 +23,7 @@ const ShowBalance: NextPage<{
   const { data } = usePaymentAddressesQuery({
     variables: { addresses: [address] },
     fetchPolicy: 'cache-first',
-    pollInterval: 2000
+    pollInterval: 5000
   })
 
   const balance = useMemo(() => {
