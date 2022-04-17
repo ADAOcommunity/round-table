@@ -99,9 +99,7 @@ const GetTreasury: NextPage = () => {
 
   return (
     <Layout>
-      <div className='space-y-2'>
-        <ShowTreasury cardano={cardano} script={script} />
-      </div>
+      <ShowTreasury cardano={cardano} script={script} />
     </Layout>
   )
 }
