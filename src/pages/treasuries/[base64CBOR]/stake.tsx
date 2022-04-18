@@ -80,7 +80,7 @@ const StakePool: NextPage<{
 }> = ({ delegate, stakePool }) => {
   const id = stakePool.id
   return (
-    <li className='p-2 border rounded shadow'>
+    <li className='p-2 border rounded hover:bg-sky-100'>
       <div className='truncate'>{id}</div>
       <div className='space-x-1'>
         <span className='font-semibold'>Margin:</span>
@@ -112,11 +112,14 @@ const StakePool: NextPage<{
 const StakePools: NextPage<{
   delegate: (id: string) => void
 }> = ({ delegate }) => {
+  const limit = 30
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
   const { loading, data } = useGetStakePoolsQuery({
-    variables: { limit: 30, offset: 0, id: (search !== '' ? search : undefined) }
+    variables: { limit, offset: (page - 1) * limit, id: (search !== '' ? search : undefined) }
   })
   const stakePools = data?.stakePools
+  const pageIndices = Array.from({ length: page + 1 }, (_, i) => i + 1)
 
   return (
     <div className='space-y-2'>
@@ -135,6 +138,18 @@ const StakePools: NextPage<{
       {stakePools && <ul className='grid gap-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
         {stakePools.map((stakePool) => <StakePool key={stakePool.id} delegate={delegate} stakePool={stakePool} />)}
       </ul>}
+      <nav className='flex text-sm space-x-1 items-center'>
+        <span>Page:</span>
+        {pageIndices.map((pageIndex) =>
+          <button
+            className='p-2 rounded hover:bg-sky-700 hover:text-white disabled:bg-sky-700 disabled:text-white'
+            onClick={() => setPage(pageIndex)}
+            disabled={page === pageIndex}
+            key={pageIndex}>
+            {pageIndex}
+          </button>
+        )}
+      </nav>
     </div>
   )
 }
