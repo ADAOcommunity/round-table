@@ -5,13 +5,14 @@ import type { Cardano } from '../../../cardano/multiplatform-lib'
 import { Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { ConfigContext } from '../../../cardano/config'
 import { useGetDelegationQuery, useGetStakePoolsQuery } from '../../../cardano/query-api'
 import { AddressViewer, NativeScriptInfoViewer } from '../../../components/transaction'
 import { StakePool } from '@cardano-graphql/client-ts'
 import { ADAAmount } from '../../../components/currency'
 import { getTransactionPath } from '../../../route'
+import { RefreshIcon, SearchIcon } from '@heroicons/react/solid'
 
 const ShowStake: NextPage<{
   cardano: Cardano
@@ -111,18 +112,29 @@ const StakePool: NextPage<{
 const StakePools: NextPage<{
   delegate: (id: string) => void
 }> = ({ delegate }) => {
-  const { data } = useGetStakePoolsQuery({
-    variables: { limit: 30, offset: 0 }
+  const [search, setSearch] = useState('')
+  const { loading, data } = useGetStakePoolsQuery({
+    variables: { limit: 30, offset: 0, id: (search !== '' ? search : undefined) }
   })
   const stakePools = data?.stakePools
 
-  if (!stakePools) return null;
-
   return (
-    <div>
-      <ul className='grid gap-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
+    <div className='space-y-2'>
+      <div className='flex border rounded overflow-hidden items-center'>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder='Search by pool id'
+          className='p-2 grow outline-none'
+          type='search' />
+        {loading && <div className='p-2'><RefreshIcon className='w-4 animate-spin transform rotate-180' /></div>}
+        <span className='p-2'>
+          <SearchIcon className='w-4' />
+        </span>
+      </div>
+      {stakePools && <ul className='grid gap-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
         {stakePools.map((stakePool) => <StakePool key={stakePool.id} delegate={delegate} stakePool={stakePool} />)}
-      </ul>
+      </ul>}
     </div>
   )
 }
