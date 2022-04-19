@@ -53,7 +53,7 @@ const AddAddress: NextPage<{
   return (
     <div className='space-y-2'>
       <label className='space-y-1'>
-        <div>New Signer (min. 2)</div>
+        <div className="after:content-['*'] after:text-red-500">New Signer (min. 2)</div>
         <textarea
           className={['block w-full border p-2 rounded', isValid ? '' : 'text-red-500'].join(' ')}
           onChange={(e) => setAddress(e.target.value)}
