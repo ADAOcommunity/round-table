@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useState, KeyboardEventHandler, ChangeEventHandler, FocusEventHandler, useEffect, useContext } from 'react'
+import { useState, KeyboardEventHandler, ChangeEventHandler, FocusEventHandler, useEffect, useContext, MouseEventHandler } from 'react'
 import { Hero, Layout, Panel } from '../../components/layout'
 import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano, MultiSigType } from '../../cardano/multiplatform-lib'
@@ -20,7 +20,8 @@ type KeyHashInput = {
 const AddAddress: NextPage<{
   cardano: Cardano
   onAdd: (_: KeyHashInput) => void
-}> = ({ cardano, onAdd }) => {
+  onCancel: () => void
+}> = ({ cardano, onAdd, onCancel }) => {
   const [address, setAddress] = useState('')
   const [config, _] = useContext(ConfigContext)
 
@@ -37,6 +38,11 @@ const AddAddress: NextPage<{
       onAdd({ id: nanoid(), address, hash: result.data })
       setAddress('')
     }
+  }
+
+  const cancelHandle: MouseEventHandler<HTMLButtonElement> = () => {
+    setAddress('')
+    onCancel()
   }
 
   const enterPressHandle: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
@@ -59,13 +65,18 @@ const AddAddress: NextPage<{
           placeholder="Add signer address and press enter">
         </textarea>
       </label>
-      <nav className='flex justify-end'>
+      <nav className='flex justify-end space-x-2'>
+        <button
+          onClick={cancelHandle}
+          className='border rounded p-2 text-sky-700'>
+          Cancel
+        </button>
         <button
           disabled={!isValid}
           onClick={submit}
           className='flex py-2 px-4 items-center space-x-1 rounded text-white bg-sky-700 disabled:border disabled:text-gray-400 disabled:bg-gray-100'>
           <PlusIcon className='h-4' />
-          <span>Add</span>
+          <span>Add Address</span>
         </button>
       </nav>
     </div>
@@ -162,8 +173,20 @@ const NewTreasury: NextPage = () => {
 
   const getScript = (): NativeScript | undefined => {
     if (keyHashInputs.length <= 1) return
-    const hashes = keyHashInputs.map(({ hash }) => hash)
-    return cardano.buildMultiSigScript(hashes, scriptType, required)
+
+    const { NativeScript, NativeScripts, ScriptPubkey, ScriptAll, ScriptAny, ScriptNOfK } = cardano.lib
+    const scripts = NativeScripts.new()
+    keyHashInputs.forEach((input) => {
+      const script = NativeScript.new_script_pubkey(ScriptPubkey.new(input.hash))
+      scripts.add(script)
+      return
+    })
+
+    switch (scriptType) {
+      case 'all': return NativeScript.new_script_all(ScriptAll.new(scripts))
+      case 'any': return NativeScript.new_script_any(ScriptAny.new(scripts))
+      case 'atLeast': return NativeScript.new_script_n_of_k(ScriptNOfK.new(required, scripts))
+    }
   }
 
   const closeModal = () => setIsModalOpen(false)
@@ -209,7 +232,7 @@ const NewTreasury: NextPage = () => {
               onClick={() => setIsModalOpen(true)}
               className='flex text-sky-700 items-center space-x-1'>
               <PlusIcon className='w-4' />
-              <span>Add signer or time lock</span>
+              <span>Add signer</span>
             </button>
             {keyHashInputs.length > 1 &&
               <div className='space-y-1'>
@@ -250,7 +273,7 @@ const NewTreasury: NextPage = () => {
         className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3'
         isOpen={isModalOpen}
         onClose={closeModal}>
-        <AddAddress cardano={cardano} onAdd={addKeyHashInput} />
+        <AddAddress cardano={cardano} onAdd={addKeyHashInput} onCancel={closeModal} />
       </Modal>
     </Layout>
   )
