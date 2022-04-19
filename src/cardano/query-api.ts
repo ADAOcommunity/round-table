@@ -31,6 +31,7 @@ const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
 }
 
 type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
+type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
 const GetUTxOsToSpendQuery = gql`
 query getUTxOsToSpend($addresses: [String]!) {
@@ -121,5 +122,16 @@ const createApolloClient = (config: Config) => new ApolloClient({
   })
 })
 
+const getTipQuery = gql`
+query getTip {
+  cardano {
+    tip {
+      slotNo
+    }
+  }
+}`
+
+const useGetTipQuery: OptionalQuery<{ cardano: Cardano }, {}> = (options) => useQuery(getTipQuery, options)
+
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }
+export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useGetTipQuery }

@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react-hooks'
-import { getAssetName, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
+import { getAssetName, getPolicyId, useGetTipQuery, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import { NextPage } from 'next'
@@ -97,6 +97,21 @@ describe('GraphQL API', () => {
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
         expect(summary.assetBalances[0]?.quantity).toBe('11413762')
       }
+    }
+  })
+
+  test('useGetTipQuery', async () => {
+    const { result, waitForValueToChange } = renderHook(() => useGetTipQuery(), { wrapper })
+
+    expect(result.current.loading).toBe(true)
+
+    await waitForValueToChange(() => result.current.loading, { timeout: 10000 })
+
+    expect(result.current.loading).toBe(false)
+    expect(result.current.data).toBeTruthy()
+
+    if (result.current.data) {
+      expect(result.current.data.cardano.tip.slotNo).toBe(56040796)
     }
   })
 })
