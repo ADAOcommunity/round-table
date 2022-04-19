@@ -4,15 +4,21 @@ import { Hero, Layout, Panel } from '../../components/layout'
 import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano, MultiSigType } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
-import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Ed25519KeyHash, NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/transaction'
-import { NotificationContext } from '../../components/notification'
 import { ConfigContext } from '../../cardano/config'
+import { nanoid } from 'nanoid'
+
+type KeyHashInput = {
+  id: string
+  address?: string
+  hash: Ed25519KeyHash
+}
 
 const AddAddress: NextPage<{
   cardano: Cardano
-  onAdd: (address: string) => void
+  onAdd: (_: KeyHashInput) => void
 }> = ({ cardano, onAdd }) => {
   const [address, setAddress] = useState('')
   const [config, _] = useContext(ConfigContext)
@@ -26,8 +32,8 @@ const AddAddress: NextPage<{
   const isValid = result.isOk && !!result.data
 
   const submit = () => {
-    if (isValid) {
-      onAdd(address)
+    if (result.isOk && result.data) {
+      onAdd({ id: nanoid(), address, hash: result.data })
       setAddress('')
     }
   }
@@ -112,28 +118,26 @@ const RequiredNumberInput: NextPage<{
   )
 }
 
-type KeyHashMap = Map<string, string>
-
 const KeyHashList: NextPage<{
   className?: string
-  keyHashMap: KeyHashMap
-  deleteKeyHash: (keyHashHex: string) => void
-}> = ({ className, keyHashMap, deleteKeyHash }) => {
-  if (keyHashMap.size <= 0) return null
+  keyHashInputs: KeyHashInput[]
+  deleteKeyHashInput: (keyHashHex: string) => void
+}> = ({ className, keyHashInputs, deleteKeyHashInput }) => {
+  if (keyHashInputs.length <= 0) return null
 
   return (
     <div className={className}>
       <div>Signers</div>
       <ul className='border divide-y rounded'>
-        {Array.from(keyHashMap).map(([keyHashHex, address]) => {
+        {keyHashInputs.map(({ id, address, hash }) => {
           return (
-            <li key={keyHashHex} className='flex items-center p-2'>
+            <li key={id} className='flex items-center p-2'>
               <div className='grow'>
-                <div>{address}</div>
-                <div>{keyHashHex}</div>
+                <div>{hash.to_hex()}</div>
+                <div className='text-sm truncate'>{address}</div>
               </div>
               <button className='p-2'>
-                <TrashIcon className='w-4' onClick={() => deleteKeyHash(keyHashHex)} />
+                <TrashIcon className='w-4' onClick={() => deleteKeyHashInput(id)} />
               </button>
             </li>
           )
@@ -144,41 +148,26 @@ const KeyHashList: NextPage<{
 }
 
 const NewTreasury: NextPage = () => {
-  const [keyHashMap, setKeyHashMap] = useState<KeyHashMap>(new Map())
+  const [keyHashInputs, setKeyHashInputs] = useState<KeyHashInput[]>([])
   const [scriptType, setScriptType] = useState<MultiSigType>('all')
   const [required, setRequired] = useState(1)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [config, _] = useContext(ConfigContext)
-  const { notify } = useContext(NotificationContext)
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
   const getScript = (): NativeScript | undefined => {
-    if (keyHashMap.size <= 1) return
-    const keyHashes = Array
-      .from(keyHashMap.keys())
-      .map((keyHashHex) => cardano.lib.Ed25519KeyHash.from_hex(keyHashHex))
-    return cardano.buildMultiSigScript(keyHashes, scriptType, required)
+    if (keyHashInputs.length <= 1) return
+    const hashes = keyHashInputs.map(({ hash }) => hash)
+    return cardano.buildMultiSigScript(hashes, scriptType, required)
   }
 
-  const addAddress = (address: string) => {
-    const result = getResult(() => {
-      const addressObject = cardano.lib.Address.from_bech32(address)
-      if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('Wrong network')
-      return cardano.lib.Address.from_bech32(address).as_base()?.payment_cred().to_keyhash()
-    })
-    if (result.isOk && result.data) {
-      setKeyHashMap(new Map(keyHashMap).set(result.data.to_hex(), address))
-      return
-    }
-    notify('error', 'Invalid address.')
+  const addKeyHashInput = (keyHashInput: KeyHashInput) => {
+    setKeyHashInputs(keyHashInputs.concat(keyHashInput))
   }
 
-  const deleteKeyHash = (keyHashHex: string) => {
-    const newMap = new Map(keyHashMap)
-    newMap.delete(keyHashHex)
-    setKeyHashMap(newMap)
+  const deleteKeyHashInput = (id: string) => {
+    setKeyHashInputs(keyHashInputs.filter((keyHashInput) => id !== keyHashInput.id))
   }
 
   return (
@@ -208,8 +197,8 @@ const NewTreasury: NextPage = () => {
                 onChange={(e) => setDescription(e.target.value)}>
               </textarea>
             </label>
-            <KeyHashList className='space-y-1' keyHashMap={keyHashMap} deleteKeyHash={deleteKeyHash} />
-            {keyHashMap.size > 1 &&
+            <KeyHashList className='space-y-1' keyHashInputs={keyHashInputs} deleteKeyHashInput={deleteKeyHashInput} />
+            {keyHashInputs.length > 1 &&
               <div className='space-y-1'>
                 <div>Required Signers</div>
                 <div className='flex space-x-2 items-center'>
@@ -221,18 +210,18 @@ const NewTreasury: NextPage = () => {
                   {scriptType == 'atLeast' &&
                     <RequiredNumberInput
                       className='border rounded p-1'
-                      max={keyHashMap.size}
+                      max={keyHashInputs.length}
                       required={required}
                       onCommit={setRequired} />
                   }
                   <div className='p-2 space-x-1'>
                     <span>of</span>
-                    <span>{keyHashMap.size}</span>
+                    <span>{keyHashInputs.length}</span>
                   </div>
                 </div>
               </div>}
             <hr />
-            <AddAddress cardano={cardano} onAdd={addAddress} />
+            <AddAddress cardano={cardano} onAdd={addKeyHashInput} />
           </div>
           <footer className='flex justify-end p-4 bg-gray-100'>
             <SaveTreasuryButton
