@@ -9,6 +9,7 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/transaction'
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
+import Modal from '../../components/modal'
 
 type KeyHashInput = {
   id: string
@@ -46,26 +47,28 @@ const AddAddress: NextPage<{
   }
 
   return (
-    <label className='block space-y-1'>
-      <div>New Signer (min. 2)</div>
-      <div className='flex space-x-2 items-start'>
+    <div className='space-y-2'>
+      <label className='space-y-1'>
+        <div>New Signer (min. 2)</div>
         <textarea
           className={['block w-full border p-2 rounded', isValid ? '' : 'text-red-500'].join(' ')}
           onChange={(e) => setAddress(e.target.value)}
           onKeyDown={enterPressHandle}
-          rows={1}
+          rows={4}
           value={address}
           placeholder="Add signer address and press enter">
         </textarea>
+      </label>
+      <nav className='flex justify-end'>
         <button
           disabled={!isValid}
           onClick={submit}
-          className='flex p-2 items-center space-x-1 border rounded text-sky-700 disabled:text-gray-400'>
+          className='flex py-2 px-4 items-center space-x-1 rounded text-white bg-sky-700 disabled:border disabled:text-gray-400 disabled:bg-gray-100'>
           <PlusIcon className='h-4' />
           <span>Add</span>
         </button>
-      </div>
-    </label>
+      </nav>
+    </div>
   )
 }
 
@@ -153,6 +156,7 @@ const NewTreasury: NextPage = () => {
   const [required, setRequired] = useState(1)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
@@ -162,8 +166,11 @@ const NewTreasury: NextPage = () => {
     return cardano.buildMultiSigScript(hashes, scriptType, required)
   }
 
+  const closeModal = () => setIsModalOpen(false)
+
   const addKeyHashInput = (keyHashInput: KeyHashInput) => {
     setKeyHashInputs(keyHashInputs.concat(keyHashInput))
+    closeModal()
   }
 
   const deleteKeyHashInput = (id: string) => {
@@ -198,6 +205,12 @@ const NewTreasury: NextPage = () => {
               </textarea>
             </label>
             <KeyHashList className='space-y-1' keyHashInputs={keyHashInputs} deleteKeyHashInput={deleteKeyHashInput} />
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className='flex text-sky-700 items-center space-x-1'>
+              <PlusIcon className='w-4' />
+              <span>Add signer or time lock</span>
+            </button>
             {keyHashInputs.length > 1 &&
               <div className='space-y-1'>
                 <div>Required Signers</div>
@@ -220,8 +233,6 @@ const NewTreasury: NextPage = () => {
                   </div>
                 </div>
               </div>}
-            <hr />
-            <AddAddress cardano={cardano} onAdd={addKeyHashInput} />
           </div>
           <footer className='flex justify-end p-4 bg-gray-100'>
             <SaveTreasuryButton
@@ -235,6 +246,12 @@ const NewTreasury: NextPage = () => {
           </footer>
         </Panel>
       </div>
+      <Modal
+        className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3'
+        isOpen={isModalOpen}
+        onClose={closeModal}>
+        <AddAddress cardano={cardano} onAdd={addKeyHashInput} />
+      </Modal>
     </Layout>
   )
 }
