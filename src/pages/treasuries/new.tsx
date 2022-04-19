@@ -36,12 +36,10 @@ const AddAddress: NextPage<{
   const submit = () => {
     if (result.isOk && result.data) {
       onAdd({ id: nanoid(), address, hash: result.data })
-      setAddress('')
     }
   }
 
   const cancelHandle: MouseEventHandler<HTMLButtonElement> = () => {
-    setAddress('')
     onCancel()
   }
 
