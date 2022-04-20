@@ -58,13 +58,6 @@ const TimeLockInputs: NextPage<{
   })
   const currentSlotNumber = data?.cardano.tip.slotNo
 
-  useEffect(() => {
-    if (currentSlotNumber) {
-      setTimeLockAfter(currentSlotNumber)
-      setTimeLockBefore(currentSlotNumber)
-    }
-  }, [])
-
   if (!currentSlotNumber) return null
 
   return (
