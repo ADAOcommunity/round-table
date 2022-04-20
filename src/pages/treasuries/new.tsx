@@ -10,11 +10,91 @@ import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/tr
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
 import Modal from '../../components/modal'
+import { useGetTipQuery } from '../../cardano/query-api'
 
 type KeyHashInput = {
   id: string
   address?: string
   hash: Ed25519KeyHash
+}
+
+const TimeLockInput: NextPage<{
+  label: string
+  className?: string
+  isEnabled: boolean
+  setIsEnabled: (_: boolean) => void
+  value: number
+  setValue: (_: number) => void
+}> = ({ className, label, isEnabled, setIsEnabled, value, setValue }) => {
+  const valueChangeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
+    setValue(parseInt(event.target.value))
+  }
+
+  return (
+    <div className={className}>
+      <label className='space-x-1'>
+        <span>{label}</span>
+        <input
+          type='checkbox'
+          checked={isEnabled}
+          onChange={() => setIsEnabled(!isEnabled)} />
+      </label>
+      <div>
+        {isEnabled && <input className='block w-full p-2 border rounded' type='number' min={0} step={1000} value={value} onChange={valueChangeHandle} />}
+      </div>
+    </div>
+  )
+}
+
+const TimeLockInputs: NextPage<{
+  className?: string
+  isTimeLockAfter: boolean
+  setIsTimeLockAfter: (_: boolean) => void
+  timeLockAfter: number
+  setTimeLockAfter: (_: number) => void
+  isTimeLockBefore: boolean
+  setIsTimeLockBefore: (_: boolean) => void
+  timeLockBefore: number
+  setTimeLockBefore: (_: number) => void
+}> = ({ className, isTimeLockAfter, setIsTimeLockAfter, timeLockAfter, setTimeLockAfter, isTimeLockBefore, setIsTimeLockBefore, timeLockBefore, setTimeLockBefore }) => {
+  const { data } = useGetTipQuery({
+    pollInterval: 5000
+  })
+  const currentSlotNumber = data?.cardano.tip.slotNo
+
+  useEffect(() => {
+    if (currentSlotNumber) {
+      setTimeLockAfter(currentSlotNumber)
+      setTimeLockBefore(currentSlotNumber)
+    }
+  }, [])
+
+  if (!currentSlotNumber) return null
+
+  return (
+    <div className={className}>
+      <div className='grid grid-cols-3 gap-4'>
+        <TimeLockInput
+          className='space-y-1'
+          value={timeLockBefore}
+          setValue={setTimeLockBefore}
+          label='Locked before'
+          isEnabled={isTimeLockBefore}
+          setIsEnabled={setIsTimeLockBefore} />
+        <div className='space-y-1'>
+          <div>Current Slot</div>
+          <div className='py-2'>{currentSlotNumber}</div>
+        </div>
+        <TimeLockInput
+          className='space-y-1'
+          value={timeLockAfter}
+          setValue={setTimeLockAfter}
+          label='Locked after'
+          isEnabled={isTimeLockAfter}
+          setIsEnabled={setIsTimeLockAfter} />
+      </div>
+    </div>
+  )
 }
 
 const AddAddress: NextPage<{
@@ -166,19 +246,33 @@ const NewTreasury: NextPage = () => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isTimeLockAfter, setIsTimeLockAfter] = useState(false)
+  const [timeLockAfter, setTimeLockAfter] = useState(0)
+  const [isTimeLockBefore, setIsTimeLockBefore] = useState(false)
+  const [timeLockBefore, setTimeLockBefore] = useState(0)
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
-  const getScript = (): NativeScript | undefined => {
-    if (keyHashInputs.length <= 1) return
-
-    const { NativeScript, NativeScripts, ScriptPubkey, ScriptAll, ScriptAny, ScriptNOfK } = cardano.lib
+  const getScript = (): NativeScript => {
+    const { NativeScript, NativeScripts, ScriptPubkey, ScriptAll, ScriptAny, ScriptNOfK, TimelockStart, TimelockExpiry, BigNum } = cardano.lib
     const scripts = NativeScripts.new()
     keyHashInputs.forEach((input) => {
       const script = NativeScript.new_script_pubkey(ScriptPubkey.new(input.hash))
       scripts.add(script)
       return
     })
+
+    if (isTimeLockAfter) {
+      const slot = BigNum.from_str(timeLockAfter.toString())
+      const script = NativeScript.new_timelock_start(TimelockStart.new(slot))
+      scripts.add(script)
+    }
+
+    if (isTimeLockBefore) {
+      const slot = BigNum.from_str(timeLockBefore.toString())
+      const script = NativeScript.new_timelock_expiry(TimelockExpiry.new(slot))
+      scripts.add(script)
+    }
 
     switch (scriptType) {
       case 'all': return NativeScript.new_script_all(ScriptAll.new(scripts))
@@ -232,7 +326,16 @@ const NewTreasury: NextPage = () => {
               <PlusIcon className='w-4' />
               <span>Add signer</span>
             </button>
-            {keyHashInputs.length > 1 &&
+            <TimeLockInputs
+              timeLockAfter={timeLockAfter}
+              setTimeLockAfter={setTimeLockAfter}
+              isTimeLockAfter={isTimeLockAfter}
+              setIsTimeLockAfter={setIsTimeLockAfter}
+              timeLockBefore={timeLockBefore}
+              setTimeLockBefore={setTimeLockBefore}
+              isTimeLockBefore={isTimeLockBefore}
+              setIsTimeLockBefore={setIsTimeLockBefore} />
+            {keyHashInputs.length > 0 && <>
               <div className='space-y-1'>
                 <div>Required Signers</div>
                 <div className='flex space-x-2 items-center'>
@@ -253,7 +356,8 @@ const NewTreasury: NextPage = () => {
                     <span>{keyHashInputs.length}</span>
                   </div>
                 </div>
-              </div>}
+              </div>
+            </>}
           </div>
           <footer className='flex justify-end p-4 bg-gray-100'>
             <SaveTreasuryButton
