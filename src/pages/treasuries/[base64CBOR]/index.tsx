@@ -14,7 +14,7 @@ import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
 import { DownloadIcon, RefreshIcon } from '@heroicons/react/solid'
 import { DownloadButton } from '../../../components/user-data'
-import { convertScript, NativeScriptView } from '../../../components/native-script'
+import { NativeScriptViewer } from '../../../components/native-script'
 
 const ShowBalance: NextPage<{
   cardano: Cardano
@@ -75,11 +75,11 @@ const ShowTreasury: NextPage<{
         </div>
         <div className='space-y-1'>
           <div className='font-semibold'>Script Details</div>
-          <NativeScriptView
+          <NativeScriptViewer
             className='p-2 border rounded space-y-2'
             headerClassName='font-semibold'
             ulClassName='space-y-1'
-            script={convertScript(script)} />
+            nativeScript={script} />
         </div>
         <div>
           <div className='font-semibold'>Balance</div>
