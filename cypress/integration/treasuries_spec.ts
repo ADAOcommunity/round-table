@@ -30,7 +30,7 @@ describe('Create a new treasury', () => {
     addresses.forEach((address) => {
       cy.contains('Add signer').click()
 
-      cy.contains('New Signer (min. 2)')
+      cy.contains('New Signer')
         .should('be.visible')
 
       cy.get('textarea[placeholder="Add signer address and press enter"]')
