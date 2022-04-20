@@ -4,6 +4,44 @@ import type { NextPage } from 'next'
 import { toIter } from '../cardano/multiplatform-lib'
 import { LockClosedIcon, LockOpenIcon, PencilIcon } from '@heroicons/react/solid'
 
+const Badge: NextPage<{
+  className?: string
+}> = ({ className, children }) => {
+  const baseClassName = 'flex items-center space-x-1 p-1 rounded'
+  return (
+    <div className={[baseClassName, className].join(' ')}>
+      {children}
+    </div>
+  )
+}
+
+const SignatureBadge: NextPage = () => {
+  return (
+    <Badge className='text-sky-900 bg-sky-100'>
+      <PencilIcon className='w-4' />
+      <span>Signature</span>
+    </Badge>
+  )
+}
+
+const ExpiryBadge: NextPage = () => {
+  return (
+    <Badge className='text-indigo-900 bg-indigo-100'>
+      <LockClosedIcon className='w-4' />
+      <span>Expiry</span>
+    </Badge>
+  )
+}
+
+const StartBadge: NextPage = () => {
+  return (
+    <Badge className='text-teal-900 bg-teal-100'>
+      <LockOpenIcon className='w-4' />
+      <span>Start</span>
+    </Badge>
+  )
+}
+
 const NativeScriptViewer: NextPage<{
   nativeScript: NativeScript
   headerClassName?: string
@@ -17,10 +55,7 @@ const NativeScriptViewer: NextPage<{
   if (script) return (
     <li className={liClassName}>
       <div className='flex space-x-1 items-center'>
-        <div className='flex items-center space-x-1 p-1 rounded text-sky-900 bg-sky-100'>
-          <PencilIcon className='w-4' />
-          <span>Signature</span>
-        </div>
+        <SignatureBadge />
         <span>{script.addr_keyhash().to_hex()}</span>
       </div>
     </li>
@@ -30,10 +65,7 @@ const NativeScriptViewer: NextPage<{
   if (script) return (
     <li className={liClassName}>
       <div className='flex space-x-1 items-center'>
-        <div className='flex items-center space-x-1 p-1 rounded text-indigo-900 bg-indigo-100'>
-          <LockClosedIcon className='w-4' />
-          <span>Expiry</span>
-        </div>
+        <ExpiryBadge />
         <span>{script.slot().to_str()}</span>
       </div>
     </li>
@@ -43,10 +75,7 @@ const NativeScriptViewer: NextPage<{
   if (script) return (
     <li className={liClassName}>
       <div className='flex space-x-1 items-center'>
-        <div className='flex items-center space-x-1 p-1 rounded text-teal-900 bg-teal-100'>
-          <LockOpenIcon className='w-4' />
-          <span>Start</span>
-        </div>
+        <StartBadge />
         <span>{script.slot().to_str()}</span>
       </div>
     </li>
@@ -85,4 +114,4 @@ const NativeScriptViewer: NextPage<{
   return null
 }
 
-export { NativeScriptViewer }
+export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer }
