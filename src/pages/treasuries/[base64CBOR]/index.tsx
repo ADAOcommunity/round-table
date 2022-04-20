@@ -5,7 +5,7 @@ import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multipla
 import type { Cardano } from '../../../cardano/multiplatform-lib'
 import { Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
-import { NativeScriptInfoViewer } from '../../../components/transaction'
+import { AddressViewer, NativeScriptInfoViewer } from '../../../components/transaction'
 import Link from 'next/link'
 import { useContext, useMemo } from 'react'
 import { ConfigContext } from '../../../cardano/config'
@@ -63,15 +63,24 @@ const ShowTreasury: NextPage<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {
+  const [config, _] = useContext(ConfigContext)
+
   return (
     <Panel>
       <div className='p-4 space-y-2'>
         <NativeScriptInfoViewer cardano={cardano} className='space-y-1' script={script} />
-        <NativeScriptView
-          className='p-2 border rounded space-y-2'
-          headerClassName='font-semibold'
-          ulClassName='space-y-1'
-          script={convertScript(script)} />
+        <div className='space-y-1'>
+          <div className='font-semibold'>Treasury Address</div>
+          <AddressViewer address={cardano.getScriptAddress(script, config.isMainnet)} />
+        </div>
+        <div className='space-y-1'>
+          <div className='font-semibold'>Script Details</div>
+          <NativeScriptView
+            className='p-2 border rounded space-y-2'
+            headerClassName='font-semibold'
+            ulClassName='space-y-1'
+            script={convertScript(script)} />
+        </div>
         <div>
           <div className='font-semibold'>Balance</div>
           <ShowBalance className='divide-y rounded border' cardano={cardano} script={script} />
