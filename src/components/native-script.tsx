@@ -43,7 +43,7 @@ const NativeScriptView: NextPage<{
   liClassName?: string
   className?: string
 }> = ({ className, headerClassName, ulClassName, liClassName, script }) => {
-  if (script.type === 'key') return <li className={liClassName}>Key Hash: {script.hash}</li>;
+  if (script.type === 'key') return <li className={liClassName}>Signature: {script.hash}</li>;
   if (script.type === 'expiry') return <li className={liClassName}>After slot: {script.slot}</li>;
   if (script.type === 'start') return <li className={liClassName}>Before slot: {script.slot}</li>;
   if (script.type === 'all') return (
