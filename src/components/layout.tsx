@@ -156,8 +156,8 @@ const TreasuryListing: NextPage<{
     <NavLink
       href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
       onPageClassName='bg-sky-700 font-semibold'
-      className='block w-full p-4 truncate hover:bg-sky-700'>
-      <div>{name}</div>
+      className='block w-full p-4 hover:bg-sky-700'>
+      <div className='truncate'>{name}</div>
       <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <RefreshIcon className='w-4 animate-spin transform rotate-180' />}</div>
     </NavLink>
   )
