@@ -44,15 +44,15 @@ const TimeLockInput: NextPage<{
 
 const TimeLockInputs: NextPage<{
   className?: string
-  isTimeLockAfter: boolean
-  setIsTimeLockAfter: (_: boolean) => void
-  timeLockAfter: number
-  setTimeLockAfter: (_: number) => void
-  isTimeLockBefore: boolean
-  setIsTimeLockBefore: (_: boolean) => void
-  timeLockBefore: number
-  setTimeLockBefore: (_: number) => void
-}> = ({ className, isTimeLockAfter, setIsTimeLockAfter, timeLockAfter, setTimeLockAfter, isTimeLockBefore, setIsTimeLockBefore, timeLockBefore, setTimeLockBefore }) => {
+  isTimelockStart: boolean
+  setIsTimelockStart: (_: boolean) => void
+  timelockStart: number
+  setTimelockStart: (_: number) => void
+  isTimelockExpiry: boolean
+  setIsTimelockExpiry: (_: boolean) => void
+  timelockExpiry: number
+  setTimelockExpiry: (_: number) => void
+}> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
   const { data } = useGetTipQuery({
     pollInterval: 5000
   })
@@ -65,22 +65,22 @@ const TimeLockInputs: NextPage<{
       <div className='grid grid-cols-3 gap-4'>
         <TimeLockInput
           className='space-y-1'
-          value={timeLockBefore}
-          setValue={setTimeLockBefore}
-          label='Locked before'
-          isEnabled={isTimeLockBefore}
-          setIsEnabled={setIsTimeLockBefore} />
+          value={timelockExpiry}
+          setValue={setTimelockExpiry}
+          label='Expiry'
+          isEnabled={isTimelockExpiry}
+          setIsEnabled={setIsTimelockExpiry} />
         <div className='space-y-1'>
           <div>Current Slot</div>
           <div className='py-2'>{currentSlotNumber}</div>
         </div>
         <TimeLockInput
           className='space-y-1'
-          value={timeLockAfter}
-          setValue={setTimeLockAfter}
-          label='Locked after'
-          isEnabled={isTimeLockAfter}
-          setIsEnabled={setIsTimeLockAfter} />
+          value={timelockStart}
+          setValue={setTimelockStart}
+          label='Start'
+          isEnabled={isTimelockStart}
+          setIsEnabled={setIsTimelockStart} />
       </div>
     </div>
   )
@@ -263,10 +263,10 @@ const NewTreasury: NextPage = () => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isTimeLockAfter, setIsTimeLockAfter] = useState(false)
-  const [timeLockAfter, setTimeLockAfter] = useState(0)
-  const [isTimeLockBefore, setIsTimeLockBefore] = useState(false)
-  const [timeLockBefore, setTimeLockBefore] = useState(0)
+  const [isTimelockStart, setIsTimelockStart] = useState(false)
+  const [timelockStart, setTimelockStart] = useState(0)
+  const [isTimelockExpiry, setIsTimelockExpiry] = useState(false)
+  const [timelockExpiry, setTimelockExpiry] = useState(0)
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
@@ -279,14 +279,14 @@ const NewTreasury: NextPage = () => {
       return
     })
 
-    if (isTimeLockAfter) {
-      const slot = BigNum.from_str(timeLockAfter.toString())
+    if (isTimelockStart) {
+      const slot = BigNum.from_str(timelockStart.toString())
       const script = NativeScript.new_timelock_start(TimelockStart.new(slot))
       scripts.add(script)
     }
 
-    if (isTimeLockBefore) {
-      const slot = BigNum.from_str(timeLockBefore.toString())
+    if (isTimelockExpiry) {
+      const slot = BigNum.from_str(timelockExpiry.toString())
       const script = NativeScript.new_timelock_expiry(TimelockExpiry.new(slot))
       scripts.add(script)
     }
@@ -346,14 +346,14 @@ const NewTreasury: NextPage = () => {
               <span>Add signer</span>
             </button>
             <TimeLockInputs
-              timeLockAfter={timeLockAfter}
-              setTimeLockAfter={setTimeLockAfter}
-              isTimeLockAfter={isTimeLockAfter}
-              setIsTimeLockAfter={setIsTimeLockAfter}
-              timeLockBefore={timeLockBefore}
-              setTimeLockBefore={setTimeLockBefore}
-              isTimeLockBefore={isTimeLockBefore}
-              setIsTimeLockBefore={setIsTimeLockBefore} />
+              timelockStart={timelockStart}
+              setTimelockStart={setTimelockStart}
+              isTimelockStart={isTimelockStart}
+              setIsTimelockStart={setIsTimelockStart}
+              timelockExpiry={timelockExpiry}
+              setTimelockExpiry={setTimelockExpiry}
+              isTimelockExpiry={isTimelockExpiry}
+              setIsTimelockExpiry={setIsTimelockExpiry} />
             {keyHashInputs.length > 0 && <>
               <div className='space-y-1'>
                 <div>Required Signers</div>
