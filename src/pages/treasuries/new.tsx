@@ -26,10 +26,6 @@ const TimeLockInput: NextPage<{
   value: number
   setValue: (_: number) => void
 }> = ({ className, label, isEnabled, setIsEnabled, value, setValue }) => {
-  const valueChangeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
-    setValue(parseInt(event.target.value))
-  }
-
   return (
     <div className={className}>
       <label className='space-x-1'>
@@ -40,7 +36,7 @@ const TimeLockInput: NextPage<{
           onChange={() => setIsEnabled(!isEnabled)} />
       </label>
       <div>
-        {isEnabled && <input className='block w-full p-2 border rounded' type='number' min={0} step={1000} value={value} onChange={valueChangeHandle} />}
+        {isEnabled && <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />}
       </div>
     </div>
   )
