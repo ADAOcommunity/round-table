@@ -270,7 +270,7 @@ const NewTreasury: NextPage = () => {
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
-  const getScript = (): NativeScript => {
+  const getScript = (): NativeScript | undefined => {
     const { NativeScript, NativeScripts, ScriptPubkey, ScriptAll, ScriptAny, ScriptNOfK, TimelockStart, TimelockExpiry, BigNum } = cardano.lib
     const scripts = NativeScripts.new()
     keyHashInputs.forEach((input) => {
@@ -290,6 +290,8 @@ const NewTreasury: NextPage = () => {
       const script = NativeScript.new_timelock_expiry(TimelockExpiry.new(slot))
       scripts.add(script)
     }
+
+    if (scripts.len() < 1) return
 
     switch (scriptType) {
       case 'all': return NativeScript.new_script_all(ScriptAll.new(scripts))
