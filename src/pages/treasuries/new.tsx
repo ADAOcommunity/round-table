@@ -161,52 +161,80 @@ const AddAddress: NextPage<{
   )
 }
 
+const NumberInput: NextPage<{
+  step?: number
+  min?: number
+  max?: number
+  className?: string
+  value: number
+  onCommit: (_: number) => void
+}> = ({ className, min, max, step, value, onCommit }) => {
+  const [localValue, setLocalValue] = useState(value.toString())
+
+  useEffect(() => {
+    let isMounted = true
+
+    isMounted && setLocalValue(value.toString())
+
+    return () => {
+      isMounted = false
+    }
+  }, [value])
+
+  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
+    setLocalValue(event.target.value)
+  }
+
+  const blurHandle: FocusEventHandler<HTMLInputElement> = () => {
+    const parsedValue = parse(localValue)
+    if (isNaN(parsedValue)) {
+      setLocalValue(value.toString())
+    } else {
+      setLocalValue(parsedValue.toString())
+      onCommit(parsedValue)
+    }
+  }
+
+  const keyPressHandle: KeyboardEventHandler<HTMLInputElement> = (event) => {
+    if (!/[0-9]/.test(event.code)) {
+      event.preventDefault()
+    }
+  }
+
+  function parse(input: string): number {
+    const parsedValue = parseInt(input)
+
+    if (min && parsedValue < min) return min
+    if (max && parsedValue > max) return max
+    return parsedValue
+  }
+
+  return (
+    <input
+      type='number'
+      className={className}
+      value={localValue}
+      onChange={changeHandle}
+      onBlur={blurHandle}
+      onKeyPress={keyPressHandle}
+      min={min} max={max} step={step} />
+  )
+}
+
 const RequiredNumberInput: NextPage<{
   className?: string
   max: number
   required: number
   onCommit: (_: number) => void
 }> = ({ className, required, max, onCommit }) => {
-  const [value, setValue] = useState(required.toString())
-
-  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
-    const value = event.target.value
-    setValue(value)
-  }
-
-  const blurHandle: FocusEventHandler<HTMLInputElement> = () => {
-    const parsedValue = parse(value)
-    onCommit(parsedValue)
-  }
-
-  useEffect(() => {
-    let isMounted = true
-
-    isMounted && setValue(required.toString())
-
-    return () => {
-      isMounted = false
-    }
-  }, [required])
-
-  function parse(input: string): number {
-    const parsedValue = parseInt(input)
-
-    if (isNaN(parsedValue)) return 1
-    if (parsedValue < 1) return 1
-    if (parsedValue > max) return max
-    return parsedValue
-  }
-
   return (
-    <input type='number'
+    <NumberInput
       className={className}
-      value={value}
+      value={required}
       step={1}
       min={1}
       max={max}
-      onBlur={blurHandle}
-      onChange={changeHandle} />
+      onCommit={onCommit} />
   )
 }
 
