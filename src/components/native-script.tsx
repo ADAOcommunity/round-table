@@ -1,4 +1,5 @@
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import { nanoid } from 'nanoid'
 import type { NextPage } from 'next'
 import { toIter } from '../cardano/multiplatform-lib'
 
@@ -49,7 +50,7 @@ const NativeScriptView: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require all to spend</header>
       <ul className={ulClassName}>
-        {script.items.map((item) => <NativeScriptView className={className} script={item} />)}
+        {script.items.map((item) => <NativeScriptView key={nanoid()} className={className} script={item} />)}
       </ul>
     </div>
   )
@@ -57,7 +58,7 @@ const NativeScriptView: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require any to spend</header>
       <ul className={ulClassName}>
-        {script.items.map((item) => <NativeScriptView className={className} script={item} />)}
+        {script.items.map((item) => <NativeScriptView key={nanoid()} className={className} script={item} />)}
       </ul>
     </div>
   )
@@ -65,7 +66,7 @@ const NativeScriptView: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require least {script.required} to spend</header>
       <ul className={ulClassName}>
-        {script.items.map((item) => <NativeScriptView className={className} script={item} />)}
+        {script.items.map((item) => <NativeScriptView key={nanoid()} className={className} script={item} />)}
       </ul>
     </div>
   )
