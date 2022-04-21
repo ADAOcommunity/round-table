@@ -566,49 +566,6 @@ const DeleteTreasuryButton: NextPage<{
   )
 }
 
-const NativeScriptViewer: NextPage<{
-  cardano: Cardano
-  className?: string
-  script: NativeScript
-  signatures?: Map<string, Vkeywitness>
-}> = ({ cardano, className, script, signatures }) => {
-
-  const [config, _] = useContext(ConfigContext)
-  const address = cardano.getScriptAddress(script, config.isMainnet)
-  const requireSignatures = cardano.getRequiredSignatures(script)
-
-  return (
-    <div className={className}>
-      <div className='space-y-1'>
-        <div className='font-semibold'>Treasury Address</div>
-        <ul>
-          <li><AddressViewer address={address} /></li>
-        </ul>
-      </div>
-      <div className='space-y-1'>
-        <div className='font-semibold'>Required Signers</div>
-        <div>{requireSignatures}</div>
-      </div>
-      <div className='space-y-1'>
-        <div className='font-semibold'>Key Hash</div>
-        <ul>
-          {Array.from(toIter(script.get_required_signers()), (keyHash, index) => {
-            const signature = signatures?.get(toHex(keyHash))
-            const hex = signature && cardano.buildSignatureSetHex([signature])
-            return (
-              <li key={index} className={'flex items-center ' + (signature ? 'text-green-500' : '')}>
-                <span>{toHex(keyHash)}</span>
-                {signature && <span><CheckIcon className='w-4' /></span>}
-                {hex && <CopyButton className='text-sm' getContent={() => hex} ms={500}><DuplicateIcon className='w-4' /></CopyButton>}
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    </div>
-  )
-}
-
 type WalletAPI = {
   signTx(tx: string, partialSign: boolean): Promise<string>
   submitTx(tx: string): Promise<string>
@@ -904,4 +861,4 @@ const CopyVkeysButton: NextPage<{
   )
 }
 
-export { AddressViewer, SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NativeScriptViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, isAddressNetworkCorrect }
+export { AddressViewer, SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, NewTransaction, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, isAddressNetworkCorrect }

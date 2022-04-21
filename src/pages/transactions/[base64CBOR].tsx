@@ -4,11 +4,13 @@ import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/lay
 import { toHex, toIter, verifySignature } from '../../cardano/multiplatform-lib'
 import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { CopyVkeysButton, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useContext, useState } from 'react'
 import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
+import { NativeScriptViewer } from '../../components/native-script'
+import type { VerifyingData } from '../../components/native-script'
 
 const ManualSign: NextPage<{
   signHandle: (_: string) => void
@@ -102,6 +104,8 @@ const GetTransaction: NextPage = () => {
     setSignatureMap(newMap)
   }
 
+  // TODO: query the necessary data like slot number
+  const verifyingData: VerifyingData = { signatures: signatureMap, currentSlot: 0 }
   const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
 
   return (
@@ -125,7 +129,12 @@ const GetTransaction: NextPage = () => {
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <Panel key={index}>
-            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} />
+            <NativeScriptViewer
+              verifyingData={verifyingData}
+              className='p-4 space-y-2'
+              headerClassName='font-semibold'
+              ulClassName='space-y-1'
+              nativeScript={script} />
             <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
               <div className='flex space-x-1 items-center'>
                 <SignatureSync

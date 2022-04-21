@@ -1,8 +1,13 @@
-import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import type { NextPage } from 'next'
 import { toIter } from '../cardano/multiplatform-lib'
-import { LockClosedIcon, LockOpenIcon, PencilIcon } from '@heroicons/react/solid'
+import { LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
+
+type VerifyingData = {
+  signatures: Map<string, Vkeywitness>
+  currentSlot: number
+}
 
 const Badge: NextPage<{
   className?: string
@@ -48,18 +53,24 @@ const NativeScriptViewer: NextPage<{
   ulClassName?: string
   liClassName?: string
   className?: string
-}> = ({ className, headerClassName, ulClassName, liClassName, nativeScript }) => {
+  verifyingData?: VerifyingData
+}> = ({ className, headerClassName, ulClassName, liClassName, nativeScript, verifyingData }) => {
   let script;
 
   script = nativeScript.as_script_pubkey()
-  if (script) return (
-    <li className={liClassName}>
-      <div className='flex space-x-1 items-center'>
-        <SignatureBadge />
-        <span>{script.addr_keyhash().to_hex()}</span>
-      </div>
-    </li>
-  )
+  if (script) {
+    const keyHashHex = script.addr_keyhash().to_hex()
+    const signature = verifyingData?.signatures.get(keyHashHex)
+    return (
+      <li className={liClassName}>
+        <div className={'flex space-x-1 items-center ' + (signature ? 'text-green-500' : '')}>
+          <SignatureBadge />
+          <span>{keyHashHex}</span>
+          {signature && <ShieldCheckIcon className='w-4' />}
+        </div>
+      </li>
+    )
+  }
 
   script = nativeScript.as_timelock_expiry()
   if (script) return (
@@ -86,7 +97,16 @@ const NativeScriptViewer: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require all to spend</header>
       <ul className={ulClassName}>
-        {Array.from(toIter(script.native_scripts())).map((item) => <NativeScriptViewer key={nanoid()} className={className} nativeScript={item} />)}
+        {Array.from(toIter(script.native_scripts())).map((item) =>
+          <NativeScriptViewer
+            key={nanoid()}
+            verifyingData={verifyingData}
+            className={className}
+            nativeScript={item}
+            headerClassName={headerClassName}
+            ulClassName={ulClassName}
+            liClassName={liClassName} />
+        )}
       </ul>
     </div>
   )
@@ -96,7 +116,16 @@ const NativeScriptViewer: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require any to spend</header>
       <ul className={ulClassName}>
-        {Array.from(toIter(script.native_scripts())).map((item) => <NativeScriptViewer key={nanoid()} className={className} nativeScript={item} />)}
+        {Array.from(toIter(script.native_scripts())).map((item) =>
+          <NativeScriptViewer
+            key={nanoid()}
+            verifyingData={verifyingData}
+            className={className}
+            nativeScript={item}
+            headerClassName={headerClassName}
+            ulClassName={ulClassName}
+            liClassName={liClassName} />
+        )}
       </ul>
     </div>
   )
@@ -106,7 +135,16 @@ const NativeScriptViewer: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require least {script.n()} to spend</header>
       <ul className={ulClassName}>
-        {Array.from(toIter(script.native_scripts())).map((item) => <NativeScriptViewer key={nanoid()} className={className} nativeScript={item} />)}
+        {Array.from(toIter(script.native_scripts())).map((item) =>
+          <NativeScriptViewer
+            key={nanoid()}
+            verifyingData={verifyingData}
+            className={className}
+            nativeScript={item}
+            headerClassName={headerClassName}
+            ulClassName={ulClassName}
+            liClassName={liClassName} />
+        )}
       </ul>
     </div>
   )
@@ -114,4 +152,5 @@ const NativeScriptViewer: NextPage<{
   return null
 }
 
+export type { VerifyingData }
 export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer }
