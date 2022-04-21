@@ -2,7 +2,8 @@ import type { NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-
 import { nanoid } from 'nanoid'
 import type { NextPage } from 'next'
 import { Cardano, toIter } from '../cardano/multiplatform-lib'
-import { LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
+import { ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
+import { CopyButton } from './layout'
 
 type VerifyingData = {
   signatures: Map<string, Vkeywitness>
@@ -82,6 +83,7 @@ const NativeScriptViewer: NextPage<{
           <SignatureBadge />
           <span>{keyHashHex}</span>
           {signature && <ShieldCheckIcon className='w-4' />}
+          {signature && cardano && <CopyButton copied={<ClipboardCheckIcon className='w-4' />} ms={500} getContent={() => cardano.buildSignatureSetHex([signature])}><ClipboardCopyIcon className='w-4' /></CopyButton>}
         </div>
       </li>
     )

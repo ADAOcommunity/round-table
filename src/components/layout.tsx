@@ -2,6 +2,7 @@ import type { NextPage } from 'next'
 import Link from 'next/link'
 import { CogIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -40,9 +41,10 @@ const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
 const CopyButton: NextPage<{
   disabled?: boolean
   className?: string
+  copied?: ReactNode
   getContent: () => string
   ms?: number
-}> = ({ children, className, disabled, getContent, ms }) => {
+}> = ({ children, copied, className, disabled, getContent, ms }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const clickHandle = () => {
@@ -65,7 +67,7 @@ const CopyButton: NextPage<{
 
   return (
     <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
-      {isCopied ? 'Copied!' : children}
+      {isCopied ? (copied ?? 'Copied!') : children}
     </button>
   )
 }

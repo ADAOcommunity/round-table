@@ -130,6 +130,7 @@ const GetTransaction: NextPage = () => {
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
           <Panel key={index}>
             <NativeScriptViewer
+              cardano={cardano}
               verifyingData={verifyingData}
               className='p-4 space-y-2'
               headerClassName='font-semibold'
