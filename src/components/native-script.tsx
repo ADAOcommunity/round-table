@@ -1,7 +1,7 @@
-import type { NativeScript, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import type { NextPage } from 'next'
-import { toIter } from '../cardano/multiplatform-lib'
+import { Cardano, toIter } from '../cardano/multiplatform-lib'
 import { LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
 
 type VerifyingData = {
@@ -49,12 +49,27 @@ const StartBadge: NextPage = () => {
 
 const NativeScriptViewer: NextPage<{
   nativeScript: NativeScript
+  cardano?: Cardano
   headerClassName?: string
   ulClassName?: string
   liClassName?: string
   className?: string
   verifyingData?: VerifyingData
-}> = ({ className, headerClassName, ulClassName, liClassName, nativeScript, verifyingData }) => {
+}> = ({ cardano, className, headerClassName, ulClassName, liClassName, nativeScript, verifyingData }) => {
+  function renderNativeScripts(nativeScripts: NativeScripts) {
+    return Array.from(toIter(nativeScripts)).map((nativeScript) =>
+      <NativeScriptViewer
+        key={nanoid()}
+        cardano={cardano}
+        verifyingData={verifyingData}
+        className={className}
+        nativeScript={nativeScript}
+        headerClassName={headerClassName}
+        ulClassName={ulClassName}
+        liClassName={liClassName} />
+    )
+  }
+
   let script;
 
   script = nativeScript.as_script_pubkey()
@@ -97,16 +112,7 @@ const NativeScriptViewer: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require all to spend</header>
       <ul className={ulClassName}>
-        {Array.from(toIter(script.native_scripts())).map((item) =>
-          <NativeScriptViewer
-            key={nanoid()}
-            verifyingData={verifyingData}
-            className={className}
-            nativeScript={item}
-            headerClassName={headerClassName}
-            ulClassName={ulClassName}
-            liClassName={liClassName} />
-        )}
+        {renderNativeScripts(script.native_scripts())}
       </ul>
     </div>
   )
@@ -116,16 +122,7 @@ const NativeScriptViewer: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require any to spend</header>
       <ul className={ulClassName}>
-        {Array.from(toIter(script.native_scripts())).map((item) =>
-          <NativeScriptViewer
-            key={nanoid()}
-            verifyingData={verifyingData}
-            className={className}
-            nativeScript={item}
-            headerClassName={headerClassName}
-            ulClassName={ulClassName}
-            liClassName={liClassName} />
-        )}
+        {renderNativeScripts(script.native_scripts())}
       </ul>
     </div>
   )
@@ -135,16 +132,7 @@ const NativeScriptViewer: NextPage<{
     <div className={className}>
       <header className={headerClassName}>Require least {script.n()} to spend</header>
       <ul className={ulClassName}>
-        {Array.from(toIter(script.native_scripts())).map((item) =>
-          <NativeScriptViewer
-            key={nanoid()}
-            verifyingData={verifyingData}
-            className={className}
-            nativeScript={item}
-            headerClassName={headerClassName}
-            ulClassName={ulClassName}
-            liClassName={liClassName} />
-        )}
+        {renderNativeScripts(script.native_scripts())}
       </ul>
     </div>
   )
