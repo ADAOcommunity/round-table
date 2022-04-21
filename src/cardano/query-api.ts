@@ -30,6 +30,17 @@ const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
   }
 }
 
+const createApolloClient = (config: Config) => new ApolloClient({
+  uri: config.queryAPI.URI,
+  cache: new InMemoryCache({
+    typePolicies: {
+      PaymentAddress: {
+        keyFields: ['address']
+      }
+    }
+  })
+})
+
 type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
 type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
@@ -110,17 +121,6 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
 
   return balance
 }
-
-const createApolloClient = (config: Config) => new ApolloClient({
-  uri: config.queryAPI.URI,
-  cache: new InMemoryCache({
-    typePolicies: {
-      PaymentAddress: {
-        keyFields: ['address']
-      }
-    }
-  })
-})
 
 const getTipQuery = gql`
 query getTip {
