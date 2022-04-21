@@ -233,7 +233,7 @@ const ChainProgress: NextPage<{
   className?: string
 }> = ({ className }) => {
   const [_, setChainStatus] = useContext(ChainStatusContext)
-  const { loading, error, data } = useGetChainStatusQuery({ pollInterval: 500 })
+  const { loading, error, data } = useGetChainStatusQuery({ pollInterval: 10000 })
   const cardano = data?.cardano
   const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
 
