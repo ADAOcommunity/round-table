@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-04-19T23:16:42.299Z',
+        createdAt: '2022-04-21T02:39:19.077Z',
         host: 'https://graphql-api.testnet.dandelion.link',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -17,16 +17,16 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'getTip',
+            operationName: 'getChainStatus',
             variables: {},
-            query: 'query getTip {\n  cardano {\n    tip {\n      slotNo\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'query getChainStatus {\n  cardano {\n    tip {\n      epochNo\n      slotInEpoch\n      slotNo\n      __typename\n    }\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Tue, 19 Apr 2022 23:16:43 GMT',
+                'Thu, 21 Apr 2022 02:39:20 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -38,7 +38,7 @@
                 'close',
             ],
             'cf-ray': [
-                '6fe9597b6c3991bd-SIN',
+                '6ff2bfa7debaab65-SIN',
             ],
             'access-control-allow-origin': [
                 '*',
@@ -47,7 +47,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"5d-o68g3RcFVyzgQDcku8v9MJfFP0E"',
+                'W/"168-FsywrVnbUSFJ/jVoYOZKU7tPVsY"',
             ],
             'set-cookie': [
                 'network=core; path=/',
@@ -65,7 +65,7 @@
                 'Express',
             ],
             'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=aB7xyKBamyJXfEaykFs7ve5noLot2u15KvN43FObquHg7Xwt1bV02JFkQahXiedpAnyF%2Fe28G5S7JUb7nLreIHqy%2BDhehAv%2BwPBqG201NxHJKQBHdOBC6L0UzER4BiMvISsIue6vOKRii%2FLeubbMblk%2FiJ9x"}],"group":"cf-nel","max_age":604800}',
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=aTWrZbKbQJNaDf7a7xpkS7tJM10ScHW33cFQRal%2BlKhCV3F%2BeDjy1bGI0nUikCWbnySirkIYusK75tz%2FYrUE8%2BexKUjvBJ9b4oqQ0Ef7oaZt6kYMw12arZD663ogXQeYYR0uhggHaf02kaULUWLo6fh0i934"}],"group":"cf-nel","max_age":604800}',
             ],
             nel: [
                 '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
@@ -84,8 +84,23 @@
             data: {
                 cardano: {
                     tip: {
-                        slotNo: 56040796,
+                        epochNo: 200,
+                        slotInEpoch: 109135,
+                        slotNo: 56139535,
                         __typename: 'Block',
+                    },
+                    currentEpoch: {
+                        protocolParams: {
+                            minFeeA: 44,
+                            minFeeB: 155381,
+                            poolDeposit: 500000000,
+                            keyDeposit: 2000000,
+                            coinsPerUtxoWord: 34482,
+                            maxValSize: '5000',
+                            maxTxSize: 16384,
+                            __typename: 'ShelleyProtocolParams',
+                        },
+                        __typename: 'Epoch',
                     },
                     __typename: 'Cardano',
                 },

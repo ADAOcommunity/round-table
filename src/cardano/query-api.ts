@@ -122,16 +122,29 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
   return balance
 }
 
-const getTipQuery = gql`
-query getTip {
+const getChainStatusQuery = gql`
+query getChainStatus {
   cardano {
     tip {
+      epochNo
+      slotInEpoch
       slotNo
+    }
+    currentEpoch {
+      protocolParams {
+        minFeeA
+        minFeeB
+        poolDeposit
+        keyDeposit
+        coinsPerUtxoWord
+        maxValSize
+        maxTxSize
+      }
     }
   }
 }`
 
-const useGetTipQuery: OptionalQuery<{ cardano: Cardano }, {}> = (options) => useQuery(getTipQuery, options)
+const useGetChainStatusQuery: OptionalQuery<{ cardano: Cardano }, {}> = (options) => useQuery(getChainStatusQuery, options)
 
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useGetTipQuery }
+export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useGetChainStatusQuery }
