@@ -4,10 +4,13 @@ import { Cardano, getResult, useCardanoMultiplatformLib } from '../../../cardano
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DeleteTreasuryButton, NativeScriptViewer, SaveTreasuryButton } from '../../../components/transaction'
+import { DeleteTreasuryButton, SaveTreasuryButton } from '../../../components/transaction'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../../db'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
+import { NativeScriptViewer } from '../../../components/native-script'
+import type { VerifyingData } from '../../../components/native-script'
+import { ChainStatusContext } from '../../../cardano/query-api'
 
 const EditTreasury: NextPage<{
   cardano: Cardano
@@ -80,7 +83,14 @@ const EditTreasury: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
+  const [chainStatus, _] = useContext(ChainStatusContext)
   const cardano = useCardanoMultiplatformLib()
+
+  function getVerifyingData(): VerifyingData | undefined {
+    const currentSlot = chainStatus?.tip.slotNo
+    if (typeof currentSlot !== 'number') return
+    return { signatures: new Map(), currentSlot }
+  }
 
   if (!cardano) return <Loading />;
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid URL</ErrorMessage>;
@@ -96,7 +106,12 @@ const GetTreasury: NextPage = () => {
           <p>Only descriptive information can be changed. If you want to change the signers, you have to create a new treasury. Deleting the info does not change any state of the treasury on chain. By deleting you merely deregister or forget it locally.</p>
         </Hero>
         <Panel>
-          <NativeScriptViewer className='p-4 space-y-2' cardano={cardano} script={script} />
+          <NativeScriptViewer
+            verifyingData={getVerifyingData()}
+            className='p-2 border rounded space-y-2'
+            headerClassName='font-semibold'
+            ulClassName='space-y-1'
+            nativeScript={script} />
         </Panel>
         <EditTreasury cardano={cardano} router={router} script={script} />
       </div>
