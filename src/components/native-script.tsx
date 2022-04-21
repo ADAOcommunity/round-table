@@ -2,7 +2,7 @@ import type { NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-
 import { nanoid } from 'nanoid'
 import type { NextPage } from 'next'
 import { Cardano, toIter } from '../cardano/multiplatform-lib'
-import { ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
+import { BanIcon, ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
 import { CopyButton } from './layout'
 
 type VerifyingData = {
@@ -90,24 +90,50 @@ const NativeScriptViewer: NextPage<{
   }
 
   script = nativeScript.as_timelock_expiry()
-  if (script) return (
-    <li className={liClassName}>
-      <div className='flex space-x-1 items-center'>
-        <ExpiryBadge />
-        <span>{script.slot().to_str()}</span>
-      </div>
-    </li>
-  )
+  if (script) {
+    const currentSlot = verifyingData?.currentSlot
+    const slot = parseInt(script.slot().to_str())
+    let color = ''
+    if (currentSlot && currentSlot > slot) color = 'text-red-500'
+    if (currentSlot && currentSlot < slot) color = 'text-green-500'
+    return (
+      <li className={liClassName}>
+        <div className={['flex space-x-1 items-center', color].join(' ')}>
+          <ExpiryBadge />
+          <span>{slot}</span>
+          {currentSlot && currentSlot > slot && <>
+            <BanIcon className='w-4' />
+          </>}
+          {currentSlot && currentSlot < slot && <>
+            <ShieldCheckIcon className='w-4' />
+          </>}
+        </div>
+      </li>
+    )
+  }
 
   script = nativeScript.as_timelock_start()
-  if (script) return (
-    <li className={liClassName}>
-      <div className='flex space-x-1 items-center'>
-        <StartBadge />
-        <span>{script.slot().to_str()}</span>
-      </div>
-    </li>
-  )
+  if (script) {
+    const currentSlot = verifyingData?.currentSlot
+    const slot = parseInt(script.slot().to_str())
+    let color = ''
+    if (currentSlot && currentSlot < slot) color = 'text-red-500'
+    if (currentSlot && currentSlot > slot) color = 'text-green-500'
+    return (
+      <li className={liClassName}>
+        <div className={['flex space-x-1 items-center', color].join(' ')}>
+          <StartBadge />
+          <span>{slot}</span>
+          {currentSlot && currentSlot < slot && <>
+            <BanIcon className='w-4' />
+          </>}
+          {currentSlot && currentSlot > slot && <>
+            <ShieldCheckIcon className='w-4' />
+          </>}
+        </div>
+      </li>
+    )
+  }
 
   script = nativeScript.as_script_all()
   if (script) return (
