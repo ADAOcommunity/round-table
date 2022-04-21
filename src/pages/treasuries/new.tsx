@@ -10,7 +10,7 @@ import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/tr
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
 import Modal from '../../components/modal'
-import { useGetTipQuery } from '../../cardano/query-api'
+import { ChainStatusContext } from '../../cardano/query-api'
 
 type KeyHashInput = {
   id: string
@@ -53,10 +53,8 @@ const TimeLockInputs: NextPage<{
   timelockExpiry: number
   setTimelockExpiry: (_: number) => void
 }> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
-  const { data } = useGetTipQuery({
-    pollInterval: 5000
-  })
-  const currentSlotNumber = data?.cardano.tip.slotNo
+  const [chainStatus, _] = useContext(ChainStatusContext)
+  const currentSlotNumber = chainStatus?.tip.slotNo
 
   if (!currentSlotNumber) return null
 
