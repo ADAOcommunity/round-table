@@ -11,6 +11,7 @@ import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
 import { NativeScriptViewer } from '../../components/native-script'
 import type { VerifyingData } from '../../components/native-script'
+import { ChainStatusContext } from '../../cardano/query-api'
 
 const ManualSign: NextPage<{
   signHandle: (_: string) => void
@@ -51,7 +52,8 @@ const GetTransaction: NextPage = () => {
   const { base64CBOR } = router.query
   const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
-  const [config, _] = useContext(ConfigContext)
+  const [config, _c] = useContext(ConfigContext)
+  const [chainStatus, _s] = useContext(ChainStatusContext)
 
   if (!cardano) return <Loading />;
 
@@ -104,8 +106,8 @@ const GetTransaction: NextPage = () => {
     setSignatureMap(newMap)
   }
 
-  // TODO: query the necessary data like slot number
-  const verifyingData: VerifyingData = { signatures: signatureMap, currentSlot: 0 }
+  const currentSlot = chainStatus?.tip.slotNo
+  const verifyingData: VerifyingData | undefined = typeof currentSlot === 'number' ? { signatures: signatureMap, currentSlot } : undefined
   const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
 
   return (
