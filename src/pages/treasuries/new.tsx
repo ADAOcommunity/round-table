@@ -59,7 +59,7 @@ const TimeLockInputs: NextPage<{
 }> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
   return (
     <div className={className}>
-      <div className='grid grid-cols-2 gap-4'>
+      <div className='grid sm:gap-2 md:grid-cols-2 md:gap-4'>
         <TimeLockInput
           className='space-y-1'
           value={timelockExpiry}
