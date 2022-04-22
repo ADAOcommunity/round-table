@@ -9,13 +9,14 @@ import { AddressViewer, NativeScriptInfoViewer } from '../../../components/trans
 import Link from 'next/link'
 import { useContext, useMemo } from 'react'
 import { ConfigContext } from '../../../cardano/config'
-import { ChainStatusContext, getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
+import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
 import { DownloadIcon, RefreshIcon } from '@heroicons/react/solid'
 import { DownloadButton } from '../../../components/user-data'
 import { NativeScriptViewer } from '../../../components/native-script'
-import type { VerifyingData } from '../../../components/native-script'
+import { SystemTimeContext } from '../../../components/time'
+import { estimateSlotByDate } from '../../../cardano/utils'
 
 const ShowBalance: NextPage<{
   cardano: Cardano
@@ -64,14 +65,8 @@ const ShowTreasury: NextPage<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {
-  const [chainStatus, _s] = useContext(ChainStatusContext)
+  const [systemTime, _t] = useContext(SystemTimeContext)
   const [config, _c] = useContext(ConfigContext)
-
-  function getVerifyingData(): VerifyingData | undefined {
-    const currentSlot = chainStatus?.tip.slotNo
-    if (typeof currentSlot !== 'number') return
-    return { signatures: new Map(), currentSlot }
-  }
 
   return (
     <Panel>
@@ -84,7 +79,7 @@ const ShowTreasury: NextPage<{
         <div className='space-y-1'>
           <div className='font-semibold'>Script Details</div>
           <NativeScriptViewer
-            verifyingData={getVerifyingData()}
+            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
             className='p-2 border rounded space-y-2'
             headerClassName='font-semibold'
             ulClassName='space-y-1'

@@ -1,29 +1,29 @@
 import { NextPage } from 'next'
-import { useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength } from '../cardano/utils'
+
+const SystemTimeContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
 
 const ChainProgress: NextPage<{
   className?: string
 }> = ({ className }) => {
   const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
   const [config, _] = useContext(ConfigContext)
+  const [systemTime, setSystemTime] = useContext(SystemTimeContext)
   const { isMainnet } = config
-  const [slot, setSlot] = useState<number>(estimateSlotByDate(new Date(), isMainnet))
 
   useEffect(() => {
-    let isMounted = true
-
     const id = setInterval(() => {
-      isMounted && setSlot(estimateSlotByDate(new Date(), isMainnet))
+      setSystemTime(new Date())
     }, 1000)
 
     return () => {
       clearInterval(id)
-      isMounted = false
     }
-  }, [config])
+  }, [setSystemTime])
 
+  const slot = estimateSlotByDate(systemTime, isMainnet)
   const slotInEpoch = getSlotInEpochBySlot(slot, isMainnet)
   const epoch = getEpochBySlot(slot, isMainnet)
   const progress = slotInEpoch / SlotLength * 100
@@ -41,4 +41,4 @@ const ChainProgress: NextPage<{
   )
 }
 
-export { ChainProgress }
+export { ChainProgress, SystemTimeContext }

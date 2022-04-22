@@ -10,8 +10,8 @@ import { useContext, useState } from 'react'
 import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
 import { NativeScriptViewer } from '../../components/native-script'
-import type { VerifyingData } from '../../components/native-script'
-import { ChainStatusContext } from '../../cardano/query-api'
+import { SystemTimeContext } from '../../components/time'
+import { estimateSlotByDate } from '../../cardano/utils'
 
 const ManualSign: NextPage<{
   signHandle: (_: string) => void
@@ -53,7 +53,7 @@ const GetTransaction: NextPage = () => {
   const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _c] = useContext(ConfigContext)
-  const [chainStatus, _s] = useContext(ChainStatusContext)
+  const [systemTime, _t] = useContext(SystemTimeContext)
 
   if (!cardano) return <Loading />;
 
@@ -106,8 +106,6 @@ const GetTransaction: NextPage = () => {
     setSignatureMap(newMap)
   }
 
-  const currentSlot = chainStatus?.tip.slotNo
-  const verifyingData: VerifyingData | undefined = typeof currentSlot === 'number' ? { signatures: signatureMap, currentSlot } : undefined
   const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
 
   return (
@@ -133,7 +131,7 @@ const GetTransaction: NextPage = () => {
           <Panel key={index}>
             <NativeScriptViewer
               cardano={cardano}
-              verifyingData={verifyingData}
+              verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
               className='p-4 space-y-2'
               headerClassName='font-semibold'
               ulClassName='space-y-1'

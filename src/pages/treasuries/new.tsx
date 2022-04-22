@@ -10,7 +10,8 @@ import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/tr
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
 import Modal from '../../components/modal'
-import { ChainStatusContext } from '../../cardano/query-api'
+import { SystemTimeContext } from '../../components/time'
+import { estimateSlotByDate } from '../../cardano/utils'
 
 type KeyHashInput = {
   id: string
@@ -53,10 +54,8 @@ const TimeLockInputs: NextPage<{
   timelockExpiry: number
   setTimelockExpiry: (_: number) => void
 }> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
-  const [chainStatus, _] = useContext(ChainStatusContext)
-  const currentSlotNumber = chainStatus?.tip.slotNo
-
-  if (!currentSlotNumber) return null
+  const [systemTime, _t] = useContext(SystemTimeContext)
+  const [config, _c] = useContext(ConfigContext)
 
   return (
     <div className={className}>
@@ -70,7 +69,7 @@ const TimeLockInputs: NextPage<{
           setIsEnabled={setIsTimelockExpiry} />
         <div className='space-y-1'>
           <div>Current Slot</div>
-          <div className='py-2'>{currentSlotNumber}</div>
+          <div className='py-2'>{estimateSlotByDate(systemTime, config.isMainnet)}</div>
         </div>
         <TimeLockInput
           className='space-y-1'

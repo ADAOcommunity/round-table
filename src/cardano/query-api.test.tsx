@@ -1,5 +1,5 @@
 import { renderHook } from '@testing-library/react-hooks'
-import { getAssetName, getPolicyId, useGetChainStatusQuery, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
+import { getAssetName, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import { NextPage } from 'next'
@@ -96,35 +96,6 @@ describe('GraphQL API', () => {
         expect(summary.assetBalances.length).toBe(3)
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
         expect(summary.assetBalances[0]?.quantity).toBe('11413762')
-      }
-    }
-  })
-
-  test('useGetChainStatusQuery', async () => {
-    const { result, waitForValueToChange } = renderHook(() => useGetChainStatusQuery(), { wrapper })
-
-    expect(result.current.loading).toBe(true)
-
-    await waitForValueToChange(() => result.current.loading, { timeout: 10000 })
-
-    expect(result.current.loading).toBe(false)
-    expect(result.current.data).toBeTruthy()
-
-    if (result.current.data) {
-      const tip = result.current.data.cardano.tip
-      expect(tip.epochNo).toBe(200)
-      expect(tip.slotInEpoch).toBe(109135)
-      expect(tip.slotNo).toBe(56139535)
-
-      const params = result.current.data.cardano.currentEpoch.protocolParams
-      if (params) {
-        expect(params.minFeeA).toBe(44)
-        expect(params.minFeeB).toBe(155381)
-        expect(params.poolDeposit).toBe(500000000)
-        expect(params.coinsPerUtxoWord).toBe(34482)
-        expect(params.keyDeposit).toBe(2000000)
-        expect(params.maxTxSize).toBe(16384)
-        expect(params.maxValSize).toBe('5000')
       }
     }
   })

@@ -2,7 +2,6 @@ import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
 import type { Cardano, PaymentAddress, TransactionOutput } from '@cardano-graphql/client-ts'
 import { Config } from './config'
-import { createContext } from 'react'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -123,31 +122,5 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
   return balance
 }
 
-const getChainStatusQuery = gql`
-query getChainStatus {
-  cardano {
-    tip {
-      epochNo
-      slotInEpoch
-      slotNo
-    }
-    currentEpoch {
-      protocolParams {
-        minFeeA
-        minFeeB
-        poolDeposit
-        keyDeposit
-        coinsPerUtxoWord
-        maxValSize
-        maxTxSize
-      }
-    }
-  }
-}`
-
-const useGetChainStatusQuery: OptionalQuery<{ cardano: Cardano }, {}> = (options) => useQuery(getChainStatusQuery, options)
-
-const ChainStatusContext = createContext<[Cardano | undefined, (_: Cardano | undefined) => void]>([undefined, (_) => { }])
-
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useGetChainStatusQuery, ChainStatusContext }
+export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }

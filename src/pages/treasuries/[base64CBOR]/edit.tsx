@@ -9,8 +9,9 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../../db'
 import { useContext, useEffect, useState } from 'react'
 import { NativeScriptViewer } from '../../../components/native-script'
-import type { VerifyingData } from '../../../components/native-script'
-import { ChainStatusContext } from '../../../cardano/query-api'
+import { SystemTimeContext } from '../../../components/time'
+import { estimateSlotByDate } from '../../../cardano/utils'
+import { ConfigContext } from '../../../cardano/config'
 
 const EditTreasury: NextPage<{
   cardano: Cardano
@@ -83,14 +84,9 @@ const EditTreasury: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const [chainStatus, _] = useContext(ChainStatusContext)
+  const [config, _c] = useContext(ConfigContext)
+  const [systemTime, _t] = useContext(SystemTimeContext)
   const cardano = useCardanoMultiplatformLib()
-
-  function getVerifyingData(): VerifyingData | undefined {
-    const currentSlot = chainStatus?.tip.slotNo
-    if (typeof currentSlot !== 'number') return
-    return { signatures: new Map(), currentSlot }
-  }
 
   if (!cardano) return <Loading />;
   if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid URL</ErrorMessage>;
@@ -107,7 +103,7 @@ const GetTreasury: NextPage = () => {
         </Hero>
         <Panel>
           <NativeScriptViewer
-            verifyingData={getVerifyingData()}
+            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
             className='p-2 border rounded space-y-2'
             headerClassName='font-semibold'
             ulClassName='space-y-1'
