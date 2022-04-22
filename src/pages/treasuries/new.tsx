@@ -59,7 +59,7 @@ const TimeLockInputs: NextPage<{
 
   return (
     <div className={className}>
-      <div className='grid grid-cols-3 gap-4'>
+      <div className='grid grid-cols-2 gap-4'>
         <TimeLockInput
           className='space-y-1'
           value={timelockExpiry}
@@ -67,10 +67,6 @@ const TimeLockInputs: NextPage<{
           label='Expiry'
           isEnabled={isTimelockExpiry}
           setIsEnabled={setIsTimelockExpiry} />
-        <div className='space-y-1'>
-          <div>Current Slot</div>
-          <div className='py-2'>{estimateSlotByDate(date, config.isMainnet)}</div>
-        </div>
         <TimeLockInput
           className='space-y-1'
           value={timelockStart}
@@ -260,10 +256,13 @@ const NewTreasury: NextPage = () => {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [config, _] = useContext(ConfigContext)
+  const currentDate = new Date()
+  const currentSlot = estimateSlotByDate(currentDate, config.isMainnet)
   const [isTimelockStart, setIsTimelockStart] = useState(false)
-  const [timelockStart, setTimelockStart] = useState(0)
+  const [timelockStart, setTimelockStart] = useState(currentSlot)
   const [isTimelockExpiry, setIsTimelockExpiry] = useState(false)
-  const [timelockExpiry, setTimelockExpiry] = useState(0)
+  const [timelockExpiry, setTimelockExpiry] = useState(currentSlot)
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
