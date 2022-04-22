@@ -82,7 +82,15 @@ const TimeLockInputs: NextPage<{
           setValue={setTimelockStart}
           label='Start Slot'
           isEnabled={isTimelockStart}
-          setIsEnabled={setIsTimelockStart} />
+          setIsEnabled={setIsTimelockStart}>
+          <div className='p-2 rounded bg-red-700 text-white'>
+            <h6 className='flex font-semibold space-x-1 items-center'>
+              <ExclamationCircleIcon className='w-4' />
+              <span>WARNING</span>
+            </h6>
+            <p>Be careful with this option. It returns false before the slot/time is reached. You might not want to wait too long to unlock it.</p>
+          </div>
+        </TimeLockInput>
       </div>
     </div>
   )
