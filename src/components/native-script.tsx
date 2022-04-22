@@ -4,6 +4,9 @@ import type { NextPage } from 'next'
 import { Cardano, toIter } from '../cardano/multiplatform-lib'
 import { BanIcon, ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
 import { CopyButton } from './layout'
+import { estimateDateBySlot } from '../cardano/utils'
+import { useContext } from 'react'
+import { ConfigContext } from '../cardano/config'
 
 type VerifyingData = {
   signatures: Map<string, Vkeywitness>
@@ -57,6 +60,8 @@ const NativeScriptViewer: NextPage<{
   className?: string
   verifyingData?: VerifyingData
 }> = ({ cardano, className, headerClassName, ulClassName, liClassName, nativeScript, verifyingData }) => {
+  const [config, _] = useContext(ConfigContext)
+
   function renderNativeScripts(nativeScripts: NativeScripts) {
     return Array.from(toIter(nativeScripts)).map((nativeScript) =>
       <NativeScriptViewer
@@ -101,6 +106,7 @@ const NativeScriptViewer: NextPage<{
         <div className={['flex space-x-1 items-center', color].join(' ')}>
           <ExpiryBadge />
           <span>{slot}</span>
+          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleDateString()})</span>
           {currentSlot && currentSlot > slot && <>
             <BanIcon className='w-4' />
           </>}
@@ -124,6 +130,7 @@ const NativeScriptViewer: NextPage<{
         <div className={['flex space-x-1 items-center', color].join(' ')}>
           <StartBadge />
           <span>{slot}</span>
+          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleDateString()})</span>
           {currentSlot && currentSlot < slot && <>
             <BanIcon className='w-4' />
           </>}
