@@ -12,9 +12,10 @@ import Image from 'next/image'
 import { getTreasuriesPath } from '../route'
 import { encodeCardanoData, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
-import { ChainStatusContext, getBalanceByPaymentAddresses, useGetChainStatusQuery, usePaymentAddressesQuery } from '../cardano/query-api'
+import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
+import { ChainProgress } from './time'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -227,41 +228,6 @@ const CardanoScanLink: NextPage<{
 
 const Hero: NextPage<{ className?: string }> = ({ className, children }) => {
   return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
-}
-
-const ChainProgress: NextPage<{
-  className?: string
-}> = ({ className }) => {
-  const [_, setChainStatus] = useContext(ChainStatusContext)
-  const { loading, error, data } = useGetChainStatusQuery({ pollInterval: 10000 })
-  const cardano = data?.cardano
-  const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
-
-  useEffect(() => {
-    setChainStatus(cardano)
-  }, [cardano])
-
-  if (error) console.error(error)
-
-  const slotsPerEpoch = 432000
-  const slotInEpoch = cardano?.tip.slotInEpoch
-  const epochNo = cardano?.tip.epochNo
-  const progress = slotInEpoch && (slotInEpoch / slotsPerEpoch * 100)
-  const statusText = slotInEpoch && epochNo && progress && `Epoch ${epochNo}: ${slotInEpoch}/${slotsPerEpoch} (${progress.toFixed(0)}%)`
-  const style = progress && { width: `${progress}%` }
-
-  return (
-    <div className={className}>
-      <div className={baseClassName}>
-        {style && <div className='h-full bg-sky-700' style={style}></div>}
-        <div className='absolute inset-0 text-center text-white'>
-          {!cardano && loading && 'Loading...'}
-          {!cardano && error && 'Error'}
-          {statusText}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 const Layout: NextPage = ({ children }) => {
