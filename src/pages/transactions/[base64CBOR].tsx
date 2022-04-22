@@ -128,14 +128,17 @@ const GetTransaction: NextPage = () => {
           <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
-          <Panel key={index}>
-            <NativeScriptViewer
-              cardano={cardano}
-              verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
-              className='p-4 space-y-2'
-              headerClassName='font-semibold'
-              ulClassName='space-y-1'
-              nativeScript={script} />
+          <Panel key={index} className='space-y-1'>
+            <div className='p-4 space-y-1'>
+              <div className='font-semibold'>Script Details</div>
+              <NativeScriptViewer
+                cardano={cardano}
+                verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
+                className='p-2 border rounded space-y-2'
+                headerClassName='font-semibold'
+                ulClassName='space-y-1'
+                nativeScript={script} />
+            </div>
             <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
               <div className='flex space-x-1 items-center'>
                 <SignatureSync
