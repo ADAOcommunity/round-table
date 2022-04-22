@@ -10,8 +10,8 @@ import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/tr
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
 import Modal from '../../components/modal'
-import { DateContext } from '../../components/time'
-import { estimateSlotByDate } from '../../cardano/utils'
+import { Calendar } from '../../components/time'
+import { estimateDateBySlot, estimateSlotByDate } from '../../cardano/utils'
 
 type KeyHashInput = {
   id: string
@@ -27,6 +27,8 @@ const TimeLockInput: NextPage<{
   value: number
   setValue: (_: number) => void
 }> = ({ className, label, isEnabled, setIsEnabled, value, setValue }) => {
+  const [config, _] = useContext(ConfigContext)
+  const date = estimateDateBySlot(value, config.isMainnet)
   return (
     <div className={className}>
       <label className='space-x-1'>
@@ -36,9 +38,10 @@ const TimeLockInput: NextPage<{
           checked={isEnabled}
           onChange={() => setIsEnabled(!isEnabled)} />
       </label>
-      <div>
-        {isEnabled && <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />}
-      </div>
+      {isEnabled && <>
+        <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />
+        <Calendar selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.isMainnet))} />
+      </>}
     </div>
   )
 }
@@ -54,9 +57,6 @@ const TimeLockInputs: NextPage<{
   timelockExpiry: number
   setTimelockExpiry: (_: number) => void
 }> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
-  const [date, _t] = useContext(DateContext)
-  const [config, _c] = useContext(ConfigContext)
-
   return (
     <div className={className}>
       <div className='grid grid-cols-2 gap-4'>
@@ -64,14 +64,14 @@ const TimeLockInputs: NextPage<{
           className='space-y-1'
           value={timelockExpiry}
           setValue={setTimelockExpiry}
-          label='Expiry'
+          label='Expiry Slot'
           isEnabled={isTimelockExpiry}
           setIsEnabled={setIsTimelockExpiry} />
         <TimeLockInput
           className='space-y-1'
           value={timelockStart}
           setValue={setTimelockStart}
-          label='Start'
+          label='Start Slot'
           isEnabled={isTimelockStart}
           setIsEnabled={setIsTimelockStart} />
       </div>
@@ -258,6 +258,7 @@ const NewTreasury: NextPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [config, _] = useContext(ConfigContext)
   const currentDate = new Date()
+  currentDate.setHours(0, 0, 0, 0)
   const currentSlot = estimateSlotByDate(currentDate, config.isMainnet)
   const [isTimelockStart, setIsTimelockStart] = useState(false)
   const [timelockStart, setTimelockStart] = useState(currentSlot)
