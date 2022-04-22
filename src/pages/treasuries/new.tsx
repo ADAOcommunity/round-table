@@ -5,7 +5,7 @@ import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatfo
 import type { Cardano, MultiSigType } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import type { Ed25519KeyHash, NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import { PlusIcon, TrashIcon } from '@heroicons/react/solid'
+import { ExclamationCircleIcon, PlusIcon, TrashIcon } from '@heroicons/react/solid'
 import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/transaction'
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
@@ -26,7 +26,7 @@ const TimeLockInput: NextPage<{
   setIsEnabled: (_: boolean) => void
   value: number
   setValue: (_: number) => void
-}> = ({ className, label, isEnabled, setIsEnabled, value, setValue }) => {
+}> = ({ className, children, label, isEnabled, setIsEnabled, value, setValue }) => {
   const [config, _] = useContext(ConfigContext)
   const date = estimateDateBySlot(value, config.isMainnet)
   return (
@@ -39,6 +39,7 @@ const TimeLockInput: NextPage<{
           onChange={() => setIsEnabled(!isEnabled)} />
       </label>
       {isEnabled && <>
+        {children}
         <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />
         <Calendar selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.isMainnet))} />
       </>}
@@ -66,7 +67,15 @@ const TimeLockInputs: NextPage<{
           setValue={setTimelockExpiry}
           label='Expiry Slot'
           isEnabled={isTimelockExpiry}
-          setIsEnabled={setIsTimelockExpiry} />
+          setIsEnabled={setIsTimelockExpiry}>
+          <div className='p-2 rounded bg-red-700 text-white'>
+            <h6 className='flex font-semibold space-x-1 items-center'>
+              <ExclamationCircleIcon className='w-4' />
+              <span>WARNING</span>
+            </h6>
+            <p>Be careful with this option. It returns false after the slot/time is passed which could lead to coins locked/burned forever when it is combined with All policy and At Least policy or used alone.</p>
+          </div>
+        </TimeLockInput>
         <TimeLockInput
           className='space-y-1'
           value={timelockStart}
