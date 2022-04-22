@@ -15,7 +15,7 @@ import { getTreasuryPath } from '../../../route'
 import { DownloadIcon, RefreshIcon } from '@heroicons/react/solid'
 import { DownloadButton } from '../../../components/user-data'
 import { NativeScriptViewer } from '../../../components/native-script'
-import { SystemTimeContext } from '../../../components/time'
+import { DateContext } from '../../../components/time'
 import { estimateSlotByDate } from '../../../cardano/utils'
 
 const ShowBalance: NextPage<{
@@ -65,7 +65,7 @@ const ShowTreasury: NextPage<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {
-  const [systemTime, _t] = useContext(SystemTimeContext)
+  const [date, _t] = useContext(DateContext)
   const [config, _c] = useContext(ConfigContext)
 
   return (
@@ -79,7 +79,7 @@ const ShowTreasury: NextPage<{
         <div className='space-y-1'>
           <div className='font-semibold'>Script Details</div>
           <NativeScriptViewer
-            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
+            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(date, config.isMainnet) }}
             className='p-2 border rounded space-y-2'
             headerClassName='font-semibold'
             ulClassName='space-y-1'

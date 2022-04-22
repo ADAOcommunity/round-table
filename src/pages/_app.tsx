@@ -6,24 +6,24 @@ import { NotificationContext, useNotification } from '../components/notification
 import { ApolloProvider } from '@apollo/client'
 import { createApolloClient } from '../cardano/query-api'
 import { useState } from 'react'
-import { SystemTimeContext } from '../components/time'
+import { DateContext } from '../components/time'
 
 const apolloClient = createApolloClient(config)
 
 function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
-  const systemTimeState = useState<Date>(new Date())
+  const dateState = useState<Date>(new Date())
 
   return (
     <ConfigContext.Provider value={[config, () => { }]}>
       <NotificationContext.Provider value={notification}>
         <ApolloProvider client={apolloClient}>
-          <SystemTimeContext.Provider value={systemTimeState}>
+          <DateContext.Provider value={dateState}>
             <Head>
               <title>{config.isMainnet ? 'RoundTable' : 'RoundTable Testnet'}</title>
             </Head>
             <Component {...pageProps} />
-          </SystemTimeContext.Provider>
+          </DateContext.Provider>
         </ApolloProvider>
       </NotificationContext.Provider>
     </ConfigContext.Provider>

@@ -9,7 +9,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../../db'
 import { useContext, useEffect, useState } from 'react'
 import { NativeScriptViewer } from '../../../components/native-script'
-import { SystemTimeContext } from '../../../components/time'
+import { DateContext } from '../../../components/time'
 import { estimateSlotByDate } from '../../../cardano/utils'
 import { ConfigContext } from '../../../cardano/config'
 
@@ -85,7 +85,7 @@ const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
   const [config, _c] = useContext(ConfigContext)
-  const [systemTime, _t] = useContext(SystemTimeContext)
+  const [date, _t] = useContext(DateContext)
   const cardano = useCardanoMultiplatformLib()
 
   if (!cardano) return <Loading />;
@@ -103,7 +103,7 @@ const GetTreasury: NextPage = () => {
         </Hero>
         <Panel>
           <NativeScriptViewer
-            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
+            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(date, config.isMainnet) }}
             className='p-2 border rounded space-y-2'
             headerClassName='font-semibold'
             ulClassName='space-y-1'

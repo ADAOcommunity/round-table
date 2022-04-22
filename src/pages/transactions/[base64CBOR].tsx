@@ -10,7 +10,7 @@ import { useContext, useState } from 'react'
 import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
 import { NativeScriptViewer } from '../../components/native-script'
-import { SystemTimeContext } from '../../components/time'
+import { DateContext } from '../../components/time'
 import { estimateSlotByDate } from '../../cardano/utils'
 
 const ManualSign: NextPage<{
@@ -53,7 +53,7 @@ const GetTransaction: NextPage = () => {
   const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _c] = useContext(ConfigContext)
-  const [systemTime, _t] = useContext(SystemTimeContext)
+  const [date, _t] = useContext(DateContext)
 
   if (!cardano) return <Loading />;
 
@@ -133,7 +133,7 @@ const GetTransaction: NextPage = () => {
               <div className='font-semibold'>Script Details</div>
               <NativeScriptViewer
                 cardano={cardano}
-                verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(systemTime, config.isMainnet) }}
+                verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(date, config.isMainnet) }}
                 className='p-2 border rounded space-y-2'
                 headerClassName='font-semibold'
                 ulClassName='space-y-1'
