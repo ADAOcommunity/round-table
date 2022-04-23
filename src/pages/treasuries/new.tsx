@@ -10,7 +10,7 @@ import { isAddressNetworkCorrect, SaveTreasuryButton } from '../../components/tr
 import { ConfigContext } from '../../cardano/config'
 import { nanoid } from 'nanoid'
 import Modal from '../../components/modal'
-import { Calendar } from '../../components/time'
+import { Calendar, DateContext } from '../../components/time'
 import { estimateDateBySlot, estimateSlotByDate } from '../../cardano/utils'
 
 type KeyHashInput = {
@@ -26,7 +26,8 @@ const TimeLockInput: NextPage<{
   setIsEnabled: (_: boolean) => void
   value: number
   setValue: (_: number) => void
-}> = ({ className, children, label, isEnabled, setIsEnabled, value, setValue }) => {
+  isLocked: (_: Date) => boolean
+}> = ({ className, children, label, isEnabled, setIsEnabled, value, setValue, isLocked }) => {
   const [config, _] = useContext(ConfigContext)
   const date = estimateDateBySlot(value, config.isMainnet)
   return (
@@ -41,7 +42,7 @@ const TimeLockInput: NextPage<{
       {isEnabled && <>
         {children}
         <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />
-        <Calendar selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.isMainnet))} />
+        <Calendar isRed={isLocked} selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.isMainnet))} />
       </>}
     </div>
   )
@@ -58,10 +59,14 @@ const TimeLockInputs: NextPage<{
   timelockExpiry: number
   setTimelockExpiry: (_: number) => void
 }> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
+  const [config, _c] = useContext(ConfigContext)
+  const [date, _t] = useContext(DateContext)
+
   return (
     <div className={className}>
       <div className='grid sm:gap-2 md:grid-cols-2 md:gap-4'>
         <TimeLockInput
+          isLocked={() => true}
           className='space-y-1'
           value={timelockExpiry}
           setValue={setTimelockExpiry}
@@ -77,6 +82,7 @@ const TimeLockInputs: NextPage<{
           </div>
         </TimeLockInput>
         <TimeLockInput
+          isLocked={() => false}
           className='space-y-1'
           value={timelockStart}
           setValue={setTimelockStart}

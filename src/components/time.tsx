@@ -57,7 +57,8 @@ function monthIter(year: number, month: number): IterableIterator<Date> {
 const Calendar: NextPage<{
   selectedDate: Date
   onChange: (_: Date) => void
-}> = ({ selectedDate, onChange }) => {
+  isRed: (_: Date) => boolean
+}> = ({ selectedDate, onChange, isRed }) => {
   const [date, setDate] = useState<Date>(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const year = date.getFullYear()
   const month = date.getMonth()
@@ -75,6 +76,10 @@ const Calendar: NextPage<{
       })
     return result
   }, [year, month])
+  const isOnSelectedDate = (date: Date): boolean =>
+    date.getFullYear() === selectedDate.getFullYear() &&
+    date.getMonth() === selectedDate.getMonth() &&
+    date.getDate() === selectedDate.getDate()
 
   return (
     <div className='flex border rounded'>
@@ -109,12 +114,22 @@ const Calendar: NextPage<{
             {weeks.map((dates, index) => <tr key={index}>
               {Array.from({ length: 7 }, (_, i) => i).map((day) => {
                 const date = dates[day]
+                if (!date) return (
+                  <td key={day}></td>
+                )
+                const tdClassName = isRed(date) ? 'bg-red-100 text-red-700' : ''
+                let buttonClassName = 'block w-full p-2 rounded hover:text-white '
+                if (isRed(date)) {
+                  buttonClassName = buttonClassName + 'hover:bg-red-700 '
+                } else {
+                  buttonClassName = buttonClassName + 'text-sky-700 hover:bg-sky-700 '
+                }
+                if (isOnSelectedDate(date)) {
+                  buttonClassName = buttonClassName + 'text-white ' + (isRed(date) ? 'bg-red-700' : 'bg-sky-700')
+                }
                 return (
-                  <td key={day}>
-                    {date && <button
-                      className='block w-full p-2 text-sky-700 rounded hover:bg-sky-700 hover:text-white disabled:bg-sky-700 disabled:text-white'
-                      onClick={() => onChange(date)}
-                      disabled={selectedDate.getTime() === date.getTime()}>{date.getDate()}</button>}
+                  <td key={day} className={tdClassName}>
+                    <button className={buttonClassName} onClick={() => onChange(date)}>{date.getDate()}</button>
                   </td>
                 )
               })}
