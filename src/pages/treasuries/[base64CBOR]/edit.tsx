@@ -1,4 +1,4 @@
-import { NextPage } from 'next'
+import type { NextPage } from 'next'
 import { NextRouter, useRouter } from 'next/router'
 import { Cardano, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
@@ -9,21 +9,21 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../../db'
 import { useContext, useEffect, useState } from 'react'
 import { NativeScriptViewer } from '../../../components/native-script'
-import { DateContext } from '../../../components/time'
 import { estimateSlotByDate } from '../../../cardano/utils'
 import { ConfigContext } from '../../../cardano/config'
+import { DateContext } from '../../../components/time'
 
 const EditTreasury: NextPage<{
   cardano: Cardano
   router: NextRouter
   script: NativeScript
 }> = ({ cardano, script }) => {
-  const [config, _c] = useContext(ConfigContext)
-  const [date, _t] = useContext(DateContext)
   const hash = cardano.hashScript(script)
-  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [config, _c] = useContext(ConfigContext)
+  const [date, _t] = useContext(DateContext)
 
   useEffect(() => {
     let isMounted = true
