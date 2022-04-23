@@ -122,8 +122,6 @@ describe('Create a new treasury', () => {
     cy.contains('Edit Info')
       .click()
 
-    cy.wait(1500)
-
     cy.get('input[placeholder="Write Name"]')
       .type(addedName)
       .should("have.value", editedName);
@@ -134,8 +132,6 @@ describe('Create a new treasury', () => {
 
     cy.contains('Save Treasury')
       .click()
-
-    cy.wait(1500)
 
     cy.contains(editedName)
       .should('be.visible')
