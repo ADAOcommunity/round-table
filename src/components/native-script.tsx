@@ -106,7 +106,7 @@ const NativeScriptViewer: NextPage<{
         <div className={['flex space-x-1 items-center', color].join(' ')}>
           <ExpiryBadge />
           <span>{slot}</span>
-          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleDateString()})</span>
+          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
           {currentSlot && currentSlot >= slot && <>
             <BanIcon className='w-4' />
           </>}
@@ -130,7 +130,7 @@ const NativeScriptViewer: NextPage<{
         <div className={['flex space-x-1 items-center', color].join(' ')}>
           <StartBadge />
           <span>{slot}</span>
-          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleDateString()})</span>
+          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
           {currentSlot && currentSlot <= slot && <>
             <BanIcon className='w-4' />
           </>}
