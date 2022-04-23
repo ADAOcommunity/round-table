@@ -99,7 +99,7 @@ const NativeScriptViewer: NextPage<{
     const currentSlot = verifyingData?.currentSlot
     const slot = parseInt(script.slot().to_str())
     let color = ''
-    if (currentSlot && currentSlot > slot) color = 'text-red-500'
+    if (currentSlot && currentSlot >= slot) color = 'text-red-500'
     if (currentSlot && currentSlot < slot) color = 'text-green-500'
     return (
       <li className={liClassName}>
@@ -107,7 +107,7 @@ const NativeScriptViewer: NextPage<{
           <ExpiryBadge />
           <span>{slot}</span>
           <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleDateString()})</span>
-          {currentSlot && currentSlot > slot && <>
+          {currentSlot && currentSlot >= slot && <>
             <BanIcon className='w-4' />
           </>}
           {currentSlot && currentSlot < slot && <>
@@ -123,7 +123,7 @@ const NativeScriptViewer: NextPage<{
     const currentSlot = verifyingData?.currentSlot
     const slot = parseInt(script.slot().to_str())
     let color = ''
-    if (currentSlot && currentSlot < slot) color = 'text-red-500'
+    if (currentSlot && currentSlot <= slot) color = 'text-red-500'
     if (currentSlot && currentSlot > slot) color = 'text-green-500'
     return (
       <li className={liClassName}>
@@ -131,7 +131,7 @@ const NativeScriptViewer: NextPage<{
           <StartBadge />
           <span>{slot}</span>
           <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleDateString()})</span>
-          {currentSlot && currentSlot < slot && <>
+          {currentSlot && currentSlot <= slot && <>
             <BanIcon className='w-4' />
           </>}
           {currentSlot && currentSlot > slot && <>
