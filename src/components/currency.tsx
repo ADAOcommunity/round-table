@@ -13,6 +13,11 @@ const toDecimal = (value: bigint, decimals: number): string => {
   }
 }
 
+const removeTrailingZero = (value: string): string =>
+  value
+    .replace(/(\.[0-9]*[1-9]+)0*$/, '$1')
+    .replace(/\.0+$/, '')
+
 const CurrencyInput: NextPage<{
   value: bigint
   onChange: (_: bigint) => void
@@ -52,7 +57,7 @@ const AssetAmount: NextPage<{
   symbol: string
   className?: string
 }> = ({ quantity, decimals, symbol, className }) => {
-  const value = toDecimal(quantity, decimals).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, "$1")
+  const value = removeTrailingZero(toDecimal(quantity, decimals))
   return (
     <span className={className}>{`${value} ${symbol}`}</span>
   )
@@ -66,4 +71,4 @@ const ADAAmount: NextPage<{
   return <AssetAmount quantity={lovelace} decimals={6} symbol={getADASymbol(config)} className={className} />
 }
 
-export { getADASymbol, toDecimal, ADAAmount, AssetAmount, CurrencyInput }
+export { getADASymbol, removeTrailingZero, toDecimal, ADAAmount, AssetAmount, CurrencyInput }
