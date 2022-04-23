@@ -59,14 +59,13 @@ const TimeLockInputs: NextPage<{
   timelockExpiry: number
   setTimelockExpiry: (_: number) => void
 }> = ({ className, isTimelockStart, setIsTimelockStart, timelockStart, setTimelockStart, isTimelockExpiry, setIsTimelockExpiry, timelockExpiry, setTimelockExpiry }) => {
-  const [config, _c] = useContext(ConfigContext)
-  const [date, _t] = useContext(DateContext)
+  const [now, _t] = useContext(DateContext)
 
   return (
     <div className={className}>
       <div className='grid sm:gap-2 md:grid-cols-2 md:gap-4'>
         <TimeLockInput
-          isLocked={() => true}
+          isLocked={(date) => date <= now}
           className='space-y-1'
           value={timelockExpiry}
           setValue={setTimelockExpiry}
