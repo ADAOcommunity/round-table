@@ -289,27 +289,29 @@ const NewTreasury: NextPage = () => {
   const cardano = useCardanoMultiplatformLib()
   if (!cardano) return <Loading />;
 
+  const { NativeScript, NativeScripts, ScriptPubkey, ScriptAll, ScriptAny, ScriptNOfK, TimelockStart, TimelockExpiry, BigNum } = cardano.lib
+
+  const scripts = NativeScripts.new()
+
+  keyHashInputs.forEach((input) => {
+    const script = NativeScript.new_script_pubkey(ScriptPubkey.new(input.hash))
+    scripts.add(script)
+    return
+  })
+
+  if (isTimelockStart) {
+    const slot = BigNum.from_str(timelockStart.toString())
+    const script = NativeScript.new_timelock_start(TimelockStart.new(slot))
+    scripts.add(script)
+  }
+
+  if (isTimelockExpiry) {
+    const slot = BigNum.from_str(timelockExpiry.toString())
+    const script = NativeScript.new_timelock_expiry(TimelockExpiry.new(slot))
+    scripts.add(script)
+  }
+
   const getScript = (): NativeScript | undefined => {
-    const { NativeScript, NativeScripts, ScriptPubkey, ScriptAll, ScriptAny, ScriptNOfK, TimelockStart, TimelockExpiry, BigNum } = cardano.lib
-    const scripts = NativeScripts.new()
-    keyHashInputs.forEach((input) => {
-      const script = NativeScript.new_script_pubkey(ScriptPubkey.new(input.hash))
-      scripts.add(script)
-      return
-    })
-
-    if (isTimelockStart) {
-      const slot = BigNum.from_str(timelockStart.toString())
-      const script = NativeScript.new_timelock_start(TimelockStart.new(slot))
-      scripts.add(script)
-    }
-
-    if (isTimelockExpiry) {
-      const slot = BigNum.from_str(timelockExpiry.toString())
-      const script = NativeScript.new_timelock_expiry(TimelockExpiry.new(slot))
-      scripts.add(script)
-    }
-
     if (scripts.len() < 1) return
 
     switch (scriptType) {
@@ -373,9 +375,9 @@ const NewTreasury: NextPage = () => {
               setTimelockExpiry={setTimelockExpiry}
               isTimelockExpiry={isTimelockExpiry}
               setIsTimelockExpiry={setIsTimelockExpiry} />
-            {keyHashInputs.length > 0 && <>
+            {scripts.len() > 0 && <>
               <div className='space-y-1'>
-                <div>Required Signers</div>
+                <div>Required Signers or Timelocks</div>
                 <div className='flex space-x-2 items-center'>
                   <select className='bg-white border rounded text-sm p-2' onChange={(e) => setScriptType(e.target.value as MultiSigType)}>
                     <option value="all">All</option>
@@ -385,13 +387,13 @@ const NewTreasury: NextPage = () => {
                   {scriptType == 'atLeast' &&
                     <RequiredNumberInput
                       className='border rounded p-1'
-                      max={keyHashInputs.length}
+                      max={scripts.len()}
                       required={required}
                       onCommit={setRequired} />
                   }
                   <div className='p-2 space-x-1'>
                     <span>of</span>
-                    <span>{keyHashInputs.length}</span>
+                    <span>{scripts.len()}</span>
                   </div>
                 </div>
               </div>
