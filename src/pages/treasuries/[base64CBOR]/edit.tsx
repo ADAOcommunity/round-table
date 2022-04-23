@@ -18,6 +18,8 @@ const EditTreasury: NextPage<{
   router: NextRouter
   script: NativeScript
 }> = ({ cardano, script }) => {
+  const [config, _c] = useContext(ConfigContext)
+  const [date, _t] = useContext(DateContext)
   const hash = cardano.hashScript(script)
   const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const [name, setName] = useState('')
@@ -57,6 +59,15 @@ const EditTreasury: NextPage<{
             onChange={(e) => setDescription(e.target.value)}>
           </textarea>
         </label>
+        <div className='space-y-1'>
+          <div>Script Details</div>
+          <NativeScriptViewer
+            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(date, config.isMainnet) }}
+            className='p-2 border rounded space-y-2'
+            headerClassName='font-semibold'
+            ulClassName='space-y-1'
+            nativeScript={script} />
+        </div>
       </div>
       <footer className='flex justify-between p-4 bg-gray-100'>
         <DeleteTreasuryButton
@@ -84,8 +95,6 @@ const EditTreasury: NextPage<{
 const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
-  const [config, _c] = useContext(ConfigContext)
-  const [date, _t] = useContext(DateContext)
   const cardano = useCardanoMultiplatformLib()
 
   if (!cardano) return <Loading />;
@@ -101,14 +110,6 @@ const GetTreasury: NextPage = () => {
           <h1 className='font-semibold text-lg'>Edit Treasury Information</h1>
           <p>Only descriptive information can be changed. If you want to change the signers, you have to create a new treasury. Deleting the info does not change any state of the treasury on chain. By deleting you merely deregister or forget it locally.</p>
         </Hero>
-        <Panel>
-          <NativeScriptViewer
-            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(date, config.isMainnet) }}
-            className='p-2 border rounded space-y-2'
-            headerClassName='font-semibold'
-            ulClassName='space-y-1'
-            nativeScript={script} />
-        </Panel>
         <EditTreasury cardano={cardano} router={router} script={script} />
       </div>
     </Layout>
