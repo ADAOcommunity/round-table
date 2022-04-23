@@ -12,6 +12,7 @@ import { nanoid } from 'nanoid'
 import Modal from '../../components/modal'
 import { Calendar, DateContext } from '../../components/time'
 import { estimateDateBySlot, estimateSlotByDate } from '../../cardano/utils'
+import { NativeScriptViewer } from '../../components/native-script'
 
 type KeyHashInput = {
   id: string
@@ -321,6 +322,8 @@ const NewTreasury: NextPage = () => {
     }
   }
 
+  const script = getScript()
+
   const closeModal = () => setIsModalOpen(false)
 
   const addKeyHashInput = (keyHashInput: KeyHashInput) => {
@@ -398,6 +401,17 @@ const NewTreasury: NextPage = () => {
                 </div>
               </div>
             </>}
+            {script && <>
+              <div className='space-y-1'>
+                <div>Script Preview</div>
+                <NativeScriptViewer
+                  verifyingData={{ signatures: new Map(), currentSlot }}
+                  className='p-2 border rounded space-y-2'
+                  headerClassName='font-semibold'
+                  ulClassName='space-y-1'
+                  nativeScript={script} />
+              </div>
+            </>}
           </div>
           <footer className='flex justify-end p-4 bg-gray-100'>
             <SaveTreasuryButton
@@ -405,7 +419,7 @@ const NewTreasury: NextPage = () => {
               className='px-4 py-2 bg-sky-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
               name={name}
               description={description}
-              script={getScript()}>
+              script={script}>
               Save Treasury
             </SaveTreasuryButton>
           </footer>
