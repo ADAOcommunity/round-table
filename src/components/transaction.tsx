@@ -1,12 +1,12 @@
-import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
+import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useMemo, useState } from 'react'
 import { toDecimal, CurrencyInput, getADASymbol, AssetAmount, ADAAmount } from './currency'
 import { getAssetName, getBalanceByUTxOs, Value } from '../cardano/query-api'
-import { Cardano, getResult, toHex, toIter } from '../cardano/multiplatform-lib'
+import { Cardano, getResult, toHex } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { TransactionOutput as GraphQLTransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, NativeScript, NativeScripts, Transaction, TransactionBody, TransactionHash, TransactionOutput, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
-import { CheckIcon, DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
+import { DuplicateIcon, PlusIcon, SearchIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
 import { BackButton, CardanoScanLink, CopyButton, Panel, Toggle } from './layout'
@@ -251,6 +251,20 @@ const TransactionMessageInput: NextPage<{
   )
 }
 
+const buildTxOutput = (cardano: Cardano, config: Config, recipient: Recipient): Result<TransactionOutput> => {
+  const { Address, TransactionOutputBuilder } = cardano.lib
+  return getResult(() => {
+    const address = Address.from_bech32(recipient.address)
+    if (!isAddressNetworkCorrect(config, address)) throw new Error('Wrong network')
+    const builder = TransactionOutputBuilder
+      .new()
+      .with_address(address)
+      .next()
+    const value = cardano.getCardanoValue(recipient.value)
+    return builder.with_value(value).build()
+  })
+}
+
 const NewTransaction: NextPage<{
   cardano: Cardano
   changeAddress?: Address
@@ -258,7 +272,6 @@ const NewTransaction: NextPage<{
   nativeScriptSet: NativeScripts
   utxos: GraphQLTransactionOutput[]
 }> = ({ cardano, changeAddress, protocolParameters, utxos, nativeScriptSet }) => {
-  const txBuilder = cardano.createTxBuilder(protocolParameters)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [config, _] = useContext(ConfigContext)
@@ -268,22 +281,6 @@ const NewTransaction: NextPage<{
     if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
     return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoWord)
   }
-
-  const buildTxOutput = (recipient: Recipient): Result<TransactionOutput> => {
-    const { TransactionOutputBuilder } = cardano.lib
-    return getResult(() => {
-      const address = cardano.lib.Address.from_bech32(recipient.address)
-      if (!isAddressNetworkCorrect(config, address)) throw new Error('Wrong network')
-      const builder = TransactionOutputBuilder
-        .new()
-        .with_address(address)
-        .next()
-      const value = cardano.getCardanoValue(recipient.value)
-      return builder.with_value(value).build()
-    })
-  }
-
-  const txOutputResults = recipients.map(buildTxOutput)
 
   const budget: Value = recipients
     .map(({ value }) => value)
@@ -297,28 +294,33 @@ const NewTransaction: NextPage<{
       return { lovelace, assets }
     }, getBalanceByUTxOs(utxos))
 
-  const transactionResult = getResult(() => {
-    const { Address } = cardano.lib
+  const transactionResult = useMemo(() => {
+    const txBuilder = cardano.createTxBuilder(protocolParameters)
 
-    txOutputResults.forEach((txOutputResult) => {
-      if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
-      txBuilder.add_output(txOutputResult.data)
-    })
+    return getResult(() => {
+      const { Address } = cardano.lib
 
-    txBuilder.set_native_scripts(nativeScriptSet)
-
-    if (message.length > 0) {
-      const value = JSON.stringify({
-        msg: message
+      recipients.forEach((recipient) => {
+        const txOutputResult = buildTxOutput(cardano, config, recipient)
+        if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
+        txBuilder.add_output(txOutputResult.data)
       })
-      txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
-    }
 
-    const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
-    cardano.chainCoinSelection(txBuilder, cardano.buildUTxOSet(utxos), address)
+      txBuilder.set_native_scripts(nativeScriptSet)
 
-    return txBuilder.build_tx()
-  })
+      if (message.length > 0) {
+        const value = JSON.stringify({
+          msg: message
+        })
+        txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
+      }
+
+      const address = changeAddress ? changeAddress : Address.from_bech32(utxos[0].address)
+      cardano.chainCoinSelection(txBuilder, cardano.buildUTxOSet(utxos), address)
+
+      return txBuilder.build_tx()
+    })
+  }, [recipients, cardano, changeAddress, config, message, nativeScriptSet, protocolParameters, utxos])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
