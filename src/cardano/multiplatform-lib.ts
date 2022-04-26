@@ -1,11 +1,34 @@
 import type { ShelleyProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionOutput as CardanoTransactionOutput, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
+import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
+type Recipient = {
+  id: string
+  address: string
+  value: Value
+}
+
+const newRecipient = (): Recipient => {
+  return {
+    id: nanoid(),
+    address: '',
+    value: {
+      lovelace: BigInt(0),
+      assets: new Map()
+    }
+  }
+}
+
+const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
+  const networkId = address.network_id()
+  return config.isMainnet ? networkId === 1 : networkId === 0
+}
 
 type Result<T> =
   | { isOk: true, data: T }
@@ -76,6 +99,19 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public buildTxOutput(recipient: Recipient): Result<CardanoTransactionOutput> {
+    const { Address, TransactionOutputBuilder } = this.lib
+    return getResult(() => {
+      const address = Address.from_bech32(recipient.address)
+      const builder = TransactionOutputBuilder
+        .new()
+        .with_address(address)
+        .next()
+      const value = this.getCardanoValue(recipient.value)
+      return builder.with_value(value).build()
+    })
   }
 
   public getMinLovelace(value: Value, hasDataHash: boolean, coinsPerUtxoWord: number): bigint {
@@ -299,5 +335,5 @@ const useCardanoMultiplatformLib = () => {
   return cardano
 }
 
-export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader }
+export type { Cardano, CardanoIterable, Result, MultiSigType, Recipient }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect }

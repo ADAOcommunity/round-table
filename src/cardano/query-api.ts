@@ -5,6 +5,9 @@ import { Config } from './config'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
+const decodeASCII = (assetName: string): string => {
+  return Buffer.from(assetName, 'hex').toString('ascii')
+}
 
 type Assets = Map<string, bigint>
 
@@ -123,4 +126,4 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
 }
 
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }
