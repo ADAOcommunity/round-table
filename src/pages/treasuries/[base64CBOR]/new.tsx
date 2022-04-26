@@ -339,16 +339,20 @@ const GetTreasury: NextPage = () => {
   const router = useRouter()
   const { base64CBOR } = router.query
   const cardano = useCardanoMultiplatformLib()
+  const parseResult = useMemo(() => {
+    if (!cardano) return;
+    return getResult(() => {
+      if (typeof base64CBOR !== 'string') throw new Error('Invalid Script');
+      return cardano.lib.NativeScript.from_bytes(Buffer.from(base64CBOR, 'base64'))
+    })
+  }, [cardano, base64CBOR])
 
-  if (!cardano) return <Loading />;
-  if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid script</ErrorMessage>;
-  const parseResult = getResult(() => cardano.lib.NativeScript.from_bytes(Buffer.from(base64CBOR, 'base64')))
-  if (!parseResult.isOk) return <ErrorMessage>Invalid script</ErrorMessage>;
-  const script = parseResult.data
+  if (!cardano || !parseResult) return <Loading />;
+  if (!parseResult.isOk) return <ErrorMessage>{parseResult.message}</ErrorMessage>;
 
   return <GetUTxOsToSpend
     cardano={cardano}
-    script={script} />
+    script={parseResult.data} />
 }
 
 export default GetTreasury
