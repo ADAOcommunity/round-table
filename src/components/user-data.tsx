@@ -159,4 +159,4 @@ const ImportUserData: NextPage = () => {
   )
 }
 
-export { ExportUserDataButton, ImportUserData }
+export { ExportUserDataButton, ImportUserData, DownloadButton }
