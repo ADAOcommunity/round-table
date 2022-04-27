@@ -1,26 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { NextPage } from 'next'
-import { ChangeEventHandler, MouseEventHandler, useContext, useState } from 'react'
+import type { NextPage } from 'next'
+import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import { db, Treasury } from '../db'
-
-const DownloadDataButton: NextPage<{
-  className?: string
-  mime: string
-  filename: string
-  data: string
-}> = ({ className, data, filename, children, mime }) => {
-  const href = `data:${mime},` + encodeURIComponent(data)
-  return (
-    <a
-      href={href}
-      download={filename}
-      className={className}>
-      {children}
-    </a>
-  )
-}
 
 type UserData = {
   isMainnet: boolean
@@ -31,6 +14,39 @@ type UserData = {
     script: string
     updatedAt: Date
   }[]
+}
+
+const DownloadButton: NextPage<{
+  className?: string
+  download: string
+  blobParts: BlobPart[]
+  options?: BlobPropertyBag
+}> = ({ blobParts, options, download, className, children }) => {
+  const [URI, setURI] = useState<string | undefined>()
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (blobParts && isMounted) {
+      const blob = new Blob(blobParts, options)
+      setURI(window.URL.createObjectURL(blob))
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [blobParts, options])
+
+  if (!URI) return null
+
+  return (
+    <a
+      href={URI}
+      className={className}
+      download={download}>
+      {children}
+    </a>
+  )
 }
 
 const ExportUserDataButton: NextPage = () => {
@@ -48,7 +64,6 @@ const ExportUserDataButton: NextPage = () => {
         }
       }))
   )
-
   if (!treasuries) return null
 
   const userData: UserData = {
@@ -56,18 +71,16 @@ const ExportUserDataButton: NextPage = () => {
     version: '1',
     treasuries
   }
-  const userDataJSON = JSON.stringify(userData)
-
   const filename = `roundtable-backup.${config.isMainnet ? 'mainnet' : 'testnet'}.json`
 
   return (
-    <DownloadDataButton
+    <DownloadButton
+      blobParts={[JSON.stringify(userData)]}
+      options={{ type: 'application/json' }}
       className='p-2 rounded bg-sky-700 text-white'
-      mime='application/json;charset=utf-8'
-      filename={filename}
-      data={userDataJSON}>
+      download={filename}>
       Export User Data
-    </DownloadDataButton>
+    </DownloadButton>
   )
 }
 
@@ -146,4 +159,4 @@ const ImportUserData: NextPage = () => {
   )
 }
 
-export { ExportUserDataButton, ImportUserData }
+export { ExportUserDataButton, ImportUserData, DownloadButton }

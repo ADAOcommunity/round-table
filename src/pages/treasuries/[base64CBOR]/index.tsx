@@ -1,5 +1,5 @@
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import { NextPage } from 'next'
+import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import type { Cardano } from '../../../cardano/multiplatform-lib'
@@ -12,7 +12,8 @@ import { ConfigContext } from '../../../cardano/config'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
-import { RefreshIcon } from '@heroicons/react/solid'
+import { DownloadIcon, RefreshIcon } from '@heroicons/react/solid'
+import { DownloadButton } from '../../../components/user-data'
 
 const ShowBalance: NextPage<{
   cardano: Cardano
@@ -72,6 +73,14 @@ const ShowTreasury: NextPage<{
         </div>
       </div>
       <footer className='flex justify-end p-4 bg-gray-100 space-x-2'>
+        <DownloadButton
+          blobParts={[script.to_bytes()]}
+          options={{ type: 'application/cbor' }}
+          download='native_script.cbor'
+          className='flex space-x-1 px-4 py-2 border text-sky-700 rounded'>
+          <DownloadIcon className='w-4' />
+          <span>Download Script</span>
+        </DownloadButton>
         <Link href={getTreasuryPath(script, 'edit')}>
           <a className='px-4 py-2 border text-sky-700 rounded'>Edit Info</a>
         </Link>
