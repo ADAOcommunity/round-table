@@ -35,7 +35,7 @@ const DownloadButton: NextPage<{
     return () => {
       isMounted = false
     }
-  }, [blobParts])
+  }, [blobParts, options])
 
   if (!URI) return null
 
