@@ -340,7 +340,7 @@ const NewTreasury: NextPage = () => {
       <div className='space-y-2'>
         <Hero>
           <h1 className='font-semibold text-lg'>New Treasury</h1>
-          <p>Start to create a treasury protected by Multi-Sig native scripts from here. A treasury needs more than one address. Only receiving address should be used.</p>
+          <p>Start to create a treasury protected by Multi-Sig native scripts from here by adding signer addresses or by setting timelocks. Only receiving addresses from one of our supported wallets should be used. Check the homepage for further information.</p>
         </Hero>
         <Panel>
           <div className='p-4 space-y-4'>
