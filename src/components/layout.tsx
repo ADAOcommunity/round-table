@@ -131,7 +131,7 @@ const PrimaryBar: NextPage = () => {
         className='p-4 hover:bg-sky-700'>
         <CogIcon className='w-12' />
       </NavLink>
-      <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/SDnm4GzY'>
+      <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/BGuhdBXQFU'>
         <div style={{ height: '48px' }}>
           <Image src='/Discord-Logo-White.svg' width={48} height={48} alt='Discord Server'></Image>
         </div>
