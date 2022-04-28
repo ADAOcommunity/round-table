@@ -6,7 +6,7 @@ import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatfo
 import { ErrorMessage, Loading } from '../../components/status'
 import { CopyVkeysButton, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { useContext, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
 import { NativeScriptViewer } from '../../components/native-script'
@@ -54,12 +54,17 @@ const GetTransaction: NextPage = () => {
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _c] = useContext(ConfigContext)
   const [date, _t] = useContext(DateContext)
+  const txResult = useMemo(() => {
+    if (!cardano) return
 
-  if (!cardano) return <Loading />;
+    return getResult(() => {
+      if (typeof base64CBOR !== 'string') throw new Error('Invalid Transaction CBOR')
+      return cardano.lib.Transaction.from_bytes(Buffer.from(base64CBOR, 'base64'))
+    })
+  }, [cardano, base64CBOR])
 
-  if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid Transaction CBOR</ErrorMessage>;
-  const txResult = getResult(() => cardano.lib.Transaction.from_bytes(Buffer.from(base64CBOR, 'base64')))
-  if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
+  if (!cardano || !txResult) return <Loading />;
+  if (!txResult.isOk) return <ErrorMessage>{txResult.message}</ErrorMessage>;
 
   const transaction = txResult.data
   const txHash = cardano.lib.hash_transaction(transaction.body())
