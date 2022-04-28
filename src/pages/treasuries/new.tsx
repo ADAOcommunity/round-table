@@ -363,12 +363,14 @@ const NewTreasury: NextPage = () => {
               </textarea>
             </label>
             <KeyHashList className='space-y-1' keyHashInputs={keyHashInputs} deleteKeyHashInput={deleteKeyHashInput} />
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className='flex text-sky-700 items-center space-x-1'>
-              <PlusIcon className='w-4' />
-              <span>Add signer</span>
-            </button>
+            <nav>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className='flex text-sky-700 items-center space-x-1 border rounded p-2'>
+                <PlusIcon className='w-4' />
+                <span>Add signer</span>
+              </button>
+            </nav>
             <TimeLockInputs
               timelockStart={timelockStart}
               setTimelockStart={setTimelockStart}
