@@ -3,11 +3,13 @@ import { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochB
 test('estimateSlotByDate', () => {
   expect(estimateSlotByDate(new Date('2022-04-21T22:26:39.000Z'), true)).toBe(59013708)
   expect(estimateSlotByDate(new Date('2022-04-21T22:28:04.000Z'), false)).toBe(56210868)
+  expect(estimateSlotByDate(new Date('2022-04-28T01:56:00.000Z'), false)).toBe(56741744)
 })
 
 test('estimateDateBySlot', () => {
   expect(estimateDateBySlot(59013708, true).toISOString()).toBe('2022-04-21T22:26:39.000Z')
   expect(estimateDateBySlot(56210868, false).toISOString()).toBe('2022-04-21T22:28:04.000Z')
+  expect(estimateDateBySlot(56741744, false).toISOString()).toBe('2022-04-28T01:56:00.000Z')
 })
 
 test('estimateDateBySlot', () => {
