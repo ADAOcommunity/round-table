@@ -1,12 +1,67 @@
-import type { NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { BigNum, NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import type { NextPage } from 'next'
-import { Cardano, toIter } from '../cardano/multiplatform-lib'
+import { toIter } from '../cardano/multiplatform-lib'
+import type { Cardano } from '../cardano/multiplatform-lib'
 import { BanIcon, ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
 import { CopyButton } from './layout'
 import { estimateDateBySlot } from '../cardano/utils'
 import { useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
+
+function minSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
+  return slots.reduce((prev, cur) => {
+    if (!cur) return prev
+    if (!prev) return cur
+    if (cur.compare(prev) <= 0) return cur
+    return prev
+  })
+}
+
+function maxSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
+  return slots.reduce((prev, cur) => {
+    if (!cur) return prev
+    if (!prev) return cur
+    if (cur.compare(prev) >= 0) return cur
+    return prev
+  })
+}
+
+function suggestStartSlot(nativeScript: NativeScript): BigNum | undefined {
+  let script;
+
+  script = nativeScript.as_timelock_start()
+  if (script) return script.slot()
+
+  script = nativeScript.as_script_all()?.native_scripts()
+  if (script) return maxSlot(Array.from(toIter(script)).map(suggestStartSlot))
+
+  script = nativeScript.as_script_any()?.native_scripts()
+  if (script) return maxSlot(Array.from(toIter(script)).map(suggestStartSlot))
+
+  script = nativeScript.as_script_n_of_k()?.native_scripts()
+  if (script) return maxSlot(Array.from(toIter(script)).map(suggestStartSlot))
+
+  return
+}
+
+function suggestExpirySlot(nativeScript: NativeScript): BigNum | undefined {
+  let script;
+
+  script = nativeScript.as_timelock_expiry()
+  if (script) return script.slot()
+
+  script = nativeScript.as_script_all()?.native_scripts()
+  if (script) return minSlot(Array.from(toIter(script)).map(suggestExpirySlot))
+
+  script = nativeScript.as_script_any()?.native_scripts()
+  if (script) return minSlot(Array.from(toIter(script)).map(suggestExpirySlot))
+
+  script = nativeScript.as_script_n_of_k()?.native_scripts()
+  if (script) return minSlot(Array.from(toIter(script)).map(suggestExpirySlot))
+
+  return
+}
 
 type VerifyingData = {
   signatures: Map<string, Vkeywitness>
@@ -176,4 +231,4 @@ const NativeScriptViewer: NextPage<{
 }
 
 export type { VerifyingData }
-export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer }
+export { suggestStartSlot, suggestExpirySlot, SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer }
