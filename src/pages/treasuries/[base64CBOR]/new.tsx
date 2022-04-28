@@ -14,6 +14,7 @@ import type { Value } from '../../../cardano/query-api'
 import type { ShelleyProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
 import { PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import { ADAAmount, getADASymbol, LabeledCurrencyInput } from '../../../components/currency'
+import { suggestExpirySlot, suggestStartSlot } from '../../../components/native-script'
 
 const AddAssetButton: NextPage<{
   budget: Value
@@ -225,6 +226,16 @@ const NewTransaction: NextPage<{
           msg: message
         })
         txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
+      }
+
+      const startSlot = suggestStartSlot(nativeScript)
+      if (startSlot) {
+        txBuilder.set_validity_start_interval(startSlot)
+      }
+
+      const expirySlot = suggestExpirySlot(nativeScript)
+      if (expirySlot) {
+        txBuilder.set_ttl(expirySlot)
       }
 
       const address = cardano.getScriptAddress(nativeScript, config.isMainnet)
