@@ -1,13 +1,17 @@
-import { NextPage } from 'next'
+import type { NextPage } from 'next'
 import { NextRouter, useRouter } from 'next/router'
 import { Cardano, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { ErrorMessage, Loading } from '../../../components/status'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DeleteTreasuryButton, NativeScriptViewer, SaveTreasuryButton } from '../../../components/transaction'
+import { DeleteTreasuryButton, SaveTreasuryButton } from '../../../components/transaction'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../../db'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
+import { NativeScriptViewer } from '../../../components/native-script'
+import { estimateSlotByDate } from '../../../cardano/utils'
+import { ConfigContext } from '../../../cardano/config'
+import { DateContext } from '../../../components/time'
 
 const EditTreasury: NextPage<{
   cardano: Cardano
@@ -15,9 +19,11 @@ const EditTreasury: NextPage<{
   script: NativeScript
 }> = ({ cardano, script }) => {
   const hash = cardano.hashScript(script)
-  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
+  const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [config, _c] = useContext(ConfigContext)
+  const [date, _t] = useContext(DateContext)
 
   useEffect(() => {
     let isMounted = true
@@ -53,6 +59,15 @@ const EditTreasury: NextPage<{
             onChange={(e) => setDescription(e.target.value)}>
           </textarea>
         </label>
+        <div className='space-y-1'>
+          <div>Script Details</div>
+          <NativeScriptViewer
+            verifyingData={{ signatures: new Map(), currentSlot: estimateSlotByDate(date, config.isMainnet) }}
+            className='p-2 border rounded space-y-2'
+            headerClassName='font-semibold'
+            ulClassName='space-y-1'
+            nativeScript={script} />
+        </div>
       </div>
       <footer className='flex justify-between p-4 bg-gray-100'>
         <DeleteTreasuryButton
@@ -95,9 +110,6 @@ const GetTreasury: NextPage = () => {
           <h1 className='font-semibold text-lg'>Edit Treasury Information</h1>
           <p>Only descriptive information can be changed. If you want to change the signers, you have to create a new treasury. Deleting the info does not change any state of the treasury on chain. By deleting you merely deregister or forget it locally.</p>
         </Hero>
-        <Panel>
-          <NativeScriptViewer className='p-4 space-y-2' cardano={cardano} script={script} />
-        </Panel>
         <EditTreasury cardano={cardano} router={router} script={script} />
       </div>
     </Layout>

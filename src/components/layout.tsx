@@ -2,6 +2,7 @@ import type { NextPage } from 'next'
 import Link from 'next/link'
 import { CogIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -14,6 +15,7 @@ import type { Cardano } from '../cardano/multiplatform-lib'
 import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
+import { ChainProgress } from './time'
 
 const Toggle: NextPage<{
   isOn: boolean
@@ -22,7 +24,7 @@ const Toggle: NextPage<{
   return (
     <label className='cursor-pointer'>
       <input className='hidden peer' type='checkbox' checked={isOn} onChange={onChange} />
-      <div className='flex border w-12 rounded-full border-gray-500 bg-gray-500 peer-checked:bg-green-500 peer-checked:border-green-500 peer-checked:justify-end'>
+      <div className='flex border w-12 items-center rounded-full border-gray-500 bg-gray-500 peer-checked:bg-green-500 peer-checked:border-green-500 peer-checked:justify-end'>
         <div className='h-6 w-6 rounded-full bg-white'></div>
       </div>
     </label>
@@ -40,9 +42,10 @@ const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
 const CopyButton: NextPage<{
   disabled?: boolean
   className?: string
+  copied?: ReactNode
   getContent: () => string
   ms?: number
-}> = ({ children, className, disabled, getContent, ms }) => {
+}> = ({ children, copied, className, disabled, getContent, ms }) => {
   const [isCopied, setIsCopied] = useState(false)
 
   const clickHandle = () => {
@@ -65,7 +68,7 @@ const CopyButton: NextPage<{
 
   return (
     <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
-      {isCopied ? 'Copied!' : children}
+      {isCopied ? (copied ?? 'Copied!') : children}
     </button>
   )
 }
@@ -156,9 +159,9 @@ const TreasuryListing: NextPage<{
     <NavLink
       href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
       onPageClassName='bg-sky-700 font-semibold'
-      className='block w-full p-4 truncate hover:bg-sky-700'>
-      <div>{name}</div>
-      <div className='text-sm font-normal'>{lovelace ? <ADAAmount lovelace={lovelace} /> : <RefreshIcon className='w-4 animate-spin transform rotate-180' />}</div>
+      className='block w-full p-4 hover:bg-sky-700'>
+      <div className='truncate'>{name}</div>
+      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <RefreshIcon className='w-4 animate-spin transform rotate-180' />}</div>
     </NavLink>
   )
 }
@@ -239,7 +242,8 @@ const Layout: NextPage = ({ children }) => {
         <div className='flex flex-row-reverse'>
           <NotificationCenter className='fixed space-y-2 w-1/4' />
         </div>
-        <div className='p-2 h-screen'>
+        <div className='p-2 h-screen space-y-2'>
+          <ChainProgress />
           {children}
         </div>
       </div>

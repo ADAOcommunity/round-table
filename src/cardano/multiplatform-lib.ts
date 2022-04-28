@@ -1,11 +1,34 @@
 import type { ShelleyProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NativeScripts, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionOutput as CardanoTransactionOutput, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
+import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
 type MultiSigType = 'all' | 'any' | 'atLeast'
+type Recipient = {
+  id: string
+  address: string
+  value: Value
+}
+
+const newRecipient = (): Recipient => {
+  return {
+    id: nanoid(),
+    address: '',
+    value: {
+      lovelace: BigInt(0),
+      assets: new Map()
+    }
+  }
+}
+
+const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
+  const networkId = address.network_id()
+  return config.isMainnet ? networkId === 1 : networkId === 0
+}
 
 type Result<T> =
   | { isOk: true, data: T }
@@ -76,6 +99,19 @@ class Cardano {
 
   public get lib() {
     return this._wasm
+  }
+
+  public buildTxOutput(recipient: Recipient): Result<CardanoTransactionOutput> {
+    const { Address, TransactionOutputBuilder } = this.lib
+    return getResult(() => {
+      const address = Address.from_bech32(recipient.address)
+      const builder = TransactionOutputBuilder
+        .new()
+        .with_address(address)
+        .next()
+      const value = this.getCardanoValue(recipient.value)
+      return builder.with_value(value).build()
+    })
   }
 
   public getMinLovelace(value: Value, hasDataHash: boolean, coinsPerUtxoWord: number): bigint {
@@ -173,16 +209,6 @@ class Cardano {
     })
   }
 
-  public buildMultiSigScript(keyHashes: Ed25519KeyHash[], type: MultiSigType, required: number): NativeScript {
-    const publicKeyScripts = keyHashes.map((keyHash) => this.buildPublicKeyScript(keyHash))
-
-    switch (type) {
-      case 'all': return this.buildAllScript(publicKeyScripts)
-      case 'any': return this.buildAnyScript(publicKeyScripts)
-      case 'atLeast': return this.buildAtLeastScript(publicKeyScripts, required)
-    }
-  }
-
   public createTxBuilder(protocolParameters: ShelleyProtocolParams): TransactionBuilder {
     const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
@@ -267,35 +293,6 @@ class Cardano {
     return utxosSet
   }
 
-  private buildPublicKeyScript(keyHash: Ed25519KeyHash): NativeScript {
-    const { ScriptPubkey, NativeScript } = this.lib
-    return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
-  }
-
-  private buildAllScript(scripts: NativeScript[]): NativeScript {
-    const { ScriptAll, NativeScript } = this.lib
-    return NativeScript.new_script_all(ScriptAll.new(this.buildNativeScripts(scripts)))
-  }
-
-  private buildAnyScript(scripts: NativeScript[]): NativeScript {
-    const { ScriptAny, NativeScript } = this.lib
-    return NativeScript.new_script_any(ScriptAny.new(this.buildNativeScripts(scripts)))
-  }
-
-  private buildAtLeastScript(scripts: NativeScript[], required: number): NativeScript {
-    const { ScriptNOfK, NativeScript } = this.lib
-    return NativeScript.new_script_n_of_k(ScriptNOfK.new(required, this.buildNativeScripts(scripts)))
-  }
-
-  private buildNativeScripts(scripts: NativeScript[]): NativeScripts {
-    const { NativeScripts } = this.lib
-    const nativeScripts = NativeScripts.new()
-    scripts.forEach((script) => {
-      nativeScripts.add(script)
-    })
-    return nativeScripts
-  }
-
   private getScriptHashBaseAddress(scriptHash: ScriptHash, networkInfo: NetworkInfo): BaseAddress {
     const { BaseAddress, StakeCredential } = this.lib
     const networkId = networkInfo.network_id()
@@ -338,5 +335,5 @@ const useCardanoMultiplatformLib = () => {
   return cardano
 }
 
-export type { Cardano, CardanoIterable, Result, MultiSigType }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader }
+export type { Cardano, CardanoIterable, Result, MultiSigType, Recipient }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect }

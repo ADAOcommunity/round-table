@@ -14,9 +14,6 @@ describe('Create a new treasury', () => {
 
     cy.url()
       .should('eq', 'http://localhost:3000/treasuries/new')
-
-    cy.contains('New Signer (min. 2)')
-      .should('be.visible')
   })
 
   it('Should fill title and description', () => {
@@ -30,40 +27,41 @@ describe('Create a new treasury', () => {
   })
 
   it('Should add signers', () => {
-    cy.contains('Add')
+    addresses.forEach((address) => {
+      cy.contains('Add signer').click()
+
+      cy.contains('New Signer')
+        .should('be.visible')
+
+      cy.get('textarea[placeholder="Add signer address and press enter"]')
+        .type(address)
+        .should("have.value", address)
+
+      cy.contains('Add Address')
+        .should('be.enabled')
+
+      cy.contains('Add Address')
+        .click()
+    })
+
+    cy.contains('Signers')
+      .parent()
+      .find('ul')
+      .children()
+      .should('have.length', 2)
+
+    cy.contains('Add signer').click()
+
+    cy.contains('Add Address')
       .should('be.disabled')
 
     cy.get('textarea[placeholder="Add signer address and press enter"]')
       .type("abcdefghijk")
 
-    cy.contains('Add')
+    cy.contains('Add Address')
       .should('be.disabled')
 
-    cy.get('textarea[placeholder="Add signer address and press enter"]')
-      .type('{selectall}{backspace}')
-
-    var signers = 0
-    addresses.map((address) => {
-      cy.get('textarea[placeholder="Add signer address and press enter"]')
-        .type(address)
-        .should("have.value", address)
-
-      cy.contains('Add')
-        .should('be.enabled')
-
-      cy.contains('Add')
-        .click()
-
-      cy.contains('Add')
-        .should('be.disabled')
-
-      signers++;
-      cy.contains('Signers')
-        .parent()
-        .find('ul')
-        .children()
-        .should('have.length', signers)
-    })
+    cy.contains('Cancel').click()
   })
   //TODO: add test to check if add button is disabled when using wrong address
 
@@ -124,8 +122,6 @@ describe('Create a new treasury', () => {
     cy.contains('Edit Info')
       .click()
 
-    cy.wait(1500)
-
     cy.get('input[placeholder="Write Name"]')
       .type(addedName)
       .should("have.value", editedName);
@@ -136,8 +132,6 @@ describe('Create a new treasury', () => {
 
     cy.contains('Save Treasury')
       .click()
-
-    cy.wait(1500)
 
     cy.contains(editedName)
       .should('be.visible')

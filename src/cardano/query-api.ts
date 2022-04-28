@@ -5,6 +5,9 @@ import { Config } from './config'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
+const decodeASCII = (assetName: string): string => {
+  return Buffer.from(assetName, 'hex').toString('ascii')
+}
 
 type Assets = Map<string, bigint>
 
@@ -30,7 +33,19 @@ const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
   }
 }
 
+const createApolloClient = (config: Config) => new ApolloClient({
+  uri: config.queryAPI.URI,
+  cache: new InMemoryCache({
+    typePolicies: {
+      PaymentAddress: {
+        keyFields: ['address']
+      }
+    }
+  })
+})
+
 type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
+type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
 const GetUTxOsToSpendQuery = gql`
 query getUTxOsToSpend($addresses: [String]!) {
@@ -110,16 +125,5 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
   return balance
 }
 
-const createApolloClient = (config: Config) => new ApolloClient({
-  uri: config.queryAPI.URI,
-  cache: new InMemoryCache({
-    typePolicies: {
-      PaymentAddress: {
-        keyFields: ['address']
-      }
-    }
-  })
-})
-
 export type { Value }
-export { createApolloClient, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }

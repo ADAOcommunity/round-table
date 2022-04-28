@@ -4,11 +4,14 @@ import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/lay
 import { toHex, toIter, verifySignature } from '../../cardano/multiplatform-lib'
 import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../components/status'
-import { CopyVkeysButton, NativeScriptViewer, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
+import { CopyVkeysButton, SignatureSync, SignTxButton, SubmitTxButton, TransactionBodyViewer } from '../../components/transaction'
 import type { Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { useContext, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import { ConfigContext } from '../../cardano/config'
+import { NativeScriptViewer } from '../../components/native-script'
+import { DateContext } from '../../components/time'
+import { estimateSlotByDate } from '../../cardano/utils'
 
 const ManualSign: NextPage<{
   signHandle: (_: string) => void
@@ -49,13 +52,19 @@ const GetTransaction: NextPage = () => {
   const { base64CBOR } = router.query
   const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
-  const [config, _] = useContext(ConfigContext)
+  const [config, _c] = useContext(ConfigContext)
+  const [date, _t] = useContext(DateContext)
+  const txResult = useMemo(() => {
+    if (!cardano) return
 
-  if (!cardano) return <Loading />;
+    return getResult(() => {
+      if (typeof base64CBOR !== 'string') throw new Error('Invalid Transaction CBOR')
+      return cardano.lib.Transaction.from_bytes(Buffer.from(base64CBOR, 'base64'))
+    })
+  }, [cardano, base64CBOR])
 
-  if (typeof base64CBOR !== 'string') return <ErrorMessage>Invalid Transaction CBOR</ErrorMessage>;
-  const txResult = getResult(() => cardano.lib.Transaction.from_bytes(Buffer.from(base64CBOR, 'base64')))
-  if (!txResult.isOk) return <ErrorMessage>Invalid transaction</ErrorMessage>;
+  if (!cardano || !txResult) return <Loading />;
+  if (!txResult.isOk) return <ErrorMessage>{txResult.message}</ErrorMessage>;
 
   const transaction = txResult.data
   const txHash = cardano.lib.hash_transaction(transaction.body())
@@ -124,8 +133,17 @@ const GetTransaction: NextPage = () => {
           <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </Panel>}
         {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
-          <Panel key={index}>
-            <NativeScriptViewer className='p-4' cardano={cardano} script={script} signatures={signatureMap} />
+          <Panel key={index} className='space-y-1'>
+            <div className='p-4 space-y-1'>
+              <div className='font-semibold'>Script Details</div>
+              <NativeScriptViewer
+                cardano={cardano}
+                verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(date, config.isMainnet) }}
+                className='p-2 border rounded space-y-2'
+                headerClassName='font-semibold'
+                ulClassName='space-y-1'
+                nativeScript={script} />
+            </div>
             <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
               <div className='flex space-x-1 items-center'>
                 <SignatureSync
