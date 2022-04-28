@@ -5,7 +5,6 @@ import { Cardano, toHex } from '../cardano/multiplatform-lib'
 import type { Recipient } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { Address, NativeScript, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { nanoid } from 'nanoid'
 import { DuplicateIcon, SearchIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -55,6 +54,7 @@ const TransactionBodyViewer: NextPage<{
   }
 
   const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
+    const id = i.toString()
     const output = txBody.outputs().get(i)
     const address = output.address().to_bech32()
     const amount = output.amount()
@@ -76,7 +76,7 @@ const TransactionBodyViewer: NextPage<{
       })
     }
     return {
-      id: nanoid(),
+      id,
       address,
       value: {
         lovelace: BigInt(amount.coin().to_str()),
