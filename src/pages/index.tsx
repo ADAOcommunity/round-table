@@ -16,7 +16,7 @@ const Home: NextPage = () => {
             <WalletInfo className='flex border rounded p-2 space-x-2 items-center w-48 shadow' name='eternl' src='/eternl.png'>Eternl/cc Wallet</WalletInfo>
             <WalletInfo className='flex border rounded p-2 space-x-2 items-center w-48 shadow' name='gero' src='https://gerowallet.io/assets/img/logo2.ico'>Gero Wallet</WalletInfo>
           </ul>
-          <p>We have an active and welcoming community. If you have any issues or questions, feel free to reach out to us via <a className='text-sky-700' target='_blank' rel='noreferrer' href='https://github.com/ADAOcommunity/round-table'>Github</a> or <a className='text-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/SDnm4GzY'>Discord</a>.</p>
+          <p>We have an active and welcoming community. If you have any issues or questions, feel free to reach out to us via <a className='text-sky-700' target='_blank' rel='noreferrer' href='https://github.com/ADAOcommunity/round-table'>Github</a> or <a className='text-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/BGuhdBXQFU'>Discord</a>.</p>
         </Panel>
       </div>
     </Layout>
