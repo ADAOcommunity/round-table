@@ -1,4 +1,5 @@
 import { MouseEventHandler, useContext, useEffect, useState } from 'react'
+import type { FC, ReactNode } from 'react'
 import { AssetAmount, ADAAmount } from './currency'
 import { decodeASCII, getAssetName } from '../cardano/query-api'
 import { Cardano, toHex } from '../cardano/multiplatform-lib'
@@ -9,7 +10,6 @@ import { DuplicateIcon, SearchIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
 import { CardanoScanLink, CopyButton, Panel, Toggle } from './layout'
-import { NextPage } from 'next'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import { db } from '../db'
@@ -19,7 +19,7 @@ import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getTransactionPath, getTreasuriesPath, getTreasuryPath } from '../route'
 
-const TransactionReviewButton: NextPage<{
+const TransactionReviewButton: FC<{
   className?: string
   result: Result<Transaction>
 }> = ({ className, result }) => {
@@ -34,7 +34,7 @@ const TransactionReviewButton: NextPage<{
   )
 }
 
-const TransactionBodyViewer: NextPage<{
+const TransactionBodyViewer: FC<{
   txBody: TransactionBody
   cardano: Cardano
 }> = ({ cardano, txBody }) => {
@@ -137,7 +137,7 @@ const TransactionBodyViewer: NextPage<{
   )
 }
 
-const AddressViewer: NextPage<{
+const AddressViewer: FC<{
   address: Address
 }> = ({ address }) => {
   const bech32 = address.to_bech32()
@@ -151,7 +151,7 @@ const AddressViewer: NextPage<{
   )
 }
 
-const NativeScriptInfoViewer: NextPage<{
+const NativeScriptInfoViewer: FC<{
   cardano: Cardano
   className?: string
   script: NativeScript
@@ -178,9 +178,10 @@ const NativeScriptInfoViewer: NextPage<{
   )
 }
 
-const DeleteTreasuryButton: NextPage<{
+const DeleteTreasuryButton: FC<{
   cardano: Cardano
   className?: string
+  children: ReactNode
   script: NativeScript
 }> = ({ cardano, className, children, script }) => {
   const hash = cardano.hashScript(script)
@@ -214,7 +215,7 @@ type Wallet = {
   apiVersion: string
 }
 
-const WalletIcon: NextPage<{
+const WalletIcon: FC<{
   height?: number
   width?: number
   className?: string
@@ -249,7 +250,7 @@ type TxSignError = {
   info: string
 }
 
-const SignTxButton: NextPage<{
+const SignTxButton: FC<{
   className?: string,
   transaction: Transaction,
   partialSign: boolean,
@@ -309,8 +310,9 @@ const SignTxButton: NextPage<{
   )
 }
 
-const SubmitTxButton: NextPage<{
+const SubmitTxButton: FC<{
   className?: string
+  children: ReactNode
   transaction: Transaction
 }> = ({ className, children, transaction }) => {
   const [config, _] = useContext(ConfigContext)
@@ -357,8 +359,9 @@ const SubmitTxButton: NextPage<{
   )
 }
 
-const WalletInfo: NextPage<{
+const WalletInfo: FC<{
   className?: string
+  children: ReactNode
   name: WalletName
   src: string
 }> = ({ name, className, children, src }) => {
@@ -387,9 +390,10 @@ const WalletInfo: NextPage<{
   )
 }
 
-const SaveTreasuryButton: NextPage<{
+const SaveTreasuryButton: FC<{
   cardano: Cardano
   className?: string
+  children: ReactNode
   name: string
   description: string
   script?: NativeScript
@@ -421,7 +425,7 @@ const SaveTreasuryButton: NextPage<{
   )
 }
 
-const SignatureSync: NextPage<{
+const SignatureSync: FC<{
   cardano: Cardano
   txHash: TransactionHash
   signatures: Map<string, Vkeywitness>
@@ -480,9 +484,10 @@ const SignatureSync: NextPage<{
   )
 }
 
-const CopyVkeysButton: NextPage<{
+const CopyVkeysButton: FC<{
   cardano: Cardano
   className?: string
+  children: ReactNode
   vkeys: Vkeywitness[]
 }> = ({ cardano, className, children, vkeys }) => {
   return (

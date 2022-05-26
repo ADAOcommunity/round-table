@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import type { FC } from 'react'
 import { useRouter } from 'next/router'
 import { BackButton, Layout, Panel } from '../../../components/layout'
 import { Cardano, isAddressNetworkCorrect, newRecipient, Recipient } from '../../../cardano/multiplatform-lib'
@@ -16,7 +17,7 @@ import { PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import { ADAAmount, getADASymbol, LabeledCurrencyInput } from '../../../components/currency'
 import { suggestExpirySlot, suggestStartSlot } from '../../../components/native-script'
 
-const AddAssetButton: NextPage<{
+const AddAssetButton: FC<{
   budget: Value
   value: Value
   onSelect: (id: string) => void
@@ -55,7 +56,7 @@ const AddAssetButton: NextPage<{
   )
 }
 
-const TransactionRecipient: NextPage<{
+const TransactionRecipient: FC<{
   cardano: Cardano
   recipient: Recipient
   budget: Value
@@ -157,7 +158,7 @@ const TransactionRecipient: NextPage<{
   )
 }
 
-const TransactionMessageInput: NextPage<{
+const TransactionMessageInput: FC<{
   className?: string
   messageLines: string[]
   onChange: (messageLines: string[]) => void
@@ -179,7 +180,7 @@ const TransactionMessageInput: NextPage<{
   )
 }
 
-const NewTransaction: NextPage<{
+const NewTransaction: FC<{
   cardano: Cardano
   protocolParameters: ShelleyProtocolParams
   nativeScript: NativeScript
@@ -310,7 +311,7 @@ const NewTransaction: NextPage<{
   )
 }
 
-const GetUTxOsToSpend: NextPage<{
+const GetUTxOsToSpend: FC<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {

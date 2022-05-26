@@ -1,4 +1,4 @@
-import { NextPage } from "next"
+import type { FC } from 'react'
 import { CheckCircleIcon, XCircleIcon, XIcon } from '@heroicons/react/solid'
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { ProgressBar } from "./status"
@@ -22,7 +22,7 @@ const NotificationContext = createContext<{
   dismissHandle: (_: string) => { }
 })
 
-const NotificationIcon: NextPage<{
+const NotificationIcon: FC<{
   type: NotificationType
 }> = ({ type }) => {
   const className = 'h-4 w-4'
@@ -33,7 +33,7 @@ const NotificationIcon: NextPage<{
   }
 }
 
-const Notification: NextPage<{
+const Notification: FC<{
   notification: Notification
   dismissHandle: (id: string) => any
 }> = ({ notification, dismissHandle }) => {
@@ -115,7 +115,7 @@ const Notification: NextPage<{
   )
 }
 
-const NotificationCenter: NextPage<{
+const NotificationCenter: FC<{
   className: string
 }> = ({ className }) => {
   const { notifications, dismissHandle } = useContext(NotificationContext)

@@ -1,5 +1,6 @@
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { NextPage } from 'next'
+import type { FC } from 'react'
 import { useRouter } from 'next/router'
 import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import type { Cardano } from '../../../cardano/multiplatform-lib'
@@ -18,7 +19,7 @@ import { NativeScriptViewer } from '../../../components/native-script'
 import { DateContext } from '../../../components/time'
 import { estimateSlotByDate } from '../../../cardano/utils'
 
-const ShowBalance: NextPage<{
+const ShowBalance: FC<{
   cardano: Cardano
   script: NativeScript
   className?: string
@@ -61,7 +62,7 @@ const ShowBalance: NextPage<{
   )
 }
 
-const ShowTreasury: NextPage<{
+const ShowTreasury: FC<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {

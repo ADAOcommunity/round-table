@@ -1,4 +1,4 @@
-import { NextPage } from "next"
+import type { FC } from 'react'
 import { ChangeEventHandler, useContext } from "react"
 import NumberFormat from "react-number-format"
 import { Config, ConfigContext } from "../cardano/config"
@@ -18,7 +18,7 @@ const removeTrailingZero = (value: string): string =>
     .replace(/(\.[0-9]*[1-9]+)0*$/, '$1')
     .replace(/\.0+$/, '')
 
-const CurrencyInput: NextPage<{
+const CurrencyInput: FC<{
   value: bigint
   onChange: (_: bigint) => void
   decimals: number
@@ -51,7 +51,7 @@ const CurrencyInput: NextPage<{
 
 const getADASymbol = (config: Config) => config.isMainnet ? '₳' : 't₳'
 
-const AssetAmount: NextPage<{
+const AssetAmount: FC<{
   quantity: bigint
   decimals: number
   symbol: string
@@ -63,7 +63,7 @@ const AssetAmount: NextPage<{
   )
 }
 
-const ADAAmount: NextPage<{
+const ADAAmount: FC<{
   lovelace: bigint
   className?: string
 }> = ({ lovelace, className }) => {
@@ -71,7 +71,7 @@ const ADAAmount: NextPage<{
   return <AssetAmount quantity={lovelace} decimals={6} symbol={getADASymbol(config)} className={className} />
 }
 
-const LabeledCurrencyInput: NextPage<{
+const LabeledCurrencyInput: FC<{
   symbol: string
   decimal: number
   value: bigint

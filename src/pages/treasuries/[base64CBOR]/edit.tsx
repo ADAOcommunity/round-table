@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import type { FC } from 'react'
 import { NextRouter, useRouter } from 'next/router'
 import { Cardano, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
@@ -13,7 +14,7 @@ import { estimateSlotByDate } from '../../../cardano/utils'
 import { ConfigContext } from '../../../cardano/config'
 import { DateContext } from '../../../components/time'
 
-const EditTreasury: NextPage<{
+const EditTreasury: FC<{
   cardano: Cardano
   router: NextRouter
   script: NativeScript

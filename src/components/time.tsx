@@ -1,4 +1,4 @@
-import { NextPage } from 'next'
+import type { FC } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength } from '../cardano/utils'
@@ -6,7 +6,7 @@ import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, Chevron
 
 const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
 
-const ChainProgress: NextPage<{
+const ChainProgress: FC<{
   className?: string
 }> = ({ className }) => {
   const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
@@ -54,7 +54,7 @@ function monthIter(year: number, month: number): IterableIterator<Date> {
   }
 }
 
-const Calendar: NextPage<{
+const Calendar: FC<{
   selectedDate: Date
   onChange: (_: Date) => void
   isRed: (_: Date) => boolean

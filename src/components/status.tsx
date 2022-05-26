@@ -1,6 +1,8 @@
-import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 
-const StatusPage: NextPage = ({ children }) => {
+const StatusPage: FC<{
+  children: ReactNode
+}> = ({ children }) => {
   return (
     <div className='flex min-h-screen bg-sky-100 justify-center items-center'>
       <div className='bg-white rounded-md shadow'>{children}</div>
@@ -8,7 +10,9 @@ const StatusPage: NextPage = ({ children }) => {
   )
 }
 
-const ErrorMessage: NextPage = ({ children }) => (
+const ErrorMessage: FC<{
+  children: ReactNode
+}> = ({ children }) => (
   <StatusPage>
     <p className='px-8 py-4 text-lg text-white bg-red-900 rounded'>{children}</p>
   </StatusPage>
@@ -20,7 +24,7 @@ const Loading = () => (
   </StatusPage>
 )
 
-const ProgressBar: NextPage<{
+const ProgressBar: FC<{
   className?: string
   max: number
   value: number

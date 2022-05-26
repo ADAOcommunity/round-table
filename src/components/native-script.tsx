@@ -1,6 +1,6 @@
 import type { BigNum, NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
-import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 import { toIter } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { BanIcon, ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
@@ -68,8 +68,9 @@ type VerifyingData = {
   currentSlot: number
 }
 
-const Badge: NextPage<{
+const Badge: FC<{
   className?: string
+  children: ReactNode
 }> = ({ className, children }) => {
   const baseClassName = 'flex items-center space-x-1 p-1 rounded'
   return (
@@ -79,7 +80,7 @@ const Badge: NextPage<{
   )
 }
 
-const SignatureBadge: NextPage = () => {
+const SignatureBadge: FC = () => {
   return (
     <Badge className='text-sky-900 bg-sky-100'>
       <PencilIcon className='w-4' />
@@ -88,7 +89,7 @@ const SignatureBadge: NextPage = () => {
   )
 }
 
-const ExpiryBadge: NextPage = () => {
+const ExpiryBadge: FC = () => {
   return (
     <Badge className='text-indigo-900 bg-indigo-100'>
       <LockClosedIcon className='w-4' />
@@ -97,7 +98,7 @@ const ExpiryBadge: NextPage = () => {
   )
 }
 
-const StartBadge: NextPage = () => {
+const StartBadge: FC = () => {
   return (
     <Badge className='text-teal-900 bg-teal-100'>
       <LockOpenIcon className='w-4' />
@@ -106,7 +107,7 @@ const StartBadge: NextPage = () => {
   )
 }
 
-const NativeScriptViewer: NextPage<{
+const NativeScriptViewer: FC<{
   nativeScript: NativeScript
   cardano?: Cardano
   headerClassName?: string
