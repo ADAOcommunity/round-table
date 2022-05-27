@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 import { useState, KeyboardEventHandler, ChangeEventHandler, FocusEventHandler, useEffect, useContext, MouseEventHandler } from 'react'
 import { Hero, Layout, Panel } from '../../components/layout'
 import { getResult, isAddressNetworkCorrect, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
@@ -20,9 +21,10 @@ type KeyHashInput = {
   hash: Ed25519KeyHash
 }
 
-const TimeLockInput: NextPage<{
+const TimeLockInput: FC<{
   label: string
   className?: string
+  children: ReactNode
   isEnabled: boolean
   setIsEnabled: (_: boolean) => void
   value: number
@@ -49,7 +51,7 @@ const TimeLockInput: NextPage<{
   )
 }
 
-const TimeLockInputs: NextPage<{
+const TimeLockInputs: FC<{
   className?: string
   isTimelockStart: boolean
   setIsTimelockStart: (_: boolean) => void
@@ -102,7 +104,7 @@ const TimeLockInputs: NextPage<{
   )
 }
 
-const AddAddress: NextPage<{
+const AddAddress: FC<{
   cardano: Cardano
   onAdd: (_: KeyHashInput) => void
   onCancel: () => void
@@ -166,7 +168,7 @@ const AddAddress: NextPage<{
   )
 }
 
-const NumberInput: NextPage<{
+const NumberInput: FC<{
   step?: number
   min?: number
   max?: number
@@ -226,7 +228,7 @@ const NumberInput: NextPage<{
   )
 }
 
-const RequiredNumberInput: NextPage<{
+const RequiredNumberInput: FC<{
   className?: string
   max: number
   required: number
@@ -243,7 +245,7 @@ const RequiredNumberInput: NextPage<{
   )
 }
 
-const KeyHashList: NextPage<{
+const KeyHashList: FC<{
   className?: string
   keyHashInputs: KeyHashInput[]
   deleteKeyHashInput: (keyHashHex: string) => void

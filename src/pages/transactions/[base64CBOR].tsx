@@ -1,4 +1,5 @@
 import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 import { useRouter } from 'next/router'
 import { Hero, Layout, Panel, ShareCurrentURLButton } from '../../components/layout'
 import { toHex, toIter, verifySignature } from '../../cardano/multiplatform-lib'
@@ -13,7 +14,8 @@ import { NativeScriptViewer } from '../../components/native-script'
 import { DateContext } from '../../components/time'
 import { estimateSlotByDate } from '../../cardano/utils'
 
-const ManualSign: NextPage<{
+const ManualSign: FC<{
+  children: ReactNode
   signHandle: (_: string) => void
 }> = ({ children, signHandle }) => {
   const [signature, setSignature] = useState('')

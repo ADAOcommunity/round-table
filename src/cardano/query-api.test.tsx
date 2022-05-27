@@ -1,8 +1,8 @@
-import { renderHook } from '@testing-library/react-hooks'
+import { renderHook, waitFor } from '@testing-library/react'
 import { getAssetName, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
-import { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 import fetch from 'cross-fetch'
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client'
 
@@ -25,7 +25,7 @@ test('getPolicyId', () => {
 
 describe('GraphQL API', () => {
   const client = createApolloClient('http://localhost:8080')
-  const wrapper: NextPage = ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>;
+  const wrapper: FC<{ children: ReactNode }> = ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>;
 
   const talkbackServer = talkback({
     host: 'https://graphql-api.testnet.dandelion.link',
@@ -38,13 +38,12 @@ describe('GraphQL API', () => {
 
   test('useGetUTxOsToSpendQuery', async () => {
     const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result, waitForValueToChange } = renderHook(() => useGetUTxOsToSpendQuery({ variables: { addresses: [address] } }), { wrapper })
+    const { result } = renderHook(() => useGetUTxOsToSpendQuery({ variables: { addresses: [address] } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
 
-    await waitForValueToChange(() => result.current.loading, { timeout: 10000 })
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
 
-    expect(result.current.loading).toBe(false)
     expect(result.current.data).toBeTruthy()
 
     if (result.current.data) {
@@ -80,13 +79,11 @@ describe('GraphQL API', () => {
 
   test('usePaymentAddressesQuery', async () => {
     const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result, waitForValueToChange } = renderHook(() => usePaymentAddressesQuery({ variables: { addresses: [address] } }), { wrapper })
+    const { result } = renderHook(() => usePaymentAddressesQuery({ variables: { addresses: [address] } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
 
-    await waitForValueToChange(() => result.current.loading, { timeout: 10000 })
-
-    expect(result.current.loading).toBe(false)
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
 
     if (result.current.data) {
       const paymentAddresses = result.current.data.paymentAddresses

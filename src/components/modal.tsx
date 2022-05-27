@@ -1,9 +1,10 @@
-import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 
-const Modal: NextPage<{
-  isOpen: boolean
+const Modal: FC<{
   className?: string
+  children: ReactNode
   onClose: () => void
+  isOpen: boolean
 }> = ({ className, children, isOpen, onClose }) => {
   if (!isOpen) return null
   return (

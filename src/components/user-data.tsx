@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
@@ -16,8 +16,9 @@ type UserData = {
   }[]
 }
 
-const DownloadButton: NextPage<{
+const DownloadButton: FC<{
   className?: string
+  children: ReactNode
   download: string
   blobParts: BlobPart[]
   options?: BlobPropertyBag
@@ -49,7 +50,7 @@ const DownloadButton: NextPage<{
   )
 }
 
-const ExportUserDataButton: NextPage = () => {
+const ExportUserDataButton: FC = () => {
   const [config, _] = useContext(ConfigContext)
   const treasuries = useLiveQuery(async () =>
     db
@@ -84,7 +85,7 @@ const ExportUserDataButton: NextPage = () => {
   )
 }
 
-const ImportUserData: NextPage = () => {
+const ImportUserData: FC = () => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
   const [userDataJSON, setUserDataJSON] = useState('')

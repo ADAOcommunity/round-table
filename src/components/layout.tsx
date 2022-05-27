@@ -1,8 +1,7 @@
-import type { NextPage } from 'next'
+import type { FC, ReactNode } from 'react'
 import Link from 'next/link'
 import { CogIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -17,7 +16,7 @@ import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
 
-const Toggle: NextPage<{
+const Toggle: FC<{
   isOn: boolean
   onChange: ChangeEventHandler<HTMLInputElement>
 }> = ({ isOn, onChange }) => {
@@ -31,7 +30,10 @@ const Toggle: NextPage<{
   )
 }
 
-const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
+const Panel: FC<{
+  children: ReactNode
+  className?: string
+}> = ({ children, className }) => {
   return (
     <div className={'border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden ' + className}>
       {children}
@@ -39,10 +41,11 @@ const Panel: NextPage<{ className?: string }> = ({ children, className }) => {
   )
 }
 
-const CopyButton: NextPage<{
-  disabled?: boolean
+const CopyButton: FC<{
   className?: string
+  children: ReactNode
   copied?: ReactNode
+  disabled?: boolean
   getContent: () => string
   ms?: number
 }> = ({ children, copied, className, disabled, getContent, ms }) => {
@@ -73,8 +76,9 @@ const CopyButton: NextPage<{
   )
 }
 
-const ShareCurrentURLButton: NextPage<{
+const ShareCurrentURLButton: FC<{
   className?: string
+  children: ReactNode
 }> = ({ children, className }) => {
   return (
     <CopyButton className={className} getContent={() => document.location.href} ms={500}>
@@ -83,15 +87,17 @@ const ShareCurrentURLButton: NextPage<{
   )
 }
 
-const BackButton: NextPage<{
+const BackButton: FC<{
   className?: string
+  children: ReactNode
 }> = ({ children, className }) => {
   const router = useRouter()
   return <button className={className} onClick={() => router.back()}>{children}</button>;
 }
 
-const NavLink: NextPage<{
+const NavLink: FC<{
   className?: string
+  children: ReactNode
   href: string
   onPageClassName: string
 }> = ({ children, className, href, onPageClassName }) => {
@@ -120,7 +126,7 @@ const NavLink: NextPage<{
   )
 }
 
-const PrimaryBar: NextPage = () => {
+const PrimaryBar: FC = () => {
   return (
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
       <Link href='/'>
@@ -148,7 +154,7 @@ const PrimaryBar: NextPage = () => {
   )
 }
 
-const TreasuryListing: NextPage<{
+const TreasuryListing: FC<{
   treasury: Treasury
   balance?: Value
 }> = ({ treasury, balance }) => {
@@ -166,7 +172,7 @@ const TreasuryListing: NextPage<{
   )
 }
 
-const TreasuryList: NextPage<{
+const TreasuryList: FC<{
   cardano: Cardano
   treasuries: Treasury[]
 }> = ({ cardano, treasuries }) => {
@@ -195,7 +201,7 @@ const TreasuryList: NextPage<{
   )
 }
 
-const SecondaryBar: NextPage = () => {
+const SecondaryBar: FC = () => {
   const treasuries = useLiveQuery(async () => db.treasuries.toArray())
   const cardano = useCardanoMultiplatformLib()
 
@@ -215,8 +221,9 @@ const SecondaryBar: NextPage = () => {
   )
 }
 
-const CardanoScanLink: NextPage<{
+const CardanoScanLink: FC<{
   className?: string
+  children: ReactNode
   type: 'transaction'
   id: string
 }> = ({ className, children, type, id }) => {
@@ -226,11 +233,16 @@ const CardanoScanLink: NextPage<{
   return <a className={className} href={href} target='_blank' rel='noreferrer'>{children}</a>;
 }
 
-const Hero: NextPage<{ className?: string }> = ({ className, children }) => {
+const Hero: FC<{
+  className?: string
+  children: ReactNode
+}> = ({ className, children }) => {
   return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
 }
 
-const Layout: NextPage = ({ children }) => {
+const Layout: FC<{
+  children: ReactNode
+}> = ({ children }) => {
   const [config, _] = useContext(ConfigContext)
 
   return (

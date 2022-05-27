@@ -1,4 +1,4 @@
-import { NextPage } from 'next'
+import type { FC } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength } from '../cardano/utils'
@@ -6,36 +6,40 @@ import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, Chevron
 
 const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
 
-const ChainProgress: NextPage<{
+const ChainProgress: FC<{
   className?: string
 }> = ({ className }) => {
   const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
   const [config, _] = useContext(ConfigContext)
-  const [date, setDate] = useContext(DateContext)
+  const [_date, setDate] = useContext(DateContext)
+  const [text, setText] = useState('')
+  const [style, setStyle] = useState<{ width: string }>({ width: '0' })
   const { isMainnet } = config
 
   useEffect(() => {
     const id = setInterval(() => {
-      setDate(new Date())
+      const date = new Date()
+      const slot = estimateSlotByDate(date, isMainnet)
+      const slotInEpoch = getSlotInEpochBySlot(slot, isMainnet)
+      const epoch = getEpochBySlot(slot, isMainnet)
+      const progress = slotInEpoch / SlotLength * 100
+
+      setStyle({ width: `${progress}%` })
+      setText(`Epoch ${epoch}: ${slotInEpoch}/${SlotLength} (${progress.toFixed(0)}%)`)
+      setDate(date)
     }, 1000)
 
     return () => {
       clearInterval(id)
     }
-  }, [setDate])
-
-  const slot = estimateSlotByDate(date, isMainnet)
-  const slotInEpoch = getSlotInEpochBySlot(slot, isMainnet)
-  const epoch = getEpochBySlot(slot, isMainnet)
-  const progress = slotInEpoch / SlotLength * 100
-  const style = progress && { width: `${progress}%` }
+  }, [setDate, isMainnet])
 
   return (
     <div className={className}>
       <div className={baseClassName}>
         {style && <div className='h-full bg-sky-700' style={style}></div>}
         <div className='absolute inset-0 text-center text-white'>
-          {`Epoch ${epoch}: ${slotInEpoch}/${SlotLength} (${progress.toFixed(0)}%)`}
+          {text}
         </div>
       </div>
     </div>
@@ -54,7 +58,7 @@ function monthIter(year: number, month: number): IterableIterator<Date> {
   }
 }
 
-const Calendar: NextPage<{
+const Calendar: FC<{
   selectedDate: Date
   onChange: (_: Date) => void
   isRed: (_: Date) => boolean
