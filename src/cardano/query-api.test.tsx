@@ -69,7 +69,7 @@ describe('GraphQL API', () => {
         expect(params.minFeeA).toBe(44)
         expect(params.minFeeB).toBe(155381)
         expect(params.poolDeposit).toBe(500000000)
-        expect(params.coinsPerUtxoWord).toBe(34482)
+        expect(params.coinsPerUtxoByte).toBe(34482)
         expect(params.keyDeposit).toBe(2000000)
         expect(params.maxTxSize).toBe(16384)
         expect(params.maxValSize).toBe('5000')

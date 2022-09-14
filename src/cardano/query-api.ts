@@ -68,7 +68,7 @@ query getUTxOsToSpend($addresses: [String]!) {
         minFeeB
         poolDeposit
         keyDeposit
-        coinsPerUtxoWord
+        coinsPerUtxoByte
         maxValSize
         maxTxSize
       }

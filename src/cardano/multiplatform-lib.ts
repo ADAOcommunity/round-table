@@ -114,11 +114,11 @@ class Cardano {
     })
   }
 
-  public getMinLovelace(value: Value, hasDataHash: boolean, coinsPerUtxoWord: number): bigint {
+  public getMinLovelace(value: Value, hasDataHash: boolean, coinsPerUtxoByte: number): bigint {
     const minimum = this.lib.min_ada_required(
       this.getCardanoValue(value),
       hasDataHash,
-      this.lib.BigNum.from_str(coinsPerUtxoWord.toString())
+      this.lib.BigNum.from_str(coinsPerUtxoByte.toString())
     )
     return BigInt(minimum.to_str())
   }
@@ -212,9 +212,9 @@ class Cardano {
   public createTxBuilder(protocolParameters: ShelleyProtocolParams): TransactionBuilder {
     const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
-      coinsPerUtxoWord, maxTxSize, maxValSize } = protocolParameters
+      coinsPerUtxoByte, maxTxSize, maxValSize } = protocolParameters
 
-    if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
+    if (!coinsPerUtxoByte) throw new Error('No coinsPerUtxoByte')
     if (!maxValSize) throw new Error('No maxValSize')
 
     const toBigNum = (value: number) => BigNum.from_str(value.toString())
@@ -222,7 +222,7 @@ class Cardano {
       .fee_algo(LinearFee.new(toBigNum(minFeeA), toBigNum(minFeeB)))
       .pool_deposit(toBigNum(poolDeposit))
       .key_deposit(toBigNum(keyDeposit))
-      .coins_per_utxo_word(toBigNum(coinsPerUtxoWord))
+      .coins_per_utxo_word(toBigNum(coinsPerUtxoByte))
       .max_tx_size(maxTxSize)
       .max_value_size(parseFloat(maxValSize))
       .build()

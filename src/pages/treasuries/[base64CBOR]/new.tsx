@@ -191,9 +191,9 @@ const NewTransaction: FC<{
   const [config, _] = useContext(ConfigContext)
 
   const getMinLovelace = (recipient: Recipient): bigint => {
-    const coinsPerUtxoWord = protocolParameters.coinsPerUtxoWord
-    if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
-    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoWord)
+    const coinsPerUtxoByte = protocolParameters.coinsPerUtxoByte
+    if (!coinsPerUtxoByte) throw new Error('No coinsPerUtxoByte')
+    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoByte)
   }
 
   const budget: Value = recipients
