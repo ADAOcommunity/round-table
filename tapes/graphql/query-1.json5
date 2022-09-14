@@ -23,7 +23,7 @@
                     'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
                 ],
             },
-            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoWord\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
@@ -128,7 +128,7 @@
                             minFeeB: 155381,
                             poolDeposit: 500000000,
                             keyDeposit: 2000000,
-                            coinsPerUtxoWord: 34482,
+                            coinsPerUtxoByte: 34482,
                             maxValSize: '5000',
                             maxTxSize: 16384,
                             __typename: 'ShelleyProtocolParams',
