@@ -209,7 +209,7 @@ class Cardano {
     })
   }
 
-  public createTxBuilder(protocolParameters: ShelleyProtocolParams): TransactionBuilder {
+  public createTxBuilder(protocolParameters: any): TransactionBuilder {
     const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
       coinsPerUtxoByte, maxTxSize, maxValSize } = protocolParameters

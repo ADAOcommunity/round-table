@@ -182,7 +182,7 @@ const TransactionMessageInput: FC<{
 
 const NewTransaction: FC<{
   cardano: Cardano
-  protocolParameters: ShelleyProtocolParams
+  protocolParameters: any
   nativeScript: NativeScript
   utxos: TransactionOutput[]
 }> = ({ cardano, protocolParameters, nativeScript, utxos }) => {
