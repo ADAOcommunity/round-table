@@ -1,4 +1,4 @@
-import type { ShelleyProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
+import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, Transaction, TransactionBuilder, TransactionHash, TransactionOutput as CardanoTransactionOutput, TransactionUnspentOutputs, Value as CardanoValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
@@ -209,7 +209,7 @@ class Cardano {
     })
   }
 
-  public createTxBuilder(protocolParameters: any): TransactionBuilder {
+  public createTxBuilder(protocolParameters: ProtocolParams): TransactionBuilder {
     const { BigNum, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
       coinsPerUtxoByte, maxTxSize, maxValSize } = protocolParameters

@@ -340,10 +340,10 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
-"@cardano-graphql/client-ts@^6.2.0":
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/@cardano-graphql/client-ts/-/client-ts-6.2.0.tgz#e28de304320596b24b17887ae28701f812e0fdf0"
-  integrity sha512-xuvHz5nT19Lh2P0SK8rb2YxUWhNqaflYFPj/jGOXdfOYI3Pkt2W2jT4nxb6OaEgq1EgPvWbZu+vy2nABsSpPCA==
+"@cardano-graphql/client-ts@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.yarnpkg.com/@cardano-graphql/client-ts/-/client-ts-7.0.0.tgz#8ade7be051de992985c46c1955eb58964f4d36d0"
+  integrity sha512-8y4bqalQ1j4TmiVihvqzFuP+Ce82+uBoBZJn3rr1THagLAkIMNbG64djw698pM5Mn2uq0C98qIXJ50fJ0rMrPw==
 
 "@colors/colors@1.5.0":
   version "1.5.0"
