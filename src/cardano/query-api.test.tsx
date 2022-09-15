@@ -52,16 +52,16 @@ describe('GraphQL API', () => {
 
       const utxo1 = utxos[0]
       expect(utxo1.address).toBe(address)
-      expect(utxo1.txHash).toBe('2c79557ef628dbc64f438c80a1fe761ea2b84a999cf82808bf550651b5d0fc13')
-      expect(utxo1.value).toBe('10000000')
-      expect(utxo1.tokens.length).toBe(0)
+      expect(utxo1.txHash).toBe('b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd')
+      expect(utxo1.value).toBe('1413762')
+      expect(utxo1.tokens.length).toBe(2)
       expect(utxo1.index).toBe(0)
 
       const utxo2 = utxos[1]
       expect(utxo2.address).toBe(address)
-      expect(utxo2.txHash).toBe('b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd')
-      expect(utxo2.value).toBe('1413762')
-      expect(utxo2.tokens.length).toBe(2)
+      expect(utxo2.txHash).toBe('8800af315253480dbd61c2eed1c4a6014d0cfddfbbb2686dae34af8b3bdc15bd')
+      expect(utxo2.value).toBe('1000000')
+      expect(utxo2.tokens.length).toBe(0)
       expect(utxo2.index).toBe(0)
 
       const params = result.current.data.cardano.currentEpoch.protocolParams
@@ -69,7 +69,7 @@ describe('GraphQL API', () => {
         expect(params.minFeeA).toBe(44)
         expect(params.minFeeB).toBe(155381)
         expect(params.poolDeposit).toBe(500000000)
-        expect(params.coinsPerUtxoWord).toBe(34482)
+        expect(params.coinsPerUtxoByte).toBe(4310)
         expect(params.keyDeposit).toBe(2000000)
         expect(params.maxTxSize).toBe(16384)
         expect(params.maxValSize).toBe('5000')
@@ -92,7 +92,7 @@ describe('GraphQL API', () => {
       if (summary) {
         expect(summary.assetBalances.length).toBe(3)
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
-        expect(summary.assetBalances[0]?.quantity).toBe('11413762')
+        expect(summary.assetBalances[0]?.quantity).toBe('2413762')
       }
     }
   })

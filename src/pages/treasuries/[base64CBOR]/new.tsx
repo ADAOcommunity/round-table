@@ -12,7 +12,7 @@ import { NativeScriptInfoViewer, TransactionReviewButton } from '../../../compon
 import { decodeASCII, getAssetName, getBalanceByUTxOs, useGetUTxOsToSpendQuery } from '../../../cardano/query-api'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Value } from '../../../cardano/query-api'
-import type { ShelleyProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
+import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
 import { PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
 import { ADAAmount, getADASymbol, LabeledCurrencyInput } from '../../../components/currency'
 import { suggestExpirySlot, suggestStartSlot } from '../../../components/native-script'
@@ -182,7 +182,7 @@ const TransactionMessageInput: FC<{
 
 const NewTransaction: FC<{
   cardano: Cardano
-  protocolParameters: ShelleyProtocolParams
+  protocolParameters: ProtocolParams
   nativeScript: NativeScript
   utxos: TransactionOutput[]
 }> = ({ cardano, protocolParameters, nativeScript, utxos }) => {
@@ -191,9 +191,9 @@ const NewTransaction: FC<{
   const [config, _] = useContext(ConfigContext)
 
   const getMinLovelace = (recipient: Recipient): bigint => {
-    const coinsPerUtxoWord = protocolParameters.coinsPerUtxoWord
-    if (!coinsPerUtxoWord) throw new Error('No coinsPerUtxoWord')
-    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoWord)
+    const coinsPerUtxoByte = protocolParameters.coinsPerUtxoByte
+    if (!coinsPerUtxoByte) throw new Error('No coinsPerUtxoByte')
+    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoByte)
   }
 
   const budget: Value = recipients

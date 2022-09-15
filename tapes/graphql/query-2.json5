@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-04-16T23:11:30.860Z',
+        createdAt: '2022-09-15T08:25:44.360Z',
         host: 'https://graphql-api.testnet.dandelion.link',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -30,7 +30,7 @@
         status: 200,
         headers: {
             date: [
-                'Sat, 16 Apr 2022 23:11:32 GMT',
+                'Thu, 15 Sep 2022 08:25:45 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -42,7 +42,7 @@
                 'close',
             ],
             'cf-ray': [
-                '6fd099be3eb94d51-SIN',
+                '74aff938bd12897d-SIN',
             ],
             'access-control-allow-origin': [
                 '*',
@@ -51,7 +51,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"297-HnLO8cOYCJB3kV+LCzRbxvjG1Lk"',
+                'W/"296-wJFmEIeCYFsJrgFg7UXxOAKoUP8"',
             ],
             'set-cookie': [
                 'network=core; path=/',
@@ -62,14 +62,11 @@
             'cf-cache-status': [
                 'DYNAMIC',
             ],
-            'expect-ct': [
-                'max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"',
-            ],
             'x-powered-by': [
                 'Express',
             ],
             'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=tmKrOk4WbEQE%2B3Wk9O5Q7kd15u9nzN9Qdh54FWjPV4oPlBC1%2Fb22FFXwHpMbJ9jIQ1z5RmPO1Vw9Y38FgK35uNPEwzY8PL8iIH53XlfevJQfg2CJ%2BkxgiQxnOz1JCjPVOd4LrjTsz6B06KotcCbH7mCYHB0p"}],"group":"cf-nel","max_age":604800}',
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=4U8JD70rnhi4QnVbAaOOO0hOMc61xxYtWH0l2VOnl1P1Nuteaqn5wLcRSnlNSSAooT6etOH1WF6N3lnUiJRulc5tmhqwtnk6KGXyWFA5efia6Wp6Pg2XWfdLYmqoASxgXLJILQSfWDLjUE9jjCNfjTwUJQTr"}],"group":"cf-nel","max_age":604800}',
             ],
             nel: [
                 '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
@@ -96,15 +93,7 @@
                                         assetId: 'ada',
                                         __typename: 'Asset',
                                     },
-                                    quantity: '11413762',
-                                    __typename: 'AssetBalance',
-                                },
-                                {
-                                    asset: {
-                                        assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
-                                        __typename: 'Asset',
-                                    },
-                                    quantity: '3',
+                                    quantity: '2413762',
                                     __typename: 'AssetBalance',
                                 },
                                 {
@@ -113,6 +102,14 @@
                                         __typename: 'Asset',
                                     },
                                     quantity: '4',
+                                    __typename: 'AssetBalance',
+                                },
+                                {
+                                    asset: {
+                                        assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
+                                        __typename: 'Asset',
+                                    },
+                                    quantity: '3',
                                     __typename: 'AssetBalance',
                                 },
                             ],
