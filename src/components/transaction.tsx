@@ -310,6 +310,35 @@ const SignTxButton: FC<{
   )
 }
 
+const submitTx = (URL: string, transaction: Transaction) => fetch(URL, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/cbor' },
+  body: transaction.to_bytes()
+}).then(async (response) => {
+  if (!response.ok) {
+    await response.text().then((message: string): Error => {
+      if (message.search(/\(ScriptWitnessNotValidatingUTXOW /) !== -1) {
+        throw {
+          name: 'InvalidSignatureError',
+          message: 'The signatures are invalid.'
+        }
+      }
+      if (message.search(/\(BadInputsUTxO /) !== -1) {
+        throw {
+          name: 'DuplicatedSpentError',
+          message: 'The UTxOs have been spent.'
+        }
+      }
+      console.error(message)
+      throw {
+        name: 'TxSubmissionError',
+        message: 'An unknown error. Check the log.'
+      }
+    })
+  }
+  return response
+})
+
 const SubmitTxButton: FC<{
   className?: string
   children: ReactNode
@@ -319,35 +348,24 @@ const SubmitTxButton: FC<{
   const { notify } = useContext(NotificationContext)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDisabled, setIsDisabled] = useState(false)
-  const URL = config.submitAPI
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
     setIsSubmitting(true)
-    fetch(URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/cbor' },
-      body: transaction.to_bytes()
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          const message = await response.text()
-          if (message.search(/\(ScriptWitnessNotValidatingUTXOW /) !== -1) {
-            notify('error', 'The signatures are invalid.')
-            return
-          }
-          if (message.search(/\(BadInputsUTxO /) !== -1) {
-            notify('error', 'The UTxOs have been spent.')
-            setIsDisabled(true)
-            return
-          }
-          notify('error', 'Failed to submit.')
-          return
-        }
+    const promises = config.submitAPI.map((URL) => submitTx(URL, transaction))
+    Promise
+      .any(promises)
+      .then(() => {
         notify('success', 'The transaction is submitted.')
       })
-      .catch((reason) => {
-        notify('error', 'Failed to connect.')
-        console.error(reason)
+      .catch((reason: AggregateError) => {
+        const duplicatedSpentError: Error = reason.errors.find((error) => error.name === 'DuplicatedSpentError')
+        if (duplicatedSpentError) {
+          setIsDisabled(true)
+          notify('error', duplicatedSpentError.message)
+          return
+        }
+        const error: Error = reason.errors[0]
+        notify('error', error.message)
       })
       .finally(() => setIsSubmitting(false))
   }

@@ -10,14 +10,20 @@ type QueryAPI = GraphQL
 type Config = {
   isMainnet: boolean
   queryAPI: QueryAPI
-  submitAPI: string
+  submitAPI: string[]
   gunPeers: string[]
 }
 
 const defaultGraphQLMainnet = 'https://d.graphql-api.mainnet.dandelion.link'
 const defaultGraphQLTestnet = 'https://d.graphql-api.testnet.dandelion.link'
-const defaultSubmitURIMainnet = 'https://adao.panl.org'
-const defaultSubmitURITestnet = 'https://testrelay1.panl.org'
+const defaultSubmitURIMainnet = [
+  'https://adao.panl.org',
+  'https://submit-api.apexpool.info/api/submit/tx'
+]
+const defaultSubmitURITestnet = [
+  'https://testrelay1.panl.org',
+  'https://relay1-testnet.apexpool.info/api/submit/tx'
+]
 
 const defaultConfig: Config = {
   isMainnet: true,
@@ -31,7 +37,8 @@ const createConfig = (): Config => {
   const defaultGraphQL = isMainnet ? defaultGraphQLMainnet : defaultGraphQLTestnet
   const defaultSubmitURI = isMainnet ? defaultSubmitURIMainnet : defaultSubmitURITestnet
   const grapQLURI = process.env.NEXT_PUBLIC_GRAPHQL ?? defaultGraphQL
-  const submitURI = process.env.NEXT_PUBLIC_SUBMIT ?? defaultSubmitURI
+  const submitEnv = process.env.NEXT_PUBLIC_SUBMIT
+  const submitURI = submitEnv ? submitEnv.split(';') : defaultSubmitURI
   const gunPeers = (process.env.NEXT_PUBLIC_GUN ?? '').split(';')
 
   return {
