@@ -364,6 +364,11 @@ const SubmitTxButton: FC<{
           notify('error', duplicatedSpentError.message)
           return
         }
+        const invalidSignatureError: Error = reason.errors.find((error) => error.name === 'InvalidSignatureError')
+        if (invalidSignatureError) {
+          notify('error', invalidSignatureError.message)
+          return
+        }
         const error: Error = reason.errors[0]
         notify('error', error.message)
       })
