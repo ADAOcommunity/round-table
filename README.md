@@ -27,7 +27,7 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 * To use it on Cardano Testnet, set `NEXT_PUBLIC_TESTNET=y`. Leave it unset to use the Mainnet.
 * To connect it to a GraphQL node, set `NEXT_PUBLIC_GRAPHQL` to the URI of the node.
-* To sumbit transactions to a relay, set `NEXT_PUBLIC_SUBMIT` to the URI of the node. **Beware that the server needs a reverse proxy to process CORS request.**
+* To sumbit transactions to relays, set `NEXT_PUBLIC_SUBMIT` to the URI of the node, split the URIs with `;`. **Beware that the server needs a reverse proxy to process CORS request.**
 * To sync signatures automatically, set `NEXT_PUBLIC_GUN` to the URIs of the peers, split the URIs with `;`. We use [GUN](https://gun.eco) to sync.
 
 ## Testing
