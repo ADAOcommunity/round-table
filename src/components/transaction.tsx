@@ -310,10 +310,10 @@ const SignTxButton: FC<{
   )
 }
 
-const submitTx = (URL: string, transaction: Transaction) => fetch(URL, {
+const submitTx = (URL: string, body: Uint8Array) => fetch(URL, {
   method: 'POST',
   headers: { 'Content-Type': 'application/cbor' },
-  body: transaction.to_bytes()
+  body
 }).then(async (response) => {
   if (!response.ok) {
     await response.text().then((message: string): Error => {
@@ -351,7 +351,7 @@ const SubmitTxButton: FC<{
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
     setIsSubmitting(true)
-    const promises = config.submitAPI.map((URL) => submitTx(URL, transaction))
+    const promises = config.submitAPI.map((URL) => submitTx(URL, transaction.to_bytes()))
     Promise
       .any(promises)
       .then(() => {
