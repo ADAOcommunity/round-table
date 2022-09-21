@@ -1,15 +1,15 @@
-import { MouseEventHandler, useContext, useEffect, useState } from 'react'
+import { MouseEventHandler, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC, ReactNode } from 'react'
 import { AssetAmount, ADAAmount } from './currency'
 import { decodeASCII, getAssetName } from '../cardano/query-api'
-import { Cardano, toHex } from '../cardano/multiplatform-lib'
+import { Cardano, getResult, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Recipient } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { Address, NativeScript, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DuplicateIcon, SearchIcon } from '@heroicons/react/solid'
+import { DuplicateIcon, SearchIcon, ShareIcon, UploadIcon } from '@heroicons/react/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
-import { CardanoScanLink, CopyButton, Panel, Toggle } from './layout'
+import { CardanoScanLink, CopyButton, Hero, Layout, Panel, ShareCurrentURLButton, Toggle } from './layout'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import { db } from '../db'
@@ -18,6 +18,10 @@ import type { IGunInstance } from 'gun'
 import { useRouter } from 'next/router'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getTransactionPath, getTreasuriesPath, getTreasuryPath } from '../route'
+import { DateContext } from './time'
+import { ErrorMessage, Loading } from './status'
+import { NativeScriptViewer } from './native-script'
+import { estimateSlotByDate } from '../cardano/utils'
 
 const TransactionReviewButton: FC<{
   className?: string
@@ -524,4 +528,194 @@ const CopyVkeysButton: FC<{
   )
 }
 
-export { AddressViewer, SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, TransactionReviewButton }
+const ManualSign: FC<{
+  children: ReactNode
+  signHandle: (_: string) => void
+}> = ({ children, signHandle }) => {
+  const [signature, setSignature] = useState('')
+  const isDisabled = !signature
+
+  const manualSignHandle = () => {
+    signHandle(signature)
+    setSignature('')
+  }
+
+  return (
+    <Panel>
+      <textarea
+        className='block w-full p-4 outline-none'
+        rows={4}
+        value={signature}
+        onChange={(e) => setSignature(e.target.value)}
+        placeholder="Input signature here and import">
+      </textarea>
+      <footer className='flex p-4 bg-gray-100 space-x-2'>
+        <button
+          onClick={manualSignHandle}
+          disabled={isDisabled}
+          className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+          <UploadIcon className='w-4' />
+          <span>Import</span>
+        </button>
+        {children}
+      </footer>
+    </Panel>
+  )
+}
+
+const TransactionViewer: FC<{
+  content: Uint8Array
+}> = ({ content }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
+  const [config, _c] = useContext(ConfigContext)
+  const [date, _t] = useContext(DateContext)
+  const txResult = useMemo(() => {
+    if (!cardano) return
+
+    return getResult(() => {
+      return cardano.lib.Transaction.from_bytes(content)
+    })
+  }, [cardano, content])
+
+  if (!cardano || !txResult) return <Loading />;
+  if (!txResult.isOk) return <ErrorMessage>{txResult.message}</ErrorMessage>;
+
+  const transaction = txResult.data
+  const txHash = cardano.lib.hash_transaction(transaction.body())
+  const witnessSet = transaction.witness_set()
+  const nativeScriptSet = witnessSet.native_scripts()
+  const signerRegistry = new Set<string>()
+  nativeScriptSet && Array.from(toIter(nativeScriptSet), (script) => {
+    Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
+  })
+
+  const txMessage = cardano.getTxMessage(transaction)
+
+  const signHandle = (signatures: string[] | string) => {
+    const newMap = new Map(signatureMap)
+
+    function getSignatures(): string[] {
+      if (typeof signatures === 'string') return [signatures]
+      return signatures
+    }
+
+    getSignatures().forEach((signature) => {
+      const result = getResult(() => {
+        const bytes = Buffer.from(signature, 'hex')
+        return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+      })
+
+      if (!result.isOk) return
+
+      const witnessSet = result.data
+      const vkeyWitnessSet = witnessSet.vkeys()
+
+      if (!vkeyWitnessSet) return
+
+      Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
+        const publicKey = vkeyWitness.vkey().public_key()
+        const keyHash = publicKey.hash()
+        const hex = toHex(keyHash)
+        if (signerRegistry.has(hex) && verifySignature(txHash, vkeyWitness)) {
+          newMap.set(hex, vkeyWitness)
+        }
+      })
+    })
+
+    setSignatureMap(newMap)
+  }
+
+  const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
+
+  return (
+    <Layout>
+      <div className='space-y-2'>
+        <Hero>
+          <h1 className='font-semibold text-lg'>Review Transaction</h1>
+          <p>Share current page URL to other signers so they can sign. After you have signed the transaction, you may copy your signatures to others to import. If the auto sync switch is on, your signatures would be exchanged automatically.</p>
+          <nav>
+            <ShareCurrentURLButton
+              className='flex space-x-1 bg-white text-sky-700 py-1 px-2 rounded shadow w-32 justify-center items-center'>
+              <ShareIcon className='w-4' />
+              <span>Copy URL</span>
+            </ShareCurrentURLButton>
+          </nav>
+        </Hero>
+        <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
+        {txMessage && <Panel className='space-y-1 p-4'>
+          <div className='font-semibold'>Message</div>
+          <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+        </Panel>}
+        {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
+          <Panel key={index} className='space-y-1'>
+            <div className='p-4 space-y-1'>
+              <div className='font-semibold'>Script Details</div>
+              <NativeScriptViewer
+                cardano={cardano}
+                verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(date, config.isMainnet) }}
+                className='p-2 border rounded space-y-2'
+                headerClassName='font-semibold'
+                ulClassName='space-y-1'
+                nativeScript={script} />
+            </div>
+            <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
+              <div className='flex space-x-1 items-center'>
+                <SignatureSync
+                  cardano={cardano}
+                  txHash={txHash}
+                  signatures={signatureMap}
+                  signHandle={signHandle}
+                  signers={signerRegistry}
+                  config={config} />
+                <div className='text-sm'>Auto sync the signatures with other signers</div>
+              </div>
+              <CopyVkeysButton
+                cardano={cardano}
+                vkeys={Array.from(signatureMap.values())}
+                className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+                <ShareIcon className='w-4' />
+                <span>Copy my signatures</span>
+              </CopyVkeysButton>
+            </footer>
+          </Panel>
+        )}
+        <ManualSign signHandle={signHandle}>
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            name='nami'
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            name='gero'
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            name='eternl'
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
+          <SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            signHandle={signHandle}
+            name='flint'
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
+          <div className='flex grow justify-end items-center space-x-4'>
+            <SubmitTxButton
+              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
+              transaction={signedTransaction}>
+              Submit Transaction
+            </SubmitTxButton>
+          </div>
+        </ManualSign>
+      </div>
+    </Layout>
+  )
+}
+
+export { AddressViewer, SaveTreasuryButton, SignTxButton, SubmitTxButton, TransactionBodyViewer, NativeScriptInfoViewer, SignatureSync, CopyVkeysButton, DeleteTreasuryButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer }
