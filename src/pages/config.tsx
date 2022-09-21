@@ -24,10 +24,12 @@ const Configure: NextPage = () => {
             <span>{config.queryAPI.URI}</span>
           </p>
         }
-        <p className='space-x-2'>
+        {config.submitAPI && <div>
           <span>Submit API:</span>
-          <span>{config.submitAPI}</span>
-        </p>
+          <ul>
+            {config.submitAPI.map((api, index) => <li key={index}>{api}</li>)}
+          </ul>
+        </div>}
         {config.gunPeers && <div>
           <span>GUN Peers:</span>
           <ul>
