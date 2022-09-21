@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react'
 import Link from 'next/link'
-import { CogIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -134,6 +134,12 @@ const PrimaryBar: FC = () => {
           <HomeIcon className='w-12' />
         </a>
       </Link>
+      <NavLink
+        href='/open'
+        onPageClassName='bg-sky-700'
+        className='p-4 hover:bg-sky-700'>
+        <FolderOpenIcon className='w-12' />
+      </NavLink>
       <NavLink
         href='/config'
         onPageClassName='bg-sky-700'
