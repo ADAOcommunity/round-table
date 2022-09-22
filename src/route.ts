@@ -12,7 +12,7 @@ function getTreasuryPath(script: NativeScript, subPath?: string): string {
 
 function getTransactionPath(transcation: Transaction): string {
   const base64CBOR = encodeCardanoData(transcation, 'base64')
-  return ['/transactions', encodeURIComponent(base64CBOR)].join('/')
+  return ['/base64', encodeURIComponent(base64CBOR)].join('/')
 }
 
 export { getTreasuriesPath, getTreasuryPath, getTransactionPath }
