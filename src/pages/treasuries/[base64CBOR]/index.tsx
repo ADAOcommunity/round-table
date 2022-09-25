@@ -13,7 +13,7 @@ import { ConfigContext } from '../../../cardano/config'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, usePaymentAddressesQuery } from '../../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../../components/currency'
 import { getTreasuryPath } from '../../../route'
-import { DownloadIcon, RefreshIcon } from '@heroicons/react/solid'
+import { ArrowDownTrayIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
 import { DownloadButton } from '../../../components/user-data'
 import { NativeScriptViewer } from '../../../components/native-script'
 import { DateContext } from '../../../components/time'
@@ -38,7 +38,7 @@ const ShowBalance: FC<{
     return getBalanceByPaymentAddresses(paymentAddresses)
   }, [data])
 
-  if (!balance) return <RefreshIcon className='w-4 animate-spin transform rotate-180' />;
+  if (!balance) return <ArrowPathIcon className='w-4 animate-spin transform rotate-180' />;
 
   return (
     <ul className={className}>
@@ -97,7 +97,7 @@ const ShowTreasury: FC<{
           options={{ type: 'application/cbor' }}
           download='native_script.cbor'
           className='flex space-x-1 px-4 py-2 border text-sky-700 rounded'>
-          <DownloadIcon className='w-4' />
+          <ArrowDownTrayIcon className='w-4' />
           <span>Download Script</span>
         </DownloadButton>
         <Link href={getTreasuryPath(script, 'edit')}>

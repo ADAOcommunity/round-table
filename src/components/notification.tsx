@@ -1,5 +1,5 @@
 import type { FC } from 'react'
-import { CheckCircleIcon, XCircleIcon, XIcon } from '@heroicons/react/solid'
+import { CheckCircleIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { ProgressBar } from "./status"
 import { nanoid } from 'nanoid'
@@ -106,7 +106,7 @@ const Notification: FC<{
       <div className='p-2 flex items-start space-x-2'>
         <div className='py-1'><NotificationIcon type={type} /></div>
         <div className='grow break-all'>{message}</div>
-        <button className='py-1' onClick={() => dismissHandle(id)}><XIcon className='h-4 w-4' /></button>
+        <button className='py-1' onClick={() => dismissHandle(id)}><XMarkIcon className='h-4 w-4' /></button>
       </div>
       <div className='absolute bottom-0 left-0 right-0'>
         <ProgressBar className={getProgressBarClassName()} value={progress} max={100} />

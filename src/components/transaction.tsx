@@ -6,7 +6,7 @@ import { Cardano, getResult, toHex, toIter, useCardanoMultiplatformLib, verifySi
 import type { Recipient } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import type { Address, NativeScript, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DuplicateIcon, SearchIcon, ShareIcon, UploadIcon } from '@heroicons/react/solid'
+import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
 import { CardanoScanLink, CopyButton, Hero, Layout, Panel, ShareCurrentURLButton, Toggle } from './layout'
@@ -96,7 +96,7 @@ const TransactionBodyViewer: FC<{
         <div className='flex items-center space-x-1'>
           <span>{toHex(txHash)}</span>
           <span>
-            <CardanoScanLink className='block text-sky-700 p-2' type='transaction' id={toHex(txHash)}><SearchIcon className='w-4' /></CardanoScanLink>
+            <CardanoScanLink className='block text-sky-700 p-2' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
           </span>
         </div>
       </div>
@@ -149,7 +149,7 @@ const AddressViewer: FC<{
     <span className='flex items-center'>
       <span>{bech32}</span>
       <CopyButton className='p-2 text-sm text-sky-700' getContent={() => bech32} ms={500}>
-        <DuplicateIcon className='w-4' />
+        <DocumentDuplicateIcon className='w-4' />
       </CopyButton>
     </span>
   )
@@ -554,7 +554,7 @@ const ManualSign: FC<{
           onClick={manualSignHandle}
           disabled={isDisabled}
           className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-          <UploadIcon className='w-4' />
+          <ArrowUpTrayIcon className='w-4' />
           <span>Import</span>
         </button>
         {children}
