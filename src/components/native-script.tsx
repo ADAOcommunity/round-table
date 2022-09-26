@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 import type { FC, ReactNode } from 'react'
 import { toIter } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
-import { BanIcon, ClipboardCheckIcon, ClipboardCopyIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/solid'
+import { NoSymbolIcon, ClipboardDocumentCheckIcon, ClipboardDocumentIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { CopyButton } from './layout'
 import { estimateDateBySlot } from '../cardano/utils'
 import { useContext } from 'react'
@@ -144,7 +144,7 @@ const NativeScriptViewer: FC<{
           <SignatureBadge />
           <span>{keyHashHex}</span>
           {signature && <ShieldCheckIcon className='w-4' />}
-          {signature && cardano && <CopyButton copied={<ClipboardCheckIcon className='w-4' />} ms={500} getContent={() => cardano.buildSignatureSetHex([signature])}><ClipboardCopyIcon className='w-4' /></CopyButton>}
+          {signature && cardano && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={500} getContent={() => cardano.buildSignatureSetHex([signature])}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
         </div>
       </li>
     )
@@ -164,7 +164,7 @@ const NativeScriptViewer: FC<{
           <span>{slot}</span>
           <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
           {currentSlot && currentSlot >= slot && <>
-            <BanIcon className='w-4' />
+            <NoSymbolIcon className='w-4' />
           </>}
           {currentSlot && currentSlot < slot && <>
             <ShieldCheckIcon className='w-4' />
@@ -188,7 +188,7 @@ const NativeScriptViewer: FC<{
           <span>{slot}</span>
           <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
           {currentSlot && currentSlot <= slot && <>
-            <BanIcon className='w-4' />
+            <NoSymbolIcon className='w-4' />
           </>}
           {currentSlot && currentSlot > slot && <>
             <ShieldCheckIcon className='w-4' />

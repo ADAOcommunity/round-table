@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, RefreshIcon } from '@heroicons/react/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -173,7 +173,7 @@ const TreasuryListing: FC<{
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 hover:bg-sky-700'>
       <div className='truncate'>{name}</div>
-      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <RefreshIcon className='w-4 animate-spin transform rotate-180' />}</div>
+      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <ArrowPathIcon className='w-4 animate-spin transform rotate-180' />}</div>
     </NavLink>
   )
 }

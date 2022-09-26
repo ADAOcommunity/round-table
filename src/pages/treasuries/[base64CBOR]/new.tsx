@@ -13,7 +13,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, useGetUTxOsToSpendQuery }
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Value } from '../../../cardano/query-api'
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import { PlusIcon, TrashIcon, XIcon } from '@heroicons/react/solid'
+import { PlusIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ADAAmount, getADASymbol, LabeledCurrencyInput } from '../../../components/currency'
 import { suggestExpirySlot, suggestStartSlot } from '../../../components/native-script'
 
@@ -264,7 +264,7 @@ const NewTransaction: FC<{
               <nav className='flex justify-between items-center'>
                 {recipients.length > 1 &&
                   <button onClick={() => deleteRecipient(recipient)}>
-                    <XIcon className='w-4' />
+                    <XMarkIcon className='w-4' />
                   </button>
                 }
               </nav>

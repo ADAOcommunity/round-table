@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength } from '../cardano/utils'
-import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid'
+import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
 const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
 
