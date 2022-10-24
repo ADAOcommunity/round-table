@@ -1579,10 +1579,10 @@ caniuse-lite@^1.0.30001400, caniuse-lite@^1.0.30001407:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001414.tgz#5f1715e506e71860b4b07c50060ea6462217611e"
   integrity sha512-t55jfSaWjCdocnFdKQoO+d2ct9C59UZg4dY3OnUlSZ447r8pUtIKdp0hpAzrGFultmTC+Us+KpKi4GZl/LXlFg==
 
-cardano-utxo-wasm@^0.1.6:
-  version "0.1.6"
-  resolved "https://registry.yarnpkg.com/cardano-utxo-wasm/-/cardano-utxo-wasm-0.1.6.tgz#932700b7046194c22d327b80023a967f0dc571b1"
-  integrity sha512-e34azH2slT9VUPoMNKZpVUb884P/xrp8KaBbpeXUjr0dLVNlS3BYn6Py7rS8I8kmagJP8HLcJwptW1kNLYz0JQ==
+cardano-utxo-wasm@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/cardano-utxo-wasm/-/cardano-utxo-wasm-0.2.0.tgz#a2497ff7adb29f77d64f55ee4b4fa77d3caa52b7"
+  integrity sha512-qv5sNVmEutbNzIJdKbIzr2cHT/vzoQSbQ1nPygimt9CCeTEyRMmE65wtKAQs3C7QeaZsTSB2rpYpC6kzIY6bUQ==
 
 caseless@~0.12.0:
   version "0.12.0"
@@ -2618,6 +2618,11 @@ fraction.js@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/fraction.js/-/fraction.js-4.2.0.tgz#448e5109a313a3527f5a3ab2119ec4cf0e0e2950"
   integrity sha512-MhLuK+2gUcnZe8ZHlaaINnQLl0xRIGRfcGk2yl8xoQAfHrSsL3rYu6FCmBdkdbhc9EPlwyGHewaRsvwRMJtAlA==
+
+fractional@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/fractional/-/fractional-1.0.0.tgz#dab167a2f9f804cf9038bddf47aa9ba7f207eabc"
+  integrity sha512-4huGcVdAAr0ffcQ7wQY3dhAdZqKd6QgGOP4Kd7ioNoBAS7GdzolwnqgjH/jTzzCpg71oTLbOVwcOWOH+BmwqvA==
 
 fs-extra@^9.1.0:
   version "9.1.0"

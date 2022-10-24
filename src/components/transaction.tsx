@@ -156,11 +156,10 @@ const AddressViewer: FC<{
 }
 
 const NativeScriptInfoViewer: FC<{
-  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ cardano, className, script }) => {
-  const hash = cardano.hashScript(script)
+}> = ({ className, script }) => {
+  const hash = script.hash()
   const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
 
   if (!treasury) return (
@@ -183,12 +182,11 @@ const NativeScriptInfoViewer: FC<{
 }
 
 const DeleteTreasuryButton: FC<{
-  cardano: Cardano
   className?: string
   children: ReactNode
   script: NativeScript
-}> = ({ cardano, className, children, script }) => {
-  const hash = cardano.hashScript(script)
+}> = ({ className, children, script }) => {
+  const hash = script.hash()
   const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const router = useRouter()
 
@@ -418,19 +416,18 @@ const WalletInfo: FC<{
 }
 
 const SaveTreasuryButton: FC<{
-  cardano: Cardano
   className?: string
   children: ReactNode
   name: string
   description: string
   script?: NativeScript
-}> = ({ cardano, name, description, script, className, children }) => {
+}> = ({ name, description, script, className, children }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
 
   if (!script) return <button className={className} disabled={true}>{children}</button>;
 
-  const hash = cardano.hashScript(script).to_hex()
+  const hash = script.hash().to_hex()
 
   const submitHandle = () => {
     db

@@ -72,7 +72,7 @@ const ShowTreasury: FC<{
   return (
     <Panel>
       <div className='p-4 space-y-2'>
-        <NativeScriptInfoViewer cardano={cardano} className='space-y-1' script={script} />
+        <NativeScriptInfoViewer className='space-y-1' script={script} />
         <div className='space-y-1'>
           <div className='font-semibold'>Treasury Address</div>
           <AddressViewer address={cardano.getScriptAddress(script, config.isMainnet)} />

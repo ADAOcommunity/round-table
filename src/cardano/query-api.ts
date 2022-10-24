@@ -71,6 +71,10 @@ query getUTxOsToSpend($addresses: [String]!) {
         coinsPerUtxoByte
         maxValSize
         maxTxSize
+        priceMem
+        priceStep
+        collateralPercent
+        maxCollateralInputs
       }
     }
   }
