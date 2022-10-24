@@ -10,6 +10,7 @@ import { useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
 
 function minSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
+  if (slots.length === 0) return
   return slots.reduce((prev, cur) => {
     if (!cur) return prev
     if (!prev) return cur
@@ -19,6 +20,7 @@ function minSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
 }
 
 function maxSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
+  if (slots.length === 0) return
   return slots.reduce((prev, cur) => {
     if (!cur) return prev
     if (!prev) return cur
