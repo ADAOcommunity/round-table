@@ -106,6 +106,11 @@ class Cardano {
   }
 
   public buildTxOutput(recipient: Recipient, protocolParams: ProtocolParams): SingleOutputBuilderResult {
+    if (recipient.value.lovelace < this.getMinLovelace(recipient, protocolParams)) {
+      const error = new Error('Insufficient ADA')
+      error.name = 'InsufficientADAError'
+      throw error
+    }
     const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = this.lib
     const address = this.parseAddress(recipient.address)
     const lovelace = BigNum.from_str(recipient.value.lovelace.toString())
