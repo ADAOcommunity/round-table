@@ -45,9 +45,9 @@ const GetTransaction: NextPage = () => {
           onChange={(e) => setText(e.target.value)}
           placeholder='URL or CBOR in Hex'>
         </textarea>
-        <footer className='flex p-4 bg-gray-100 space-x-2'>
-          {txResult && <TransactionReviewButton className='px-4 py-2 rounded' result={txResult} />}
-        </footer>
+        {txResult?.isOk && <footer className='flex p-4 bg-gray-100 space-x-2'>
+          <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />
+        </footer>}
       </Panel>
     </Layout>
   )
