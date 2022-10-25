@@ -4,7 +4,6 @@ import { AssetAmount, ADAAmount } from './currency'
 import { decodeASCII, getAssetName } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Recipient } from '../cardano/multiplatform-lib'
-import type { Result } from '../cardano/multiplatform-lib'
 import type { Address, NativeScript, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
@@ -25,14 +24,10 @@ import { estimateSlotByDate } from '../cardano/utils'
 
 const TransactionReviewButton: FC<{
   className?: string
-  result: Result<Transaction>
-}> = ({ className, result }) => {
-  if (!result.isOk) return (
-    <div className={['text-gray-400 bg-gray-100 border cursor-not-allowed', className].join(' ')}>Review Transaction</div>
-  )
-
+  transaction: Transaction
+}> = ({ className, transaction }) => {
   return (
-    <Link href={getTransactionPath(result.data)}>
+    <Link href={getTransactionPath(transaction)}>
       <a className={['text-white bg-sky-700', className].join(' ')}>Review Transaction</a>
     </Link>
   )

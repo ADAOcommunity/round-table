@@ -335,6 +335,7 @@ const NewTransaction: FC<{
           onChange={setMessage}
           messageLines={message} />
       </div>
+      {!txResult.isOk && <div className='bg-red-100 text-red-500 p-4'>{txResult.message}</div> }
       <footer className='flex p-4 bg-gray-100 items-center'>
         <div className='grow'>
           {txResult.isOk &&
@@ -351,7 +352,7 @@ const NewTransaction: FC<{
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
           </button>
-          <TransactionReviewButton className='px-4 py-2 rounded' result={txResult} />
+          {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
         </nav>
       </footer>
     </Panel>
