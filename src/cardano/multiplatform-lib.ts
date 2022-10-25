@@ -106,8 +106,8 @@ class Cardano {
   }
 
   public buildTxOutput(recipient: Recipient, protocolParams: ProtocolParams): SingleOutputBuilderResult {
-    const { Address, AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = this.lib
-    const address = Address.from_bech32(recipient.address)
+    const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = this.lib
+    const address = this.parseAddress(recipient.address)
     const lovelace = BigNum.from_str(recipient.value.lovelace.toString())
     const multiAsset = MultiAsset.new()
     recipient.value.assets.forEach((quantity, assetId) => {
@@ -129,10 +129,10 @@ class Cardano {
   }
 
   public getMinLovelace(recipient: Recipient, protocolParams: ProtocolParams): bigint {
-    const { Address, BigNum, TransactionOutput } = this.lib
+    const { BigNum, TransactionOutput } = this.lib
     if (!protocolParams.coinsPerUtxoByte) throw new Error('coinsPerUtxoByte is missing')
     const coinsPerUtxoByte = BigNum.from_str(protocolParams.coinsPerUtxoByte.toString())
-    const address = Address.from_bech32(recipient.address)
+    const address = this.parseAddress(recipient.address)
     const txOutput = TransactionOutput.new(address, this.buildCMLValue(recipient.value))
     const minimum = this.lib.min_ada_required(
       txOutput,
@@ -159,7 +159,7 @@ class Cardano {
   }
 
   public createTxInputBuilder(input: Output, address: string): SingleInputBuilder {
-    const { Address, AssetName, BigNum, MultiAsset, ScriptHash, SingleInputBuilder, TransactionHash, TransactionInput, } = this.lib
+    const { AssetName, BigNum, MultiAsset, ScriptHash, SingleInputBuilder, TransactionHash, TransactionInput, } = this.lib
     if (!input.data) throw new Error('hash and index are missing')
     const data: TransactionOutput = input.data
     const hash = TransactionHash.from_hex(data.txHash)
@@ -176,7 +176,7 @@ class Cardano {
       })
       value.set_multiasset(multiAsset)
     }
-    const txOuput = this.lib.TransactionOutput.new(Address.from_bech32(address), value)
+    const txOuput = this.lib.TransactionOutput.new(this.parseAddress(address), value)
     return SingleInputBuilder.new(txInput, txOuput)
   }
 
@@ -208,8 +208,13 @@ class Cardano {
     return toHex(witnessSet)
   }
 
-  public parseAddress(bech32Address: string): Result<Address> {
-    return getResult(() => this.lib.Address.from_bech32(bech32Address))
+  public parseAddress(address: string): Address {
+    const { Address, ByronAddress } = this.lib
+    if (Address.is_valid_bech32(address)) return Address.from_bech32(address)
+    if (Address.is_valid_byron(address)) return ByronAddress.from_base58(address).to_address()
+    const error = new Error('The address is invalid.')
+    error.name = 'InvalidAddressError'
+    throw error
   }
 
   public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
