@@ -1,5 +1,6 @@
 import type { NextPage } from 'next'
-import { FC, useCallback, useEffect } from 'react'
+import type { FC } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { BackButton, Layout, Panel } from '../../../components/layout'
 import { Cardano, isAddressNetworkCorrect, newRecipient, Recipient } from '../../../cardano/multiplatform-lib'
