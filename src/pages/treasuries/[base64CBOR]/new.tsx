@@ -383,7 +383,7 @@ const GetUTxOsToSpend: FC<{
       <div className='space-y-2'>
         <Hero>
           <h1 className='font-semibold text-lg'>Create Transaction</h1>
-          <p>Due to the native assets, you should have <strong><ADAAmount lovelace={minLovelace} /></strong> at least in your treasury in order to create transaction properly.</p>
+          <p>Due to the native assets, you should have <strong><ADAAmount lovelace={minLovelace} /></strong> at least in your treasury in order to create transactions properly.</p>
         </Hero>
         <NativeScriptInfoViewer
           className='border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden p-4 space-y-1'
