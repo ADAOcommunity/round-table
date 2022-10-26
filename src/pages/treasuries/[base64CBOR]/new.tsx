@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import type { FC } from 'react'
 import { useCallback, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { BackButton, Layout, Panel } from '../../../components/layout'
+import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
 import { Cardano, isAddressNetworkCorrect, newRecipient, Recipient } from '../../../cardano/multiplatform-lib'
 import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../../components/status'
@@ -189,12 +189,12 @@ const NewTransaction: FC<{
   protocolParameters: ProtocolParams
   nativeScript: NativeScript
   utxos: TransactionOutput[]
-}> = ({ cardano, protocolParameters, nativeScript, utxos }) => {
+  minLovelace: bigint
+}> = ({ cardano, protocolParameters, nativeScript, utxos, minLovelace }) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [config, _] = useContext(ConfigContext)
   const [inputs, setInputs] = useState<Output[]>([])
-  const minLovelace = BigInt(5e6)
 
   useEffect(() => {
     let isMounted = true
@@ -363,7 +363,7 @@ const GetUTxOsToSpend: FC<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {
-
+  const minLovelace = BigInt(5e6)
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
   const { loading, error, data } = useGetUTxOsToSpendQuery({
@@ -381,11 +381,16 @@ const GetUTxOsToSpend: FC<{
   return (
     <Layout>
       <div className='space-y-2'>
+        <Hero>
+          <h1 className='font-semibold text-lg'>Create Transaction</h1>
+          <p>Due to the native assets, you should have <strong><ADAAmount lovelace={minLovelace} /></strong> at least in your treasury in order to create transaction properly.</p>
+        </Hero>
         <NativeScriptInfoViewer
           className='border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden p-4 space-y-1'
           script={script} />
         <NewTransaction
           cardano={cardano}
+          minLovelace={minLovelace}
           utxos={data.utxos}
           nativeScript={script}
           protocolParameters={protocolParameters} />
