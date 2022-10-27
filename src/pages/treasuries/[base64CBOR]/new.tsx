@@ -208,6 +208,7 @@ const NewTransaction: FC<{
   const [message, setMessage] = useState<string[]>([])
   const [config, _] = useContext(ConfigContext)
   const [inputs, setInputs] = useState<Output[]>([])
+  const [changeAddress, setChangeAddress] = useState<string>(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
 
   useEffect(() => {
     let isMounted = true
@@ -301,9 +302,7 @@ const NewTransaction: FC<{
       txBuilder.set_ttl(expirySlot)
     }
 
-    const address = cardano.getScriptAddress(nativeScript, config.isMainnet)
-
-    return txBuilder.build(ChangeSelectionAlgo.Default, address).build_unchecked()
+    return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
   }), [recipients, cardano, config, message, protocolParameters, inputs, nativeScript])
 
   const handleRecipientChange = (recipient: Recipient) => {
@@ -338,6 +337,17 @@ const NewTransaction: FC<{
           </li>
         )}
       </ul>
+      <div>
+        <header className='px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Change Address</h2>
+          <p className='text-sm'>Send change to this address</p>
+        </header>
+        <RecipientAddressInput
+          className='p-4'
+          cardano={cardano}
+          address={changeAddress}
+          setAddress={setChangeAddress} />
+      </div>
       <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Message</h2>
