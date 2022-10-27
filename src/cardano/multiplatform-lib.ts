@@ -222,6 +222,11 @@ class Cardano {
     throw error
   }
 
+  public isValidAddress(address: string): boolean {
+    const { Address } = this.lib
+    return Address.is_valid_bech32(address) || Address.is_valid_byron(address)
+  }
+
   public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
     return getResult(() => {
       const keyHash = address.as_base()?.payment_cred().to_keyhash()

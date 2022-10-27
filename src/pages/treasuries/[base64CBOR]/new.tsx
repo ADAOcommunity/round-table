@@ -59,6 +59,35 @@ const AddAssetButton: FC<{
   )
 }
 
+const RecipientAddressInput: FC<{
+  address: string
+  cardano: Cardano
+  className?: string
+  setAddress: (address: string) => void
+}> = ({ address, cardano, className, setAddress }) => {
+  const [config, _] = useContext(ConfigContext)
+
+  const addressResult = useMemo(() => getResult(() => {
+    const addressObject = cardano.parseAddress(address)
+    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('This address is from a wrong network')
+    return addressObject
+  }), [address, cardano, config])
+
+  return (
+    <div className={className}>
+      <label className='flex block border rounded overflow-hidden'>
+        <span className='p-2 bg-gray-100 border-r'>To</span>
+        <input
+          className={['p-2 block w-full outline-none', addressResult.isOk ? '' : 'text-red-500'].join(' ')}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder='Address' />
+      </label>
+      {address && !addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
+    </div>
+  )
+}
+
 const TransactionRecipient: FC<{
   cardano: Cardano
   recipient: Recipient
@@ -96,27 +125,11 @@ const TransactionRecipient: FC<{
     })
   }
 
-  const addressResult = getResult(() => {
-    const addressObject = cardano.lib.Address.from_bech32(address)
-    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('This address is from a wrong network')
-    return addressObject
-  })
-
-  const minLovelace = addressResult.isOk ? getMinLovelace(recipient) : undefined
+  const minLovelace = cardano.isValidAddress(address) ? getMinLovelace(recipient) : undefined
 
   return (
     <div className='p-4 space-y-2'>
-      <div>
-        <label className='flex block border rounded overflow-hidden'>
-          <span className='p-2 bg-gray-100 border-r'>To</span>
-          <input
-            className={['p-2 block w-full outline-none', addressResult.isOk ? '' : 'text-red-500'].join(' ')}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder='Address' />
-        </label>
-        {address && !addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
-      </div>
+      <RecipientAddressInput address={address} setAddress={setAddress} cardano={cardano} />
       <div>
         <LabeledCurrencyInput
           symbol={getADASymbol(config)}
