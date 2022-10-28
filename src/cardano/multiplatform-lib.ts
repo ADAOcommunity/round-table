@@ -1,6 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
 import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import type { Output } from 'cardano-utxo-wasm'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import type { Config } from './config'
@@ -163,25 +162,24 @@ class Cardano {
     return cardanoValue
   }
 
-  public createTxInputBuilder(input: Output, address: string): SingleInputBuilder {
+  public createTxInputBuilder(input: TransactionOutput): SingleInputBuilder {
     const { AssetName, BigNum, MultiAsset, ScriptHash, SingleInputBuilder, TransactionHash, TransactionInput, } = this.lib
-    if (!input.data) throw new Error('hash and index are missing')
-    const data: TransactionOutput = input.data
-    const hash = TransactionHash.from_hex(data.txHash)
-    const index = BigNum.from_str(data.index.toString())
+    const hash = TransactionHash.from_hex(input.txHash)
+    const index = BigNum.from_str(input.index.toString())
     const txInput = TransactionInput.new(hash, index)
-    const value = this.lib.Value.new(BigNum.from_str(input.lovelace.toString()))
-    if (input.assets.length > 0) {
+    const value = this.lib.Value.new(BigNum.from_str(input.value))
+    if (input.tokens.length > 0) {
       const multiAsset = MultiAsset.new()
-      input.assets.forEach((asset) => {
-        const policyId = ScriptHash.from_bytes(Buffer.from(asset.policyId, 'hex'))
-        const assetName = AssetName.new(Buffer.from(asset.assetName, 'hex'))
-        const quantity = BigNum.from_str(asset.quantity.toString())
+      input.tokens.forEach((token) => {
+        const assetId = token.asset.assetId
+        const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(assetId), 'hex'))
+        const assetName = AssetName.new(Buffer.from(getAssetName(assetId), 'hex'))
+        const quantity = BigNum.from_str(token.quantity.toString())
         multiAsset.set_asset(policyId, assetName, quantity)
       })
       value.set_multiasset(multiAsset)
     }
-    const txOuput = this.lib.TransactionOutput.new(this.parseAddress(address), value)
+    const txOuput = this.lib.TransactionOutput.new(this.parseAddress(input.address), value)
     return SingleInputBuilder.new(txInput, txOuput)
   }
 

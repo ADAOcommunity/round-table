@@ -205,7 +205,7 @@ const NewTransaction: FC<{
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [config, _] = useContext(ConfigContext)
-  const [inputs, setInputs] = useState<Output[]>([])
+  const [inputs, setInputs] = useState<TransactionOutput[]>([])
   const [changeAddress, setChangeAddress] = useState<string>(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
 
@@ -242,7 +242,8 @@ const NewTransaction: FC<{
           }
         })
         const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
-        result && setInputs(result.selected)
+        const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
+        txOutputs && setInputs(txOutputs)
       })
     }
 
@@ -270,9 +271,8 @@ const NewTransaction: FC<{
     const txBuilder = cardano.createTxBuilder(protocolParameters)
 
     inputs.forEach((input) => {
-      const txOutput: TransactionOutput = input.data
       const result = cardano
-        .createTxInputBuilder(input, txOutput.address)
+        .createTxInputBuilder(input)
         .native_script(nativeScript, NativeScriptWitnessInfo.assume_signature_count())
       txBuilder.add_input(result)
     })
