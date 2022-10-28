@@ -208,43 +208,48 @@ const NewTransaction: FC<{
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
   const [changeAddress, setChangeAddress] = useState<string>(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
+  const [sendAllUTxOs, setSendAllUTxOs] = useState(false)
 
   useEffect(() => {
     let isMounted = true
 
     if (isMounted) {
-      setInputs([])
-      init().then(() => {
-        const inputs: Output[] = utxos.map((txOutput) => {
-          return {
-            data: txOutput,
-            lovelace: BigInt(txOutput.value),
-            assets: txOutput.tokens.map((token) => {
-              const assetId = token.asset.assetId
-              return {
-                policyId: getPolicyId(assetId),
-                assetName: getAssetName(assetId),
-                quantity: BigInt(token.quantity)
-              }
-            })
-          }
+      if (sendAllUTxOs) {
+        setInputs(utxos)
+      } else {
+        setInputs([])
+        init().then(() => {
+          const inputs: Output[] = utxos.map((txOutput) => {
+            return {
+              data: txOutput,
+              lovelace: BigInt(txOutput.value),
+              assets: txOutput.tokens.map((token) => {
+                const assetId = token.asset.assetId
+                return {
+                  policyId: getPolicyId(assetId),
+                  assetName: getAssetName(assetId),
+                  quantity: BigInt(token.quantity)
+                }
+              })
+            }
+          })
+          const outputs: Output[] = recipients.map((recipient) => {
+            return {
+              lovelace: recipient.value.lovelace,
+              assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
+                return {
+                  policyId: getPolicyId(id),
+                  assetName: getAssetName(id),
+                  quantity: BigInt(quantity)
+                }
+              })
+            }
+          })
+          const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
+          const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
+          txOutputs && setInputs(txOutputs)
         })
-        const outputs: Output[] = recipients.map((recipient) => {
-          return {
-            lovelace: recipient.value.lovelace,
-            assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
-              return {
-                policyId: getPolicyId(id),
-                assetName: getAssetName(id),
-                quantity: BigInt(quantity)
-              }
-            })
-          }
-        })
-        const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
-        const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
-        txOutputs && setInputs(txOutputs)
-      })
+      }
     }
 
     return () => {
@@ -348,12 +353,23 @@ const NewTransaction: FC<{
             <span>I know the risk and I want to change it.</span>
           </label>
         </header>
-        <RecipientAddressInput
-          className='p-4'
-          cardano={cardano}
-          disabled={isChangeSettingDisabled}
-          address={changeAddress}
-          setAddress={setChangeAddress} />
+        <div className='p-4 space-y-2'>
+          <RecipientAddressInput
+            cardano={cardano}
+            disabled={isChangeSettingDisabled}
+            address={changeAddress}
+            setAddress={setChangeAddress} />
+          <div>
+            <label className='items-center space-x-1'>
+              <input
+                type='checkbox'
+                checked={sendAllUTxOs}
+                disabled={isChangeSettingDisabled}
+                onChange={() => setSendAllUTxOs(!sendAllUTxOs)} />
+              <span>Send All</span>
+            </label>
+          </div>
+        </div>
       </div>
       <div>
         <header className='px-4 py-2 bg-gray-100'>
