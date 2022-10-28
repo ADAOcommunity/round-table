@@ -255,7 +255,7 @@ const NewTransaction: FC<{
     return () => {
       isMounted = false
     }
-  }, [utxos, recipients, minLovelace])
+  }, [utxos, recipients, sendAllUTxOs, minLovelace])
 
   const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
 
