@@ -302,7 +302,7 @@ const NewTransaction: FC<{
     }
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, config, message, protocolParameters, inputs, nativeScript])
+  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, nativeScript])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
