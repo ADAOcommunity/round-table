@@ -340,13 +340,13 @@ const NewTransaction: FC<{
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Change Address</h2>
           <p className='text-sm'>Send change to this address. Default to the treasury address. DO NOT CHANGE IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
-          <p className='text-sm items-center space-x-1'>
+          <label className='text-sm items-center space-x-1'>
             <input
               type='checkbox'
               checked={!isChangeSettingDisabled}
               onChange={() => setIsChangeSettingDisabled(!isChangeSettingDisabled)} />
             <span>I know the risk and I want to change it.</span>
-          </p>
+          </label>
         </header>
         <RecipientAddressInput
           className='p-4'
