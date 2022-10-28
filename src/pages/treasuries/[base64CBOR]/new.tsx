@@ -210,6 +210,19 @@ const NewTransaction: FC<{
   useEffect(() => {
     let isMounted = true
 
+    if (isMounted && isChangeSettingDisabled) {
+      setChangeAddress(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
+      setSendAllUTxOs(false)
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [isChangeSettingDisabled])
+
+  useEffect(() => {
+    let isMounted = true
+
     if (isMounted) {
       if (sendAllUTxOs) {
         setInputs(utxos)
