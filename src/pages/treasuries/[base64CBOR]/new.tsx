@@ -325,11 +325,9 @@ const NewTransaction: FC<{
             <header className='flex px-4 py-2 bg-gray-100'>
               <h2 className='grow font-semibold'>Recipient #{index + 1}</h2>
               <nav className='flex justify-between items-center'>
-                {recipients.length > 1 &&
-                  <button onClick={() => deleteRecipient(recipient)}>
-                    <XMarkIcon className='w-4' />
-                  </button>
-                }
+                <button onClick={() => deleteRecipient(recipient)}>
+                  <XMarkIcon className='w-4' />
+                </button>
               </nav>
             </header>
             <TransactionRecipient
