@@ -358,7 +358,7 @@ const NewTransaction: FC<{
       <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Message</h2>
-          <p className='text-sm'>Cannot exceed 64 bytes each line</p>
+          <p className='text-sm'>Cannot exceed 64 bytes each line.</p>
         </header>
         <TransactionMessageInput
           className='p-4 block w-full outline-none'
