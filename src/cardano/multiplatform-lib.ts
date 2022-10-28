@@ -120,15 +120,11 @@ class Cardano {
       multiAsset.set_asset(policyId, assetName, BigNum.from_str(quantity.toString()))
     })
 
-    if (!protocolParams.coinsPerUtxoByte) throw new Error('coinsPerUtxoByte is missing')
-    const coinsPerUtxoByte = BigNum.from_str(protocolParams.coinsPerUtxoByte.toString())
-
     return TransactionOutputBuilder
       .new()
       .with_address(address)
       .next()
-      .with_coin(lovelace)
-      .with_asset_and_min_required_coin(multiAsset, coinsPerUtxoByte)
+      .with_coin_and_asset(lovelace, multiAsset)
       .build()
   }
 
