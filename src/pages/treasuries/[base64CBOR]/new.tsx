@@ -14,7 +14,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useGetUTxOsT
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Value } from '../../../cardano/query-api'
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import { PlusIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { PlusIcon, TrashIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ADAAmount, getADASymbol, LabeledCurrencyInput } from '../../../components/currency'
 import { suggestExpirySlot, suggestStartSlot } from '../../../components/native-script'
 import type { Output } from 'cardano-utxo-wasm'
@@ -354,15 +354,16 @@ const NewTransaction: FC<{
           onChange={setMessage}
           messageLines={message} />
       </div>
-      {!txResult.isOk && <div className='bg-red-100 text-red-500 p-4'>{txResult.message}</div> }
       <footer className='flex p-4 bg-gray-100 items-center'>
         <div className='grow'>
-          {txResult.isOk &&
-            <p className='flex space-x-1 font-semibold'>
-              <span>Fee:</span>
-              <span><ADAAmount lovelace={BigInt(txResult.data.body().fee().to_str())} /></span>
-            </p>
-          }
+          {txResult.isOk && <p className='flex space-x-1'>
+            <span>Fee:</span>
+            <span><ADAAmount lovelace={BigInt(txResult.data.body().fee().to_str())} /></span>
+          </p>}
+          {!txResult.isOk && <p className='flex space-x-1 text-red-500 items-center'>
+            <XCircleIcon className='h-4 w-4' />
+            <span>{txResult.message === 'The address is invalid.' ? 'Some addresses are invalid.' : txResult.message}</span>
+          </p>}
         </div>
         <nav className='flex justify-end space-x-2'>
           <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
