@@ -224,7 +224,7 @@ class Cardano {
 
   public isValidAddress(address: string): boolean {
     const { Address } = this.lib
-    return Address.is_valid_bech32(address) || Address.is_valid_byron(address)
+    return Address.is_valid(address)
   }
 
   public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {

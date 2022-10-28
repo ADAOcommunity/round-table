@@ -67,23 +67,19 @@ const RecipientAddressInput: FC<{
 }> = ({ address, cardano, className, setAddress }) => {
   const [config, _] = useContext(ConfigContext)
 
-  const addressResult = useMemo(() => getResult(() => {
-    const addressObject = cardano.parseAddress(address)
-    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('This address is from a wrong network')
-    return addressObject
-  }), [address, cardano, config])
+  const isValid = cardano.isValidAddress(address) && isAddressNetworkCorrect(config, cardano.parseAddress(address))
 
   return (
     <div className={className}>
       <label className='flex block border rounded overflow-hidden'>
         <span className='p-2 bg-gray-100 border-r'>To</span>
         <input
-          className={['p-2 block w-full outline-none', addressResult.isOk ? '' : 'text-red-500'].join(' ')}
+          className={['p-2 block w-full outline-none', isValid ? '' : 'text-red-500'].join(' ')}
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder='Address' />
       </label>
-      {address && !addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
+      {address && !isValid && <p className='text-sm text-red-500'>The address is invalid.</p>}
     </div>
   )
 }
