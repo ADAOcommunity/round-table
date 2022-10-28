@@ -63,8 +63,9 @@ const RecipientAddressInput: FC<{
   address: string
   cardano: Cardano
   className?: string
+  disabled?: boolean
   setAddress: (address: string) => void
-}> = ({ address, cardano, className, setAddress }) => {
+}> = ({ address, cardano, className, disabled, setAddress }) => {
   const [config, _] = useContext(ConfigContext)
 
   const isValid = cardano.isValidAddress(address) && isAddressNetworkCorrect(config, cardano.parseAddress(address))
@@ -74,7 +75,8 @@ const RecipientAddressInput: FC<{
       <label className='flex block border rounded overflow-hidden'>
         <span className='p-2 bg-gray-100 border-r'>To</span>
         <input
-          className={['p-2 block w-full outline-none', isValid ? '' : 'text-red-500'].join(' ')}
+          className={['p-2 block w-full outline-none disabled:bg-gray-100', isValid ? '' : 'text-red-500'].join(' ')}
+          disabled={disabled}
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           placeholder='Address' />
@@ -205,6 +207,7 @@ const NewTransaction: FC<{
   const [config, _] = useContext(ConfigContext)
   const [inputs, setInputs] = useState<Output[]>([])
   const [changeAddress, setChangeAddress] = useState<string>(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
+  const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
 
   useEffect(() => {
     let isMounted = true
@@ -336,11 +339,19 @@ const NewTransaction: FC<{
       <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Change Address</h2>
-          <p className='text-sm'>Send change to this address</p>
+          <p className='text-sm'>Send change to this address. Default to the treasury address. DO NOT CHANGE IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
+          <p className='text-sm items-center space-x-1'>
+            <input
+              type='checkbox'
+              checked={!isChangeSettingDisabled}
+              onChange={() => setIsChangeSettingDisabled(!isChangeSettingDisabled)} />
+            <span>I know the risk and I want to change it.</span>
+          </p>
         </header>
         <RecipientAddressInput
           className='p-4'
           cardano={cardano}
+          disabled={isChangeSettingDisabled}
           address={changeAddress}
           setAddress={setChangeAddress} />
       </div>
