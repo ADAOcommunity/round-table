@@ -352,7 +352,7 @@ const NewTransaction: FC<{
       <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Change Address</h2>
-          <p className='text-sm'>Send change to this address. Default to the treasury address. DO NOT CHANGE IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
+          <p className='text-sm'>The change caused by this transaction goes to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
           <p>
             <label className='text-sm items-center space-x-1'>
               <input
@@ -369,16 +369,15 @@ const NewTransaction: FC<{
             disabled={isChangeSettingDisabled}
             address={changeAddress}
             setAddress={setChangeAddress} />
-          <div>
+          {!isChangeSettingDisabled && <div>
             <label className='items-center space-x-1'>
               <input
                 type='checkbox'
                 checked={sendAllUTxOs}
-                disabled={isChangeSettingDisabled}
                 onChange={() => setSendAllUTxOs(!sendAllUTxOs)} />
-              <span>Send All</span>
+              <span>Send all remaining assets in the treasury to this address</span>
             </label>
-          </div>
+          </div>}
         </div>
       </div>
       <div>
