@@ -203,34 +203,50 @@ const NewTransaction: FC<{
   const [message, setMessage] = useState<string[]>([])
   const [config, _] = useContext(ConfigContext)
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
-  const [changeAddress, setChangeAddress] = useState<string>(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
+  const defaultChangeAddress = useMemo(() => cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32(), [cardano, nativeScript, config])
+  const [changeAddress, setChangeAddress] = useState<string>(defaultChangeAddress)
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
 
   useEffect(() => {
     let isMounted = true
 
+    if (isMounted) {
+      if (recipients.length === 0) {
+        setChangeAddress('')
+      } else {
+        !changeAddress && setChangeAddress(defaultChangeAddress)
+      }
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [changeAddress, defaultChangeAddress, recipients])
+
+  useEffect(() => {
+    let isMounted = true
+
     if (isMounted && isChangeSettingDisabled) {
-      setChangeAddress(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
+      setChangeAddress(defaultChangeAddress)
       setWillSpendAll(false)
     }
 
     return () => {
       isMounted = false
     }
-  }, [isChangeSettingDisabled])
+  }, [defaultChangeAddress, isChangeSettingDisabled])
 
   useEffect(() => {
     let isMounted = true
 
     if (isMounted) {
-      if (willSpendAll) {
+      if (willSpendAll || recipients.length === 0) {
         setInputs(utxos)
         return
       }
 
       setInputs([])
-      if (recipients.length === 0) return
 
       init().then(() => {
         const inputs: Output[] = utxos.map((txOutput) => {
@@ -356,25 +372,25 @@ const NewTransaction: FC<{
         </ul>
         <div>
           <header className='px-4 py-2 bg-gray-100'>
-            <h2 className='font-semibold'>Change Address</h2>
-            <p className='text-sm'>The change caused by this transaction or all remaining assets in the treasury goes to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
-            <p>
+            <h2 className='font-semibold'>{recipients.length > 0 ? 'Change' : 'Send All'}</h2>
+            <p className='text-sm'>{recipients.length > 0 ? 'The change caused by this transaction or all remaining assets in the treasury will be sent to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!' : 'All assets in this treasury will be sent to this address.'}</p>
+            {recipients.length > 0 && <p>
               <label className='text-sm items-center space-x-1'>
                 <input
                   type='checkbox'
                   checked={!isChangeSettingDisabled}
                   onChange={() => setIsChangeSettingDisabled(!isChangeSettingDisabled)} />
-                <span>I know the risk and I want to change it.</span>
+                <span>I know the risk and I want to do it.</span>
               </label>
-            </p>
+            </p>}
           </header>
           <div className='p-4 space-y-2'>
             <RecipientAddressInput
               cardano={cardano}
-              disabled={isChangeSettingDisabled}
+              disabled={isChangeSettingDisabled && recipients.length > 0}
               address={changeAddress}
               setAddress={setChangeAddress} />
-            {!isChangeSettingDisabled && <div>
+            {!isChangeSettingDisabled && recipients.length > 0 && <div>
               <label className='items-center space-x-1'>
                 <input
                   type='checkbox'
