@@ -205,14 +205,14 @@ const NewTransaction: FC<{
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
   const [changeAddress, setChangeAddress] = useState<string>(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
-  const [sendAllUTxOs, setSendAllUTxOs] = useState(false)
+  const [willSpendAll, setWillSpendAll] = useState(false)
 
   useEffect(() => {
     let isMounted = true
 
     if (isMounted && isChangeSettingDisabled) {
       setChangeAddress(cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32())
-      setSendAllUTxOs(false)
+      setWillSpendAll(false)
     }
 
     return () => {
@@ -224,7 +224,7 @@ const NewTransaction: FC<{
     let isMounted = true
 
     if (isMounted) {
-      if (sendAllUTxOs) {
+      if (willSpendAll) {
         setInputs(utxos)
         return
       }
@@ -268,7 +268,7 @@ const NewTransaction: FC<{
     return () => {
       isMounted = false
     }
-  }, [utxos, recipients, sendAllUTxOs, minLovelace])
+  }, [utxos, recipients, willSpendAll, minLovelace])
 
     const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
 
@@ -378,8 +378,8 @@ const NewTransaction: FC<{
               <label className='items-center space-x-1'>
                 <input
                   type='checkbox'
-                  checked={sendAllUTxOs}
-                  onChange={() => setSendAllUTxOs(!sendAllUTxOs)} />
+                  checked={willSpendAll}
+                  onChange={() => setWillSpendAll(!willSpendAll)} />
                 <span>Send all remaining assets in the treasury to this address</span>
               </label>
             </div>}
