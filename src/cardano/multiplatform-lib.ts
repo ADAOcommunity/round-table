@@ -65,7 +65,7 @@ function toIter<T>(set: CardanoIterable<T>): IterableIterator<T> {
         value: set.get(index++)
       } : { done: true, value: null }
     },
-    [Symbol.iterator]: function() { return this }
+    [Symbol.iterator]: function () { return this }
   }
 }
 
@@ -145,16 +145,14 @@ class Cardano {
     const { AssetName, BigNum, MultiAsset, ScriptHash } = this.lib
     const { lovelace, assets } = value
     const cardanoValue = this.lib.Value.new(BigNum.from_str(lovelace.toString()))
-    if (assets.size > 0) {
-      const multiAsset = MultiAsset.new()
-      assets.forEach((quantity, id, _) => {
-        const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
-        const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
-        const value = BigNum.from_str(quantity.toString())
-        multiAsset.set_asset(policyId, assetName, value)
-      })
-      cardanoValue.set_multiasset(multiAsset)
-    }
+    const multiAsset = MultiAsset.new()
+    assets.forEach((quantity, id, _) => {
+      const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
+      const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
+      const value = BigNum.from_str(quantity.toString())
+      multiAsset.set_asset(policyId, assetName, value)
+    })
+    cardanoValue.set_multiasset(multiAsset)
     return cardanoValue
   }
 
@@ -240,8 +238,8 @@ class Cardano {
   public createTxBuilder(protocolParameters: ProtocolParams): TransactionBuilder {
     const { BigNum, ExUnitPrices, UnitInterval, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
-            coinsPerUtxoByte, maxTxSize, maxValSize, maxCollateralInputs,
-            priceMem, priceStep, collateralPercent } = protocolParameters
+      coinsPerUtxoByte, maxTxSize, maxValSize, maxCollateralInputs,
+      priceMem, priceStep, collateralPercent } = protocolParameters
 
     if (!coinsPerUtxoByte) throw new Error('coinsPerUtxoByte is missing')
     if (!maxValSize) throw new Error('maxValSize is missing')
