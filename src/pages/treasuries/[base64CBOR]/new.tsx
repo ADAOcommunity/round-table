@@ -226,40 +226,43 @@ const NewTransaction: FC<{
     if (isMounted) {
       if (sendAllUTxOs) {
         setInputs(utxos)
-      } else {
-        setInputs([])
-        init().then(() => {
-          const inputs: Output[] = utxos.map((txOutput) => {
-            return {
-              data: txOutput,
-              lovelace: BigInt(txOutput.value),
-              assets: txOutput.tokens.map((token) => {
-                const assetId = token.asset.assetId
-                return {
-                  policyId: getPolicyId(assetId),
-                  assetName: getAssetName(assetId),
-                  quantity: BigInt(token.quantity)
-                }
-              })
-            }
-          })
-          const outputs: Output[] = recipients.map((recipient) => {
-            return {
-              lovelace: recipient.value.lovelace,
-              assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
-                return {
-                  policyId: getPolicyId(id),
-                  assetName: getAssetName(id),
-                  quantity: BigInt(quantity)
-                }
-              })
-            }
-          })
-          const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
-          const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
-          txOutputs && setInputs(txOutputs)
-        })
+        return
       }
+
+      setInputs([])
+      if (recipients.length === 0) return
+
+      init().then(() => {
+        const inputs: Output[] = utxos.map((txOutput) => {
+          return {
+            data: txOutput,
+            lovelace: BigInt(txOutput.value),
+            assets: txOutput.tokens.map((token) => {
+              const assetId = token.asset.assetId
+              return {
+                policyId: getPolicyId(assetId),
+                assetName: getAssetName(assetId),
+                quantity: BigInt(token.quantity)
+              }
+            })
+          }
+        })
+        const outputs: Output[] = recipients.map((recipient) => {
+          return {
+            lovelace: recipient.value.lovelace,
+            assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
+              return {
+                policyId: getPolicyId(id),
+                assetName: getAssetName(id),
+                quantity: BigInt(quantity)
+              }
+            })
+          }
+        })
+        const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
+        const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
+        txOutputs && setInputs(txOutputs)
+      })
     }
 
     return () => {
@@ -267,153 +270,155 @@ const NewTransaction: FC<{
     }
   }, [utxos, recipients, sendAllUTxOs, minLovelace])
 
-  const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
+    const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
 
-  const budget: Value = useMemo(() => recipients
-    .map(({ value }) => value)
-    .reduce((result, value) => {
-      const lovelace = result.lovelace - value.lovelace
-      const assets = new Map(result.assets)
-      Array.from(value.assets).forEach(([id, quantity]) => {
-        const _quantity = assets.get(id)
-        _quantity && assets.set(id, _quantity - quantity)
+    const budget: Value = useMemo(() => recipients
+      .map(({ value }) => value)
+      .reduce((result, value) => {
+        const lovelace = result.lovelace - value.lovelace
+        const assets = new Map(result.assets)
+        Array.from(value.assets).forEach(([id, quantity]) => {
+          const _quantity = assets.get(id)
+          _quantity && assets.set(id, _quantity - quantity)
+        })
+        return { lovelace, assets }
+      }, getBalanceByUTxOs(utxos)), [recipients, utxos])
+
+    const txResult = useMemo(() => getResult(() => {
+      if (inputs.length === 0) throw new Error('No UTxO is spent.')
+
+      const { AuxiliaryData, ChangeSelectionAlgo, NativeScriptWitnessInfo, MetadataJsonSchema } = cardano.lib
+      const txBuilder = cardano.createTxBuilder(protocolParameters)
+
+      inputs.forEach((input) => {
+        const result = cardano
+          .createTxInputBuilder(input)
+          .native_script(nativeScript, NativeScriptWitnessInfo.assume_signature_count())
+        txBuilder.add_input(result)
       })
-      return { lovelace, assets }
-    }, getBalanceByUTxOs(utxos)), [recipients, utxos])
 
-  const txResult = useMemo(() => getResult(() => {
-    const { AuxiliaryData, ChangeSelectionAlgo, NativeScriptWitnessInfo, MetadataJsonSchema } = cardano.lib
-    const txBuilder = cardano.createTxBuilder(protocolParameters)
-
-    inputs.forEach((input) => {
-      const result = cardano
-        .createTxInputBuilder(input)
-        .native_script(nativeScript, NativeScriptWitnessInfo.assume_signature_count())
-      txBuilder.add_input(result)
-    })
-
-    recipients.forEach((recipient) => {
-      const result = cardano.buildTxOutput(recipient, protocolParameters)
-      txBuilder.add_output(result)
-    })
-
-    if (message.length > 0) {
-      const value = JSON.stringify({
-        msg: message
+      recipients.forEach((recipient) => {
+        const result = cardano.buildTxOutput(recipient, protocolParameters)
+        txBuilder.add_output(result)
       })
-      let auxiliaryData = AuxiliaryData.new()
-      auxiliaryData.add_json_metadatum_with_schema(cardano.getMessageLabel(), value, MetadataJsonSchema.NoConversions)
-      txBuilder.add_auxiliary_data(auxiliaryData)
+
+      if (message.length > 0) {
+        const value = JSON.stringify({
+          msg: message
+        })
+        let auxiliaryData = AuxiliaryData.new()
+        auxiliaryData.add_json_metadatum_with_schema(cardano.getMessageLabel(), value, MetadataJsonSchema.NoConversions)
+        txBuilder.add_auxiliary_data(auxiliaryData)
+      }
+
+      const startSlot = suggestStartSlot(nativeScript)
+      if (startSlot) {
+        txBuilder.set_validity_start_interval(startSlot)
+      }
+
+      const expirySlot = suggestExpirySlot(nativeScript)
+      if (expirySlot) {
+        txBuilder.set_ttl(expirySlot)
+      }
+
+      return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
+    }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, nativeScript])
+
+    const handleRecipientChange = (recipient: Recipient) => {
+      setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
     }
 
-    const startSlot = suggestStartSlot(nativeScript)
-    if (startSlot) {
-      txBuilder.set_validity_start_interval(startSlot)
+    const deleteRecipient = (recipient: Recipient) => {
+      setRecipients(recipients.filter(({ id }) => id !== recipient.id))
     }
 
-    const expirySlot = suggestExpirySlot(nativeScript)
-    if (expirySlot) {
-      txBuilder.set_ttl(expirySlot)
-    }
-
-    return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, nativeScript])
-
-  const handleRecipientChange = (recipient: Recipient) => {
-    setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
-  }
-
-  const deleteRecipient = (recipient: Recipient) => {
-    setRecipients(recipients.filter(({ id }) => id !== recipient.id))
-  }
-
-  return (
-    <Panel>
-      <ul>
-        {recipients.map((recipient, index) =>
-          <li key={recipient.id}>
-            <header className='flex px-4 py-2 bg-gray-100'>
-              <h2 className='grow font-semibold'>Recipient #{index + 1}</h2>
-              <nav className='flex justify-between items-center'>
-                <button onClick={() => deleteRecipient(recipient)}>
-                  <XMarkIcon className='w-4' />
-                </button>
-              </nav>
-            </header>
-            <TransactionRecipient
+    return (
+      <Panel>
+        <ul>
+          {recipients.map((recipient, index) =>
+            <li key={recipient.id}>
+              <header className='flex px-4 py-2 bg-gray-100'>
+                <h2 className='grow font-semibold'>Recipient #{index + 1}</h2>
+                <nav className='flex justify-between items-center'>
+                  <button onClick={() => deleteRecipient(recipient)}>
+                    <XMarkIcon className='w-4' />
+                  </button>
+                </nav>
+              </header>
+              <TransactionRecipient
+                cardano={cardano}
+                recipient={recipient}
+                budget={budget}
+                getMinLovelace={getMinLovelace}
+                onChange={handleRecipientChange} />
+            </li>
+          )}
+        </ul>
+        <div>
+          <header className='px-4 py-2 bg-gray-100'>
+            <h2 className='font-semibold'>Change Address</h2>
+            <p className='text-sm'>The change caused by this transaction or all remaining assets in the treasury goes to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
+            <p>
+              <label className='text-sm items-center space-x-1'>
+                <input
+                  type='checkbox'
+                  checked={!isChangeSettingDisabled}
+                  onChange={() => setIsChangeSettingDisabled(!isChangeSettingDisabled)} />
+                <span>I know the risk and I want to change it.</span>
+              </label>
+            </p>
+          </header>
+          <div className='p-4 space-y-2'>
+            <RecipientAddressInput
               cardano={cardano}
-              recipient={recipient}
-              budget={budget}
-              getMinLovelace={getMinLovelace}
-              onChange={handleRecipientChange} />
-          </li>
-        )}
-      </ul>
-      <div>
-        <header className='px-4 py-2 bg-gray-100'>
-          <h2 className='font-semibold'>Change Address</h2>
-          <p className='text-sm'>The change caused by this transaction goes to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!</p>
-          <p>
-            <label className='text-sm items-center space-x-1'>
-              <input
-                type='checkbox'
-                checked={!isChangeSettingDisabled}
-                onChange={() => setIsChangeSettingDisabled(!isChangeSettingDisabled)} />
-              <span>I know the risk and I want to change it.</span>
-            </label>
-          </p>
-        </header>
-        <div className='p-4 space-y-2'>
-          <RecipientAddressInput
-            cardano={cardano}
-            disabled={isChangeSettingDisabled}
-            address={changeAddress}
-            setAddress={setChangeAddress} />
-          {!isChangeSettingDisabled && <div>
-            <label className='items-center space-x-1'>
-              <input
-                type='checkbox'
-                checked={sendAllUTxOs}
-                onChange={() => setSendAllUTxOs(!sendAllUTxOs)} />
-              <span>Send all remaining assets in the treasury to this address</span>
-            </label>
-          </div>}
+              disabled={isChangeSettingDisabled}
+              address={changeAddress}
+              setAddress={setChangeAddress} />
+            {!isChangeSettingDisabled && <div>
+              <label className='items-center space-x-1'>
+                <input
+                  type='checkbox'
+                  checked={sendAllUTxOs}
+                  onChange={() => setSendAllUTxOs(!sendAllUTxOs)} />
+                <span>Send all remaining assets in the treasury to this address</span>
+              </label>
+            </div>}
+          </div>
         </div>
-      </div>
-      <div>
-        <header className='px-4 py-2 bg-gray-100'>
-          <h2 className='font-semibold'>Message</h2>
-          <p className='text-sm'>Cannot exceed 64 bytes each line.</p>
-        </header>
-        <TransactionMessageInput
-          className='p-4 block w-full outline-none'
-          onChange={setMessage}
-          messageLines={message} />
-      </div>
-      <footer className='flex p-4 bg-gray-100 items-center'>
-        <div className='grow'>
-          {txResult.isOk && <p className='flex space-x-1'>
-            <span>Fee:</span>
-            <span><ADAAmount lovelace={BigInt(txResult.data.body().fee().to_str())} /></span>
-          </p>}
-          {!txResult.isOk && <p className='flex space-x-1 text-red-500 items-center'>
-            <XCircleIcon className='h-4 w-4' />
-            <span>{txResult.message === 'The address is invalid.' ? 'Some addresses are invalid.' : txResult.message}</span>
-          </p>}
+        <div>
+          <header className='px-4 py-2 bg-gray-100'>
+            <h2 className='font-semibold'>Message</h2>
+            <p className='text-sm'>Cannot exceed 64 bytes each line.</p>
+          </header>
+          <TransactionMessageInput
+            className='p-4 block w-full outline-none'
+            onChange={setMessage}
+            messageLines={message} />
         </div>
-        <nav className='flex justify-end space-x-2'>
-          <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
-          <button
-            className='p-2 rounded text-sky-700 border'
-            onClick={() => setRecipients(recipients.concat(newRecipient()))}>
-            Add Recipient
-          </button>
-          {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
-        </nav>
-      </footer>
-    </Panel>
-  )
-}
+        <footer className='flex p-4 bg-gray-100 items-center'>
+          <div className='grow'>
+            {txResult.isOk && <p className='flex space-x-1'>
+              <span>Fee:</span>
+              <span><ADAAmount lovelace={BigInt(txResult.data.body().fee().to_str())} /></span>
+            </p>}
+            {!txResult.isOk && <p className='flex space-x-1 text-red-500 items-center'>
+              <XCircleIcon className='h-4 w-4' />
+              <span>{txResult.message === 'The address is invalid.' ? 'Some addresses are invalid.' : txResult.message}</span>
+            </p>}
+          </div>
+          <nav className='flex justify-end space-x-2'>
+            <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
+            <button
+              className='p-2 rounded text-sky-700 border'
+              onClick={() => setRecipients(recipients.concat(newRecipient()))}>
+              Add Recipient
+            </button>
+            {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
+          </nav>
+        </footer>
+      </Panel>
+    )
+  }
 
 const GetUTxOsToSpend: FC<{
   cardano: Cardano
