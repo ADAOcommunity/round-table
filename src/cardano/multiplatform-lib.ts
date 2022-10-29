@@ -110,21 +110,12 @@ class Cardano {
       error.name = 'InsufficientADAError'
       throw error
     }
-    const { AssetName, BigNum, TransactionOutputBuilder, MultiAsset, ScriptHash } = this.lib
-    const address = this.parseAddress(recipient.address)
-    const lovelace = BigNum.from_str(recipient.value.lovelace.toString())
-    const multiAsset = MultiAsset.new()
-    recipient.value.assets.forEach((quantity, assetId) => {
-      const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(assetId), 'hex'))
-      const assetName = AssetName.new(Buffer.from(getAssetName(assetId), 'hex'))
-      multiAsset.set_asset(policyId, assetName, BigNum.from_str(quantity.toString()))
-    })
-
+    const { TransactionOutputBuilder } = this.lib
     return TransactionOutputBuilder
       .new()
-      .with_address(address)
+      .with_address(this.parseAddress(recipient.address))
       .next()
-      .with_coin_and_asset(lovelace, multiAsset)
+      .with_value(this.buildCMLValue(recipient.value))
       .build()
   }
 
@@ -145,14 +136,16 @@ class Cardano {
     const { AssetName, BigNum, MultiAsset, ScriptHash } = this.lib
     const { lovelace, assets } = value
     const cardanoValue = this.lib.Value.new(BigNum.from_str(lovelace.toString()))
-    const multiAsset = MultiAsset.new()
-    assets.forEach((quantity, id, _) => {
-      const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
-      const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
-      const value = BigNum.from_str(quantity.toString())
-      multiAsset.set_asset(policyId, assetName, value)
-    })
-    cardanoValue.set_multiasset(multiAsset)
+    if (assets.size > 0) {
+      const multiAsset = MultiAsset.new()
+      assets.forEach((quantity, id, _) => {
+        const policyId = ScriptHash.from_bytes(Buffer.from(getPolicyId(id), 'hex'))
+        const assetName = AssetName.new(Buffer.from(getAssetName(id), 'hex'))
+        const value = BigNum.from_str(quantity.toString())
+        multiAsset.set_asset(policyId, assetName, value)
+      })
+      cardanoValue.set_multiasset(multiAsset)
+    }
     return cardanoValue
   }
 
