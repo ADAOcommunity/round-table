@@ -211,22 +211,6 @@ const NewTransaction: FC<{
   useEffect(() => {
     let isMounted = true
 
-    if (isMounted) {
-      if (recipients.length === 0) {
-        setChangeAddress('')
-      } else {
-        !changeAddress && setChangeAddress(defaultChangeAddress)
-      }
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [changeAddress, defaultChangeAddress, recipients])
-
-  useEffect(() => {
-    let isMounted = true
-
     if (isMounted && isChangeSettingDisabled) {
       setChangeAddress(defaultChangeAddress)
       setWillSpendAll(false)
