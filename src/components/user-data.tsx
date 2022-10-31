@@ -123,7 +123,7 @@ const ImportUserData: FC = () => {
       const treasuries: Treasury[] = userData.treasuries.map((treasury) => {
         const script = Buffer.from(treasury.script, 'base64')
         const nativeScript = cardano.lib.NativeScript.from_bytes(script)
-        const hash = cardano.hashScript(nativeScript).to_hex()
+        const hash = nativeScript.hash().to_hex()
         return {
           hash,
           name: treasury.name,

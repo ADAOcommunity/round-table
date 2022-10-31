@@ -1,21 +1,21 @@
 import type { NextPage } from 'next'
-import type { FC } from 'react'
 import { useRouter } from 'next/router'
-import { BackButton, Layout, Panel } from '../../../components/layout'
-import { Cardano, isAddressNetworkCorrect, newRecipient, Recipient } from '../../../cardano/multiplatform-lib'
-import { getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
+import { BackButton, Hero, Layout, Panel } from '../../../components/layout'
+import { Cardano, isAddressNetworkCorrect, newRecipient, Recipient, getResult, useCardanoMultiplatformLib } from '../../../cardano/multiplatform-lib'
 import { ErrorMessage, Loading } from '../../../components/status'
-import type { ChangeEventHandler } from 'react'
-import { useContext, useMemo, useState } from 'react'
+import type { FC, ChangeEventHandler } from 'react'
+import { useContext, useMemo, useState, useCallback, useEffect } from 'react'
 import { ConfigContext } from '../../../cardano/config'
 import { NativeScriptInfoViewer, TransactionReviewButton } from '../../../components/transaction'
-import { decodeASCII, getAssetName, getBalanceByUTxOs, useGetUTxOsToSpendQuery } from '../../../cardano/query-api'
-import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Value } from '../../../cardano/query-api'
+import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useGetUTxOsToSpendQuery } from '../../../cardano/query-api'
+import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import { PlusIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { PlusIcon, TrashIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ADAAmount, getADASymbol, LabeledCurrencyInput } from '../../../components/currency'
 import { suggestExpirySlot, suggestStartSlot } from '../../../components/native-script'
+import type { Output } from 'cardano-utxo-wasm'
+import init, { select } from 'cardano-utxo-wasm'
 
 const AddAssetButton: FC<{
   budget: Value
@@ -52,6 +52,33 @@ const AddAssetButton: FC<{
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+const RecipientAddressInput: FC<{
+  address: string
+  cardano: Cardano
+  className?: string
+  disabled?: boolean
+  setAddress: (address: string) => void
+}> = ({ address, cardano, className, disabled, setAddress }) => {
+  const [config, _] = useContext(ConfigContext)
+
+  const isValid = cardano.isValidAddress(address) && isAddressNetworkCorrect(config, cardano.parseAddress(address))
+
+  return (
+    <div className={className}>
+      <label className='flex block border rounded overflow-hidden'>
+        <span className='p-2 bg-gray-100 border-r'>To</span>
+        <input
+          className={['p-2 block w-full outline-none disabled:bg-gray-100', isValid ? '' : 'text-red-500'].join(' ')}
+          disabled={disabled}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          placeholder='Address' />
+      </label>
+      {address && !isValid && <p className='text-sm text-red-500'>The address is invalid.</p>}
     </div>
   )
 }
@@ -93,26 +120,11 @@ const TransactionRecipient: FC<{
     })
   }
 
-  const minLovelace = getMinLovelace(recipient)
-  const addressResult = getResult(() => {
-    const addressObject = cardano.lib.Address.from_bech32(address)
-    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('This address is from a wrong network')
-    return addressObject
-  })
+  const minLovelace = cardano.isValidAddress(address) ? getMinLovelace(recipient) : undefined
 
   return (
     <div className='p-4 space-y-2'>
-      <div>
-        <label className='flex block border rounded overflow-hidden'>
-          <span className='p-2 bg-gray-100 border-r'>To</span>
-          <input
-            className={['p-2 block w-full outline-none', addressResult.isOk ? '' : 'text-red-500'].join(' ')}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder='Address' />
-        </label>
-        {address && !addressResult.isOk && <p className='text-sm'>{addressResult.message}</p>}
-      </div>
+      <RecipientAddressInput address={address} setAddress={setAddress} cardano={cardano} />
       <div>
         <LabeledCurrencyInput
           symbol={getADASymbol(config)}
@@ -122,7 +134,7 @@ const TransactionRecipient: FC<{
           max={value.lovelace + budget.lovelace}
           onChange={setLovelace}
           placeholder='0.000000' />
-        <p className='text-sm space-x-1'>
+        {minLovelace ? <p className='text-sm space-x-1'>
           <span>At least</span>
           <button
             onClick={() => setLovelace(minLovelace)}
@@ -130,7 +142,7 @@ const TransactionRecipient: FC<{
             <ADAAmount lovelace={minLovelace} />
           </button>
           <span>is required</span>
-        </p>
+        </p> : null}
       </div>
       <ul className='space-y-2'>
         {Array.from(value.assets).map(([id, quantity]) => {
@@ -185,48 +197,118 @@ const NewTransaction: FC<{
   protocolParameters: ProtocolParams
   nativeScript: NativeScript
   utxos: TransactionOutput[]
-}> = ({ cardano, protocolParameters, nativeScript, utxos }) => {
+  minLovelace: bigint
+}> = ({ cardano, protocolParameters, nativeScript, utxos, minLovelace }) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [config, _] = useContext(ConfigContext)
+  const [inputs, setInputs] = useState<TransactionOutput[]>([])
+  const defaultChangeAddress = useMemo(() => cardano.getScriptAddress(nativeScript, config.isMainnet).to_bech32(), [cardano, nativeScript, config])
+  const [changeAddress, setChangeAddress] = useState<string>(defaultChangeAddress)
+  const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
+  const [willSpendAll, setWillSpendAll] = useState(false)
 
-  const getMinLovelace = (recipient: Recipient): bigint => {
-    const coinsPerUtxoByte = protocolParameters.coinsPerUtxoByte
-    if (!coinsPerUtxoByte) throw new Error('No coinsPerUtxoByte')
-    return cardano.getMinLovelace(recipient.value, false, coinsPerUtxoByte)
-  }
+  useEffect(() => {
+    let isMounted = true
 
-  const budget: Value = recipients
-    .map(({ value }) => value)
-    .reduce((result, value) => {
-      const lovelace = result.lovelace - value.lovelace
-      const assets = new Map(result.assets)
-      Array.from(value.assets).forEach(([id, quantity]) => {
-        const _quantity = assets.get(id)
-        _quantity && assets.set(id, _quantity - quantity)
+    if (isMounted && isChangeSettingDisabled) {
+      setChangeAddress(defaultChangeAddress)
+      setWillSpendAll(false)
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [defaultChangeAddress, isChangeSettingDisabled])
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (isMounted) {
+      if (willSpendAll || recipients.length === 0) {
+        setInputs(utxos)
+        return
+      }
+
+      setInputs([])
+
+      init().then(() => {
+        const inputs: Output[] = utxos.map((txOutput) => {
+          return {
+            data: txOutput,
+            lovelace: BigInt(txOutput.value),
+            assets: txOutput.tokens.map((token) => {
+              const assetId = token.asset.assetId
+              return {
+                policyId: getPolicyId(assetId),
+                assetName: getAssetName(assetId),
+                quantity: BigInt(token.quantity)
+              }
+            })
+          }
+        })
+        const outputs: Output[] = recipients.map((recipient) => {
+          return {
+            lovelace: recipient.value.lovelace,
+            assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
+              return {
+                policyId: getPolicyId(id),
+                assetName: getAssetName(id),
+                quantity: BigInt(quantity)
+              }
+            })
+          }
+        })
+        const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
+        const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
+        txOutputs && setInputs(txOutputs)
       })
-      return { lovelace, assets }
-    }, getBalanceByUTxOs(utxos))
+    }
 
-  const transactionResult = useMemo(() => {
-    const { NativeScripts } = cardano.lib
-    const txBuilder = cardano.createTxBuilder(protocolParameters)
-    const nativeScripts = NativeScripts.new()
-    nativeScripts.add(nativeScript)
-    txBuilder.set_native_scripts(nativeScripts)
+    return () => {
+      isMounted = false
+    }
+  }, [utxos, recipients, willSpendAll, minLovelace])
 
-    return getResult(() => {
+    const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
+
+    const budget: Value = useMemo(() => recipients
+      .map(({ value }) => value)
+      .reduce((result, value) => {
+        const lovelace = result.lovelace - value.lovelace
+        const assets = new Map(result.assets)
+        Array.from(value.assets).forEach(([id, quantity]) => {
+          const _quantity = assets.get(id)
+          _quantity && assets.set(id, _quantity - quantity)
+        })
+        return { lovelace, assets }
+      }, getBalanceByUTxOs(utxos)), [recipients, utxos])
+
+    const txResult = useMemo(() => getResult(() => {
+      if (inputs.length === 0) throw new Error('No UTxO is spent.')
+
+      const { AuxiliaryData, ChangeSelectionAlgo, NativeScriptWitnessInfo, MetadataJsonSchema } = cardano.lib
+      const txBuilder = cardano.createTxBuilder(protocolParameters)
+
+      inputs.forEach((input) => {
+        const result = cardano
+          .createTxInputBuilder(input)
+          .native_script(nativeScript, NativeScriptWitnessInfo.assume_signature_count())
+        txBuilder.add_input(result)
+      })
+
       recipients.forEach((recipient) => {
-        const txOutputResult = cardano.buildTxOutput(recipient)
-        if (!txOutputResult?.isOk) throw new Error('There are some invalid Transaction Outputs')
-        txBuilder.add_output(txOutputResult.data)
+        const result = cardano.buildTxOutput(recipient, protocolParameters)
+        txBuilder.add_output(result)
       })
 
       if (message.length > 0) {
         const value = JSON.stringify({
           msg: message
         })
-        txBuilder.add_json_metadatum(cardano.getMessageLabel(), value)
+        let auxiliaryData = AuxiliaryData.new()
+        auxiliaryData.add_json_metadatum_with_schema(cardano.getMessageLabel(), value, MetadataJsonSchema.NoConversions)
+        txBuilder.add_auxiliary_data(auxiliaryData)
       }
 
       const startSlot = suggestStartSlot(nativeScript)
@@ -239,83 +321,110 @@ const NewTransaction: FC<{
         txBuilder.set_ttl(expirySlot)
       }
 
-      const address = cardano.getScriptAddress(nativeScript, config.isMainnet)
-      cardano.chainCoinSelection(txBuilder, cardano.buildUTxOSet(utxos), address)
+      return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
+    }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, nativeScript])
 
-      return txBuilder.build_tx()
-    })
-  }, [recipients, cardano, config, message, protocolParameters, utxos, nativeScript])
+    const handleRecipientChange = (recipient: Recipient) => {
+      setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
+    }
 
-  const handleRecipientChange = (recipient: Recipient) => {
-    setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
-  }
+    const deleteRecipient = (recipient: Recipient) => {
+      setRecipients(recipients.filter(({ id }) => id !== recipient.id))
+    }
 
-  const deleteRecipient = (recipient: Recipient) => {
-    setRecipients(recipients.filter(({ id }) => id !== recipient.id))
-  }
-
-  return (
-    <Panel>
-      <ul>
-        {recipients.map((recipient, index) =>
-          <li key={recipient.id}>
-            <header className='flex px-4 py-2 bg-gray-100'>
-              <h2 className='grow font-semibold'>Recipient #{index + 1}</h2>
-              <nav className='flex justify-between items-center'>
-                {recipients.length > 1 &&
+    return (
+      <Panel>
+        <ul>
+          {recipients.map((recipient, index) =>
+            <li key={recipient.id}>
+              <header className='flex px-4 py-2 bg-gray-100'>
+                <h2 className='grow font-semibold'>Recipient #{index + 1}</h2>
+                <nav className='flex justify-between items-center'>
                   <button onClick={() => deleteRecipient(recipient)}>
                     <XMarkIcon className='w-4' />
                   </button>
-                }
-              </nav>
-            </header>
-            <TransactionRecipient
+                </nav>
+              </header>
+              <TransactionRecipient
+                cardano={cardano}
+                recipient={recipient}
+                budget={budget}
+                getMinLovelace={getMinLovelace}
+                onChange={handleRecipientChange} />
+            </li>
+          )}
+        </ul>
+        <div>
+          <header className='px-4 py-2 bg-gray-100'>
+            <h2 className='font-semibold'>{recipients.length > 0 ? 'Change' : 'Send All'}</h2>
+            <p className='text-sm'>{recipients.length > 0 ? 'The change caused by this transaction or all remaining assets in the treasury will be sent to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!' : 'All assets in this treasury will be sent to this address.'}</p>
+            {recipients.length > 0 && <p>
+              <label className='text-sm items-center space-x-1'>
+                <input
+                  type='checkbox'
+                  checked={!isChangeSettingDisabled}
+                  onChange={() => setIsChangeSettingDisabled(!isChangeSettingDisabled)} />
+                <span>I know the risk and I want to do it.</span>
+              </label>
+            </p>}
+          </header>
+          <div className='p-4 space-y-2'>
+            <RecipientAddressInput
               cardano={cardano}
-              recipient={recipient}
-              budget={budget}
-              getMinLovelace={getMinLovelace}
-              onChange={handleRecipientChange} />
-          </li>
-        )}
-      </ul>
-      <div>
-        <header className='px-4 py-2 bg-gray-100'>
-          <h2 className='font-semibold'>Message</h2>
-          <p className='text-sm'>Cannot exceed 64 bytes each line</p>
-        </header>
-        <TransactionMessageInput
-          className='p-4 block w-full outline-none'
-          onChange={setMessage}
-          messageLines={message} />
-      </div>
-      <footer className='flex p-4 bg-gray-100 items-center'>
-        <div className='grow'>
-          {transactionResult.isOk &&
-            <p className='flex space-x-1 font-semibold'>
-              <span>Fee:</span>
-              <span><ADAAmount lovelace={BigInt(transactionResult.data.body().fee().to_str())} /></span>
-            </p>
-          }
+              disabled={isChangeSettingDisabled && recipients.length > 0}
+              address={changeAddress}
+              setAddress={setChangeAddress} />
+            {!isChangeSettingDisabled && recipients.length > 0 && <div>
+              <label className='items-center space-x-1'>
+                <input
+                  type='checkbox'
+                  checked={willSpendAll}
+                  onChange={() => setWillSpendAll(!willSpendAll)} />
+                <span>Send all remaining assets in the treasury to this address</span>
+              </label>
+            </div>}
+          </div>
         </div>
-        <nav className='flex justify-end space-x-2'>
-          <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
-          <button
-            className='p-2 rounded text-sky-700 border'
-            onClick={() => setRecipients(recipients.concat(newRecipient()))}>
-            Add Recipient
-          </button>
-          <TransactionReviewButton className='px-4 py-2 rounded' result={transactionResult} />
-        </nav>
-      </footer>
-    </Panel>
-  )
-}
+        <div>
+          <header className='px-4 py-2 bg-gray-100'>
+            <h2 className='font-semibold'>Message</h2>
+            <p className='text-sm'>Cannot exceed 64 bytes each line.</p>
+          </header>
+          <TransactionMessageInput
+            className='p-4 block w-full outline-none'
+            onChange={setMessage}
+            messageLines={message} />
+        </div>
+        <footer className='flex p-4 bg-gray-100 items-center'>
+          <div className='grow'>
+            {txResult.isOk && <p className='flex space-x-1'>
+              <span>Fee:</span>
+              <span><ADAAmount lovelace={BigInt(txResult.data.body().fee().to_str())} /></span>
+            </p>}
+            {!txResult.isOk && <p className='flex space-x-1 text-red-500 items-center'>
+              <XCircleIcon className='h-4 w-4' />
+              <span>{txResult.message === 'The address is invalid.' ? 'Some addresses are invalid.' : txResult.message}</span>
+            </p>}
+          </div>
+          <nav className='flex justify-end space-x-2'>
+            <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
+            <button
+              className='p-2 rounded text-sky-700 border'
+              onClick={() => setRecipients(recipients.concat(newRecipient()))}>
+              Add Recipient
+            </button>
+            {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
+          </nav>
+        </footer>
+      </Panel>
+    )
+  }
 
 const GetUTxOsToSpend: FC<{
   cardano: Cardano
   script: NativeScript
 }> = ({ cardano, script }) => {
-
+  const minLovelace = BigInt(5e6)
   const [config, _] = useContext(ConfigContext)
   const address = cardano.getScriptAddress(script, config.isMainnet)
   const { loading, error, data } = useGetUTxOsToSpendQuery({
@@ -333,12 +442,19 @@ const GetUTxOsToSpend: FC<{
   return (
     <Layout>
       <div className='space-y-2'>
+        <Hero>
+          <h1 className='font-semibold text-lg'>Create Transaction</h1>
+          <article>
+            <p>Due to the native assets, you should have <strong><ADAAmount lovelace={minLovelace} /></strong> at least in your treasury in order to create transactions properly.</p>
+            <p>You can send all assets to other by removing all the recipients.</p>
+          </article>
+        </Hero>
         <NativeScriptInfoViewer
-          cardano={cardano}
           className='border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden p-4 space-y-1'
           script={script} />
         <NewTransaction
           cardano={cardano}
+          minLovelace={minLovelace}
           utxos={data.utxos}
           nativeScript={script}
           protocolParameters={protocolParameters} />

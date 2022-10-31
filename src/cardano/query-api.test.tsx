@@ -73,6 +73,10 @@ describe('GraphQL API', () => {
         expect(params.keyDeposit).toBe(2000000)
         expect(params.maxTxSize).toBe(16384)
         expect(params.maxValSize).toBe('5000')
+        expect(params.priceMem).toBe(0.0577)
+        expect(params.priceStep).toBe(0.0000721)
+        expect(params.collateralPercent).toBe(150)
+        expect(params.maxCollateralInputs).toBe(3)
       }
     }
   })

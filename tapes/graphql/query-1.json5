@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-09-15T08:25:42.869Z',
+        createdAt: '2022-10-25T04:34:01.402Z',
         host: 'https://graphql-api.testnet.dandelion.link',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -23,14 +23,14 @@
                     'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
                 ],
             },
-            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        priceMem\n        priceStep\n        collateralPercent\n        maxCollateralInputs\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Thu, 15 Sep 2022 08:25:44 GMT',
+                'Tue, 25 Oct 2022 04:34:03 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -42,7 +42,7 @@
                 'close',
             ],
             'cf-ray': [
-                '74aff9304ca64816-SIN',
+                '75f83ccdcebd897c-SIN',
             ],
             'access-control-allow-origin': [
                 '*',
@@ -51,7 +51,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"461-+YCQGeUjtLTybAhIdJuMQDVkGY8"',
+                'W/"4b9-dWNrHZpUmXv1o5UtEg+rOMZALUk"',
             ],
             'set-cookie': [
                 'network=core; path=/',
@@ -66,7 +66,7 @@
                 'Express',
             ],
             'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=5IEOmS4%2FCKqXGEFkQnqd%2BFOruiKBZdjGU5dh9JZ0SOZb0IYfxt%2BnU41DXNIAdPSsoxvKIYyDX0HV1tnERLLeF8JG6SkZ3DtDNIAkDpaHpQ1hJrOrocHBIjT6RrX7%2BlTHqVOYH8aDtJnE62C3%2Bul3jH%2BtDX3V"}],"group":"cf-nel","max_age":604800}',
+                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=zSpkt64uPa28Zzl%2FgE0IZiVrSgtOohaMw%2BBYWE0cjUYbEMZhbP0GI9ojmIjc7uXsXC8O3cHOW5MEVwfwwklM80BeWGydVQT6Vi0K6rpJ5fjylBNzPpRfYJR8zWDOONnkrR5ReEFVSoWcpJOUxtOjZ38AEgsQ"}],"group":"cf-nel","max_age":604800}',
             ],
             nel: [
                 '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
@@ -128,6 +128,10 @@
                             coinsPerUtxoByte: 4310,
                             maxValSize: '5000',
                             maxTxSize: 16384,
+                            priceMem: 0.0577,
+                            priceStep: 0.0000721,
+                            collateralPercent: 150,
+                            maxCollateralInputs: 3,
                             __typename: 'ProtocolParams',
                         },
                         __typename: 'Epoch',

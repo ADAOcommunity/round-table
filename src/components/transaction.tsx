@@ -4,7 +4,6 @@ import { AssetAmount, ADAAmount } from './currency'
 import { decodeASCII, getAssetName } from '../cardano/query-api'
 import { Cardano, getResult, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Recipient } from '../cardano/multiplatform-lib'
-import type { Result } from '../cardano/multiplatform-lib'
 import type { Address, NativeScript, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
@@ -25,14 +24,10 @@ import { estimateSlotByDate } from '../cardano/utils'
 
 const TransactionReviewButton: FC<{
   className?: string
-  result: Result<Transaction>
-}> = ({ className, result }) => {
-  if (!result.isOk) return (
-    <div className={['text-gray-400 bg-gray-100 border cursor-not-allowed', className].join(' ')}>Review Transaction</div>
-  )
-
+  transaction: Transaction
+}> = ({ className, transaction }) => {
   return (
-    <Link href={getTransactionPath(result.data)}>
+    <Link href={getTransactionPath(transaction)}>
       <a className={['text-white bg-sky-700', className].join(' ')}>Review Transaction</a>
     </Link>
   )
@@ -156,11 +151,10 @@ const AddressViewer: FC<{
 }
 
 const NativeScriptInfoViewer: FC<{
-  cardano: Cardano
   className?: string
   script: NativeScript
-}> = ({ cardano, className, script }) => {
-  const hash = cardano.hashScript(script)
+}> = ({ className, script }) => {
+  const hash = script.hash()
   const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
 
   if (!treasury) return (
@@ -183,12 +177,11 @@ const NativeScriptInfoViewer: FC<{
 }
 
 const DeleteTreasuryButton: FC<{
-  cardano: Cardano
   className?: string
   children: ReactNode
   script: NativeScript
-}> = ({ cardano, className, children, script }) => {
-  const hash = cardano.hashScript(script)
+}> = ({ className, children, script }) => {
+  const hash = script.hash()
   const treasury = useLiveQuery(async () => db.treasuries.get(hash.to_hex()), [script])
   const router = useRouter()
 
@@ -418,19 +411,18 @@ const WalletInfo: FC<{
 }
 
 const SaveTreasuryButton: FC<{
-  cardano: Cardano
   className?: string
   children: ReactNode
   name: string
   description: string
   script?: NativeScript
-}> = ({ cardano, name, description, script, className, children }) => {
+}> = ({ name, description, script, className, children }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
 
   if (!script) return <button className={className} disabled={true}>{children}</button>;
 
-  const hash = cardano.hashScript(script).to_hex()
+  const hash = script.hash().to_hex()
 
   const submitHandle = () => {
     db
