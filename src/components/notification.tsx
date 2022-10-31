@@ -84,7 +84,7 @@ const Notification: FC<{
   })
 
   const getClassName = (): string => {
-    const base = 'rounded-md shadow overflow-hidden relative'
+    const base = 'rounded shadow overflow-hidden relative'
 
     switch (type) {
       case 'success': return `${base} bg-green-100 text-green-500`

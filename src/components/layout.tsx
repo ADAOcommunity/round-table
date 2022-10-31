@@ -257,13 +257,13 @@ const Layout: FC<{
       <SecondaryBar />
       <div className='w-full bg-sky-100 overflow-y-auto'>
         {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
-        <div className='flex flex-row-reverse'>
-          <NotificationCenter className='fixed space-y-2 w-1/4' />
-        </div>
         <div className='p-2 h-screen space-y-2'>
           <ChainProgress />
           {children}
         </div>
+      </div>
+      <div className='flex flex-row-reverse'>
+        <NotificationCenter className='fixed space-y-2 w-1/4 p-4' />
       </div>
     </div>
   )
