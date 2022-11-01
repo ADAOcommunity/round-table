@@ -55,7 +55,7 @@ const TransactionBodyViewer: FC<{
   const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
     const id = i.toString()
     const output = txBody.outputs().get(i)
-    const address = output.address().to_bech32()
+    const address = cardano.toAddressString(output.address())
     const amount = output.amount()
     const assets = new Map()
     const multiAsset = amount.multiasset()

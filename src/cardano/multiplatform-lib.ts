@@ -207,6 +207,12 @@ class Cardano {
     throw error
   }
 
+  public toAddressString(address: Address): string {
+    const byron = address.as_byron()
+    if (byron) return byron.to_base58()
+    return address.to_bech32()
+  }
+
   public isValidAddress(address: string): boolean {
     const { Address } = this.lib
     return Address.is_valid(address)
