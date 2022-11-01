@@ -33,6 +33,12 @@ const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
   return config.isMainnet ? networkId === 1 : networkId === 0
 }
 
+const toAddressString = (address: Address): string => {
+  const byron = address.as_byron()
+  if (byron) return byron.to_base58()
+  return address.to_bech32()
+}
+
 type Result<T> =
   | { isOk: true, data: T }
   | { isOk: false, message: string }
@@ -207,12 +213,6 @@ class Cardano {
     throw error
   }
 
-  public toAddressString(address: Address): string {
-    const byron = address.as_byron()
-    if (byron) return byron.to_base58()
-    return address.to_bech32()
-  }
-
   public isValidAddress(address: string): boolean {
     const { Address } = this.lib
     return Address.is_valid(address)
@@ -339,4 +339,4 @@ const useCardanoMultiplatformLib = () => {
 }
 
 export type { Cardano, CardanoIterable, Result, MultiSigType, Recipient }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect, toAddressString }
