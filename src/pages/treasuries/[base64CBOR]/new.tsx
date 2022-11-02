@@ -446,7 +446,7 @@ const GetUTxOsToSpend: FC<{
           <h1 className='font-semibold text-lg'>Create Transaction</h1>
           <div>
             <p>Due to the native assets, you should always have at least <strong><ADAAmount lovelace={minLovelace} /></strong> in your treasury to create transactions properly.</p>
-            <p>You can send all assets to a different address by modifying the "change" recipient.</p>
+            <p>You can send all assets to a different address by modifying the &ldquo;change&rdquo; recipient.</p>
           </div>
         </Hero>
         <NativeScriptInfoViewer
