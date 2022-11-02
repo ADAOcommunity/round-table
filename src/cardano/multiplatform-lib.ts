@@ -33,11 +33,7 @@ const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
   return config.isMainnet ? networkId === 1 : networkId === 0
 }
 
-const toAddressString = (address: Address): string => {
-  const byron = address.as_byron()
-  if (byron) return byron.to_base58()
-  return address.to_bech32()
-}
+const toAddressString = (address: Address): string => address.as_byron()?.to_base58() ?? address.to_bech32()
 
 type Result<T> =
   | { isOk: true, data: T }
