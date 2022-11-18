@@ -5,16 +5,14 @@ import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, Treasury } from '../db'
+import { db, Account } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
-import { getTreasuriesPath } from '../route'
-import { encodeCardanoData, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
-import type { Cardano } from '../cardano/multiplatform-lib'
 import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
+import { getAccountPath } from '../route'
 
 const Toggle: FC<{
   isOn: boolean
@@ -160,33 +158,26 @@ const PrimaryBar: FC = () => {
   )
 }
 
-const TreasuryListing: FC<{
-  treasury: Treasury
+const AccountListing: FC<{
+  account: Account
   balance?: Value
-}> = ({ treasury, balance }) => {
-  const { name, script } = treasury
-  const base64CBOR = encodeCardanoData(script, 'base64')
+}> = ({ account, balance }) => {
   const lovelace = balance?.lovelace
   return (
     <NavLink
-      href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
+      href={getAccountPath(account.policy)}
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 hover:bg-sky-700'>
-      <div className='truncate'>{name}</div>
+      <div className='truncate'>{account.name}</div>
       <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <ArrowPathIcon className='w-4 animate-spin transform rotate-180' />}</div>
     </NavLink>
   )
 }
 
-const TreasuryList: FC<{
-  cardano: Cardano
-  treasuries: Treasury[]
-}> = ({ cardano, treasuries }) => {
-  const [config, _] = useContext(ConfigContext)
-  const addresses = cardano && treasuries && treasuries.map((treasury) => {
-    const script = cardano.lib.NativeScript.from_bytes(treasury.script)
-    return cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  })
+const AccountList: FC<{
+  accounts: Account[]
+}> = ({ accounts }) => {
+  const addresses = accounts.map((account) => account.id)
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
@@ -202,27 +193,26 @@ const TreasuryList: FC<{
 
   return (
     <nav className='block w-full'>
-      {treasuries.map((treasury, index) => <TreasuryListing key={index} treasury={treasury} balance={balances[index]} />)}
+      {accounts.map((account, index) => <AccountListing key={index} account={account} balance={balances[index]} />)}
     </nav>
   )
 }
 
 const SecondaryBar: FC = () => {
-  const treasuries = useLiveQuery(async () => db.treasuries.toArray())
-  const cardano = useCardanoMultiplatformLib()
+  const accounts = useLiveQuery(async () => db.accounts.toArray())
 
   return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
       <nav className='w-full bg-sky-900 font-semibold'>
         <NavLink
-          href='/treasuries/new'
+          href='/accounts/new'
           onPageClassName='bg-sky-700'
           className='flex w-full p-4 items-center space-x-1 justify-center hover:bg-sky-700'>
           <PlusIcon className='w-4' />
-          <span>New Treasury</span>
+          <span>New Account</span>
         </NavLink>
       </nav>
-      {cardano && treasuries && <TreasuryList cardano={cardano} treasuries={treasuries} />}
+      {accounts && <AccountList accounts={accounts} />}
     </aside>
   )
 }

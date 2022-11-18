@@ -3,17 +3,13 @@ import type { FC, ReactNode } from 'react'
 import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
-import { db, Treasury } from '../db'
+import { db } from '../db'
+import type { Account } from '../db'
 
 type UserData = {
   isMainnet: boolean
   version: string
-  treasuries: {
-    name: string
-    description: string
-    script: string
-    updatedAt: Date
-  }[]
+  accounts: Account[]
 }
 
 const DownloadButton: FC<{
@@ -52,25 +48,15 @@ const DownloadButton: FC<{
 
 const ExportUserDataButton: FC = () => {
   const [config, _] = useContext(ConfigContext)
-  const treasuries = useLiveQuery(async () =>
-    db
-      .treasuries
-      .toArray()
-      .then((treasuries) => treasuries.map((treasury) => {
-        return {
-          name: treasury.name,
-          description: treasury.description,
-          script: Buffer.from(treasury.script).toString('base64'),
-          updatedAt: treasury.updatedAt
-        }
-      }))
+  const accounts = useLiveQuery(async () =>
+    db.accounts.toArray()
   )
-  if (!treasuries) return null
+  if (!accounts) return null
 
   const userData: UserData = {
     isMainnet: config.isMainnet,
     version: '1',
-    treasuries
+    accounts
   }
   const filename = `roundtable-backup.${config.isMainnet ? 'mainnet' : 'testnet'}.json`
 
@@ -120,20 +106,8 @@ const ImportUserData: FC = () => {
     const version = userData.version
 
     if (version === '1') {
-      const treasuries: Treasury[] = userData.treasuries.map((treasury) => {
-        const script = Buffer.from(treasury.script, 'base64')
-        const nativeScript = cardano.lib.NativeScript.from_bytes(script)
-        const hash = nativeScript.hash().to_hex()
-        return {
-          hash,
-          name: treasury.name,
-          description: treasury.description,
-          script,
-          updatedAt: treasury.updatedAt
-        }
-      })
-
-      db.treasuries.bulkAdd(treasuries)
+      const accounts: Account[] = userData.accounts
+      db.accounts.bulkAdd(accounts)
     }
   }
 

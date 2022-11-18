@@ -2,6 +2,7 @@ import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-
 import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
+import type { Policy } from '../db'
 import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
@@ -10,7 +11,6 @@ const Fraction = require('fractional').Fraction
 type Fraction = { numerator: number, denominator: number }
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
-type MultiSigType = 'all' | 'any' | 'atLeast'
 type Recipient = {
   id: string
   address: string
@@ -214,22 +214,6 @@ class Cardano {
     return Address.is_valid(address)
   }
 
-  public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
-    return getResult(() => {
-      const keyHash = address.as_base()?.payment_cred().to_keyhash()
-      if (!keyHash) throw new Error('failed to get keyhash from address')
-      return keyHash
-    })
-  }
-
-  public getAddressScriptHash(address: Address): Result<ScriptHash> {
-    return getResult(() => {
-      const scriptHash = address.as_base()?.payment_cred().to_scripthash()
-      if (!scriptHash) throw new Error('failed to get script hash from address')
-      return scriptHash
-    })
-  }
-
   public createTxBuilder(protocolParameters: ProtocolParams): TransactionBuilder {
     const { BigNum, ExUnitPrices, UnitInterval, TransactionBuilder, TransactionBuilderConfigBuilder, LinearFee } = this.lib
     const { minFeeA, minFeeB, poolDeposit, keyDeposit,
@@ -264,39 +248,66 @@ class Cardano {
     return TransactionBuilder.new(config)
   }
 
-  public getScriptAddress(script: NativeScript, isMainnet: boolean): Address {
-    const { NetworkInfo } = this.lib
-    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
-    return this.getScriptHashBaseAddress(script.hash(), networkInfo).to_address()
+  public getNativeScriptFromPolicy(policy: Policy, getKeyHash: (address: Address) => Ed25519KeyHash): NativeScript {
+    const { Address, BigNum, NativeScript, NativeScripts, ScriptAll, ScriptAny, ScriptNOfK, ScriptPubkey, TimelockStart, TimelockExpiry } = this.lib
+    if (typeof policy === 'string') {
+      const keyHash = getKeyHash(Address.from_bech32(policy))
+      return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
+    }
+    switch (policy.type) {
+      case 'TimelockStart': return NativeScript.new_timelock_start(TimelockStart.new(BigNum.from_str(policy.slot.toString())))
+      case 'TimelockExpiry': return NativeScript.new_timelock_expiry(TimelockExpiry.new(BigNum.from_str(policy.slot.toString())))
+    }
+    const nativeScripts = NativeScripts.new()
+    policy.policies.forEach((policy) => {
+      nativeScripts.add(this.getNativeScriptFromPolicy(policy, getKeyHash))
+    })
+    switch (policy.type) {
+      case 'All': return NativeScript.new_script_all(ScriptAll.new(nativeScripts))
+      case 'Any': return NativeScript.new_script_any(ScriptAny.new(nativeScripts))
+      case 'NofK': return NativeScript.new_script_n_of_k(ScriptNOfK.new(policy.number, nativeScripts))
+    }
   }
 
-  public getScriptType(script: NativeScript): MultiSigType {
-    const { NativeScriptKind } = this.lib
-    switch (script.kind()) {
-      case NativeScriptKind.ScriptAll: return 'all'
-      case NativeScriptKind.ScriptAny: return 'any'
-      case NativeScriptKind.ScriptNOfK: return 'atLeast'
-      default: throw new Error(`Unsupported Script Type: ${script.kind()}`)
-    }
+  public getPaymentNativeScriptFromPolicy(policy: Policy): NativeScript {
+    return this.getNativeScriptFromPolicy(policy, (address) => {
+      const keyHash = address.as_base()?.payment_cred().to_keyhash()
+      if (!keyHash) throw new Error('No key hash of payment')
+      return keyHash
+    })
+  }
+
+  public getStakingNativeScriptFromPolicy(policy: Policy): NativeScript {
+    return this.getNativeScriptFromPolicy(policy, (address) => {
+      const keyHash = address.as_base()?.stake_cred().to_keyhash()
+      if (!keyHash) throw new Error('No key hash of staking')
+      return keyHash
+    })
+  }
+
+  public getPolicyAddress(policy: Policy, isMainnet: boolean): Address {
+    const { Address, BaseAddress, StakeCredential, NetworkInfo } = this.lib
+    if (typeof policy === 'string') return Address.from_bech32(policy)
+    const paymentScript = this.getPaymentNativeScriptFromPolicy(policy)
+    const stakingScript = this.getStakingNativeScriptFromPolicy(policy)
+    const networkId = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+    const payment = StakeCredential.from_scripthash(paymentScript.hash())
+    const staking = StakeCredential.from_scripthash(stakingScript.hash())
+    return BaseAddress.new(networkId.network_id(), payment, staking).to_address()
   }
 
   public getRequiredSignatures(script: NativeScript): number {
+    const { NativeScriptKind } = this.lib
     const totalNumber = script.get_required_signers().len()
-    switch (this.getScriptType(script)) {
-      case 'all': return totalNumber
-      case 'any': return 1
-      case `atLeast`:
+    switch (script.kind()) {
+      case NativeScriptKind.ScriptAll: return totalNumber
+      case NativeScriptKind.ScriptAny: return 1
+      case NativeScriptKind.ScriptNOfK:
         const nofK = script.as_script_n_of_k()
         if (!nofK) throw new Error('cannot convert to ScriptNofK')
         return nofK.n()
+      default: throw new Error(`Unsupported Script Type: ${script.kind()}`)
     }
-  }
-
-  private getScriptHashBaseAddress(scriptHash: ScriptHash, networkInfo: NetworkInfo): BaseAddress {
-    const { BaseAddress, StakeCredential } = this.lib
-    const networkId = networkInfo.network_id()
-    const credential = StakeCredential.from_scripthash(scriptHash)
-    return BaseAddress.new(networkId, credential, credential)
   }
 }
 
@@ -334,5 +345,5 @@ const useCardanoMultiplatformLib = () => {
   return cardano
 }
 
-export type { Cardano, CardanoIterable, Result, MultiSigType, Recipient }
+export type { Cardano, CardanoIterable, Result, Recipient }
 export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect, toAddressString }

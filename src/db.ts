@@ -1,26 +1,34 @@
 import Dexie, { Table } from 'dexie'
 
-interface Treasury {
-  hash: string
+type Policy =
+  | { type: 'All', policies: Array<Policy> }
+  | { type: 'Any', policies: Array<Policy> }
+  | { type: 'NofK', policies: Array<Policy>, number: number }
+  | { type: 'TimelockStart', slot: number }
+  | { type: 'TimelockExpiry', slot: number }
+  | string
+
+interface Account {
+  id: string
   name: string
   description: string
-  script: Uint8Array
+  policy: Policy
   updatedAt: Date
 }
 
 class LocalDatabase extends Dexie {
-  treasuries!: Table<Treasury>
+  accounts!: Table<Account>
 
   constructor() {
     super('round-table')
 
     this.version(1).stores({
-      treasuries: '&hash'
+      accounts: '&id'
     })
   }
 }
 
 const db = new LocalDatabase()
 
-export type { Treasury }
+export type { Account, Policy }
 export { db }
