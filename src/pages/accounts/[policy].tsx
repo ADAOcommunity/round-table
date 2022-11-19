@@ -1,8 +1,8 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { getResult, useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
-import type { Cardano, Result } from '../../cardano/multiplatform-lib'
-import { ErrorMessage, Loading } from '../../components/status'
+import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
+import type { Cardano } from '../../cardano/multiplatform-lib'
+import { Loading } from '../../components/status'
 import { db, Policy } from '../../db'
 import { useContext, useMemo, useState } from 'react'
 import type { FC } from 'react'
@@ -11,9 +11,10 @@ import { CopyButton, Hero, Layout, Panel } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
-import { ArrowPathIcon, DocumentDuplicateIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
 import { EditAccount } from '../../components/account'
 import { NewTransaction } from '../../components/transaction'
+import { Modal } from '../../components/modal'
 
 const Balance: FC<{
   addresses: string[]
@@ -30,7 +31,11 @@ const Balance: FC<{
     return getBalanceByPaymentAddresses(paymentAddresses)
   }, [data])
 
-  if (!balance) return <ArrowPathIcon className='w-4 animate-spin transform rotate-180' />;
+  if (!balance) return (
+    <Modal>
+      <Loading />
+    </Modal>
+  )
 
   return (
     <Panel className='p-4 space-y-2'>
@@ -69,15 +74,16 @@ const Spend: FC<{
     fetchPolicy: 'network-only'
   })
 
-  if (loading) return null
   if (error) {
     console.error(error)
     return null
   }
-  if (!data) return null
+  if (loading || !data) return (
+    <Modal><Loading /></Modal>
+  )
 
   const protocolParameters = data.cardano.currentEpoch.protocolParams
-  if (!protocolParameters) return null
+  if (!protocolParameters) throw new Error('No protocol parameter')
 
   return (
     <NewTransaction
@@ -95,72 +101,60 @@ const GetPolicy: NextPage = () => {
   const cardano = useCardanoMultiplatformLib()
   const router = useRouter()
   const policyContent = router.query.policy
-  const result: Result<{ policy: Policy, address: string } | undefined> = useMemo(() => getResult(() => {
-    if (!cardano) return
-    if (!policyContent) return
+  const result: { policy: Policy, address: string } | undefined = useMemo(() => {
+    if (!cardano || !policyContent) return
     if (typeof policyContent !== 'string') throw new Error('Cannot parse the policy')
     const { Address } = cardano.lib
     if (Address.is_valid_bech32(policyContent)) return { policy: policyContent, address: policyContent }
     const policy: Policy = JSON.parse(policyContent)
     const address = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
     return { policy, address }
-  }), [cardano, config, policyContent])
+  }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'balance' | 'spend' | 'edit'>('balance')
-  const account = useLiveQuery(async () => {
-    if (result.isOk && result.data) {
-      const { address } = result.data
-      return db.accounts.get(address)
-    }
-  }, [result])
-
-  if (!result.isOk) {
-    console.error(result.message)
-    return <ErrorMessage>Invalid Policy</ErrorMessage>;
-  }
-  if (!cardano) return <Loading />;
-  if (!result.data) return <Loading />;
-
-  const { policy, address } = result.data
+  const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
 
   return (
     <Layout>
-      <Hero>
-        <h1 className='text-lg font-semibold'>{account?.name ?? 'Unknown Account'}</h1>
-        <div>
-          <div className='flex items-center'>
-            <span>{address}</span>
-            <CopyButton className='p-2 text-sm text-white' getContent={() => address} ms={500}>
-              <DocumentDuplicateIcon className='w-4' />
-            </CopyButton>
+      {(!cardano || !result) && <Modal><Loading /></Modal>}
+      {cardano && result && <div className='space-y-2'>
+        <Hero>
+          <h1 className='text-lg font-semibold'>{account?.name ?? 'Unknown Account'}</h1>
+          <div>
+            <div className='flex items-center'>
+              <span>{result.address}</span>
+              <CopyButton className='p-2 text-sm text-white' getContent={() => result.address} ms={500}>
+                <DocumentDuplicateIcon className='w-4' />
+              </CopyButton>
+            </div>
+            {account && account.description.length > 0 && <div>{account.description}</div>}
           </div>
-          {account && account.description.length > 0 && <div>{account.description}</div>}
-        </div>
-        <div className='flex'>
-          <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
-            <button
-              onClick={() => setTab('balance')}
-              disabled={tab === 'balance'}
-              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-              Balance
-            </button>
-            <button
-              onClick={() => setTab('spend')}
-              disabled={tab === 'spend'}
-              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-              Spend
-            </button>
-            <button
-              onClick={() => setTab('edit')}
-              disabled={tab === 'edit'}
-              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-              Edit
-            </button>
-          </nav>
-        </div>
-      </Hero>
-      {tab === 'balance' && <Balance addresses={[result.data.address]} />}
-      {tab === 'spend' && <Spend cardano={cardano} policy={policy} address={address} />}
-      {tab === 'edit' && <EditAccount cardano={cardano} account={account} />}
+          <div className='flex'>
+            <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
+              <button
+                onClick={() => setTab('balance')}
+                disabled={tab === 'balance'}
+                className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+                Balance
+              </button>
+              <button
+                onClick={() => setTab('spend')}
+                disabled={tab === 'spend'}
+                className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+                Spend
+              </button>
+              <button
+                onClick={() => setTab('edit')}
+                disabled={tab === 'edit'}
+                className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+                Edit
+              </button>
+            </nav>
+          </div>
+        </Hero>
+        {tab === 'balance' && <Balance addresses={[result.address]} />}
+        {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
+        {tab === 'edit' && <EditAccount cardano={cardano} account={account} />}
+      </div>}
     </Layout>
   )
 }

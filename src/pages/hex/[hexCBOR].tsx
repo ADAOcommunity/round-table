@@ -1,17 +1,21 @@
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { ErrorMessage, Loading } from '../../components/status'
+import { Layout } from '../../components/layout'
+import { Modal } from '../../components/modal'
+import { Loading } from '../../components/status'
 import { TransactionViewer } from '../../components/transaction'
 
 const GetTransaction: NextPage = () => {
   const router = useRouter()
   const { hexCBOR } = router.query
 
-  if (!hexCBOR) return <Loading />;
-  if (typeof hexCBOR !== 'string') return <ErrorMessage>Invalid Transaction CBOR</ErrorMessage>;
+  if (typeof hexCBOR !== 'string') return null
 
   return (
-    <TransactionViewer content={Buffer.from(hexCBOR, 'hex')} />
+    <Layout>
+      {!hexCBOR && <Modal><Loading /></Modal>}
+      {hexCBOR && <TransactionViewer content={Buffer.from(hexCBOR, 'hex')} />}
+    </Layout>
   )
 }
 

@@ -1,4 +1,4 @@
-import type { FC, ReactNode, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler, MouseEventHandler } from 'react'
+import type { FC, ReactNode, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
 import { useMemo } from 'react'
 import { useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
@@ -8,7 +8,7 @@ import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
 import { Panel } from '../components/layout'
 import { ExclamationCircleIcon, PlusIcon, XMarkIcon, NoSymbolIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { Calendar, DateContext } from '../components/time'
-import Modal from '../components/modal'
+import { Modal } from '../components/modal'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
@@ -379,10 +379,10 @@ const EditPolicy: FC<{
           )
         })}
       </ul>}
-      {modal === 'address' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3' onClose={closeModal}>
+      {modal === 'address' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
         <AddAddress className='space-y-2' cardano={cardano} add={addPolicy} cancel={closeModal} />
       </Modal>}
-      {modal === 'timelock' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3' onClose={closeModal}>
+      {modal === 'timelock' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
         <AddTimelock className='space-y-2' add={addPolicy} cancel={closeModal} />
       </Modal>}
     </div>

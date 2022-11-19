@@ -1,6 +1,6 @@
 import type { FC, ReactNode } from 'react'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon } from '@heroicons/react/24/solid'
 import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -13,6 +13,7 @@ import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
 import { getAccountPath } from '../route'
+import { SpinnerIcon } from './status'
 
 const Toggle: FC<{
   isOn: boolean
@@ -169,7 +170,7 @@ const AccountListing: FC<{
       onPageClassName='bg-sky-700 font-semibold'
       className='block w-full p-4 hover:bg-sky-700'>
       <div className='truncate'>{account.name}</div>
-      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <ArrowPathIcon className='w-4 animate-spin transform rotate-180' />}</div>
+      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}</div>
     </NavLink>
   )
 }
