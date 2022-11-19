@@ -815,7 +815,7 @@ const NewTransaction: FC<{
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
-  const nativeScript = useMemo(() => cardano.getPaymentNativeScriptFromPolicy(policy), [cardano, policy])
+  const paymentNativeScript = useMemo(() => typeof policy !== 'string' && cardano.getPaymentNativeScriptFromPolicy(policy), [cardano, policy])
   const [changeAddress, setChangeAddress] = useState<string>(defaultChangeAddress)
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
@@ -903,10 +903,12 @@ const NewTransaction: FC<{
     const txBuilder = cardano.createTxBuilder(protocolParameters)
 
     inputs.forEach((input) => {
-      const result = cardano
-        .createTxInputBuilder(input)
-        .native_script(nativeScript, NativeScriptWitnessInfo.assume_signature_count())
-      txBuilder.add_input(result)
+      const builder = cardano.createTxInputBuilder(input)
+      if (paymentNativeScript) {
+        txBuilder.add_input(builder.native_script(paymentNativeScript, NativeScriptWitnessInfo.assume_signature_count()))
+      } else {
+        txBuilder.add_input(builder.payment_key())
+      }
     })
 
     recipients.forEach((recipient) => {
@@ -923,18 +925,18 @@ const NewTransaction: FC<{
       txBuilder.add_auxiliary_data(auxiliaryData)
     }
 
-    const startSlot = suggestStartSlot(nativeScript)
+    const startSlot = paymentNativeScript && suggestStartSlot(paymentNativeScript)
     if (startSlot) {
       txBuilder.set_validity_start_interval(startSlot)
     }
 
-    const expirySlot = suggestExpirySlot(nativeScript)
+    const expirySlot = paymentNativeScript && suggestExpirySlot(paymentNativeScript)
     if (expirySlot) {
       txBuilder.set_ttl(expirySlot)
     }
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, nativeScript])
+  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, paymentNativeScript])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
