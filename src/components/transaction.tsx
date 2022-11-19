@@ -15,10 +15,8 @@ import Image from 'next/image'
 import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
-import { DateContext } from './time'
 import { Loading } from './status'
 import { NativeScriptViewer, suggestExpirySlot, suggestStartSlot } from './native-script'
-import { estimateSlotByDate } from '../cardano/utils'
 import type { Policy } from '../db'
 import type { TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts'
 import init, { select } from 'cardano-utxo-wasm'
@@ -481,8 +479,18 @@ const TransactionViewer: FC<{
   const cardano = useCardanoMultiplatformLib()
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _c] = useContext(ConfigContext)
-  const [date, _t] = useContext(DateContext)
   const transaction = useMemo(() => cardano?.lib.Transaction.from_bytes(content), [cardano, content])
+  const nativeScripts = useMemo(() => {
+    const scriptSet = transaction?.witness_set().native_scripts()
+    if (scriptSet) return Array.from(toIter(scriptSet))
+  }, [transaction])
+  const signerRegistry = useMemo(() => {
+    const signers = new Set<string>()
+    nativeScripts?.forEach((script) => {
+      Array.from(toIter(script.get_required_signers()), (signer) => signers.add(toHex(signer)))
+    })
+    return signers
+  }, [nativeScripts])
 
   if (!cardano || !transaction) return (
     <Modal>
@@ -491,12 +499,6 @@ const TransactionViewer: FC<{
   )
 
   const txHash = cardano.lib.hash_transaction(transaction.body())
-  const witnessSet = transaction.witness_set()
-  const nativeScriptSet = witnessSet.native_scripts()
-  const signerRegistry = new Set<string>()
-  nativeScriptSet && Array.from(toIter(nativeScriptSet), (script) => {
-    Array.from(toIter(script.get_required_signers()), (signer) => signerRegistry.add(toHex(signer)))
-  })
 
   const txMessage = cardano.getTxMessage(transaction)
 
@@ -554,13 +556,13 @@ const TransactionViewer: FC<{
         <div className='font-semibold'>Message</div>
         <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
       </Panel>}
-      {nativeScriptSet && Array.from(toIter(nativeScriptSet), (script, index) =>
+      {nativeScripts?.map((script, index) =>
         <Panel key={index} className='space-y-1'>
           <div className='p-4 space-y-1'>
             <div className='font-semibold'>Script Details</div>
             <NativeScriptViewer
               cardano={cardano}
-              verifyingData={{ signatures: signatureMap, currentSlot: estimateSlotByDate(date, config.isMainnet) }}
+              verifyingData={signatureMap}
               className='p-2 border rounded space-y-2'
               headerClassName='font-semibold'
               ulClassName='space-y-1'
