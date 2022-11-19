@@ -34,7 +34,7 @@ const Panel: FC<{
   className?: string
 }> = ({ children, className }) => {
   return (
-    <div className={'border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden ' + className}>
+    <div className={['border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden', className].join(' ')}>
       {children}
     </div>
   )
@@ -234,7 +234,7 @@ const Hero: FC<{
   className?: string
   children: ReactNode
 }> = ({ className, children }) => {
-  return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
+  return <div className={['rounded p-4 bg-sky-700 text-white shadow space-y-4', className].join(' ')}>{children}</div>;
 }
 
 const Layout: FC<{

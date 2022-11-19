@@ -1,7 +1,7 @@
 import type { NextPage } from 'next'
 import { Hero, Layout, Panel } from '../components/layout'
 import { getResult, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
-import { Loading } from '../components/status'
+import { SpinnerIcon } from '../components/status'
 import { useMemo, useState } from 'react'
 import { TransactionReviewButton } from '../components/transaction'
 
@@ -30,7 +30,7 @@ const GetTransaction: NextPage = () => {
     })
   }, [cardano, text])
 
-  if (!cardano) return <Loading />;
+  if (txResult && !txResult.isOk) console.log(txResult.message)
 
   return (
     <Layout>
@@ -42,11 +42,13 @@ const GetTransaction: NextPage = () => {
         <textarea
           className='block w-full p-4 outline-none'
           rows={8}
+          value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder='URL or CBOR in Hex'>
         </textarea>
-        {txResult?.isOk && <footer className='flex p-4 bg-gray-100 space-x-2'>
-          <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />
+        {text && <footer className='flex p-4 bg-gray-100 space-x-2'>
+          {txResult && !txResult.isOk && <div className='text-red-500'>Invalid Transaction</div>}
+          {txResult?.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
         </footer>}
       </Panel>
     </Layout>
