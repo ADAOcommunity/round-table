@@ -12,11 +12,14 @@ import { CopyButton, Hero, Layout, Panel } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
-import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
 import { EditAccount } from '../../components/account'
 import { NewTransaction } from '../../components/transaction'
 import { Modal } from '../../components/modal'
 import { NotificationContext } from '../../components/notification'
+import { NativeScriptViewer } from '../../components/native-script'
+import { DownloadButton } from '../../components/user-data'
+import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const Balance: FC<{
   addresses: string[]
@@ -140,6 +143,61 @@ const Delete: FC<{
   )
 }
 
+const NativeScriptPanel: FC<{
+  cardano: Cardano
+  nativeScript: NativeScript
+  filename: string
+  title: string
+}> = ({ cardano, nativeScript, filename, title }) => {
+  return (
+    <Panel>
+      <div className='p-4 space-y-2'>
+        <h2 className='font-semibold'>{title}</h2>
+        <NativeScriptViewer
+          cardano={cardano}
+          className='p-2 border rounded space-y-2'
+          headerClassName='font-semibold'
+          ulClassName='space-y-1'
+          nativeScript={nativeScript} />
+      </div>
+      <footer className='flex justify-end p-4 bg-gray-100'>
+        <DownloadButton
+          blobParts={[nativeScript.to_bytes()]}
+          options={{ type: 'application/cbor' }}
+          download={filename}
+          className='flex space-x-1 px-4 py-2 border text-sky-700 rounded'>
+          <ArrowDownTrayIcon className='w-4' />
+          <span>Download</span>
+        </DownloadButton>
+      </footer>
+    </Panel>
+  )
+}
+
+const ShowNativeScript: FC<{
+  cardano: Cardano
+  policy: Policy
+}> = ({ cardano, policy }) => {
+  if (typeof policy === 'string') throw new Error('No NativeScript for policy in single address')
+  const payment = useMemo(() => cardano.getPaymentNativeScriptFromPolicy(policy), [cardano, policy])
+  const staking = useMemo(() => cardano.getStakingNativeScriptFromPolicy(policy), [cardano, policy])
+
+  return (
+    <>
+      <NativeScriptPanel
+        cardano={cardano}
+        nativeScript={payment}
+        filename='payment.cbor'
+        title='Payment Native Script' />
+      <NativeScriptPanel
+        cardano={cardano}
+        nativeScript={staking}
+        filename='staking.cbor'
+        title='Staking Native Script' />
+    </>
+  )
+}
+
 const GetPolicy: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
   const cardano = useCardanoMultiplatformLib()
@@ -154,7 +212,7 @@ const GetPolicy: NextPage = () => {
     const address = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
     return { policy, address }
   }, [cardano, config, policyContent])
-  const [tab, setTab] = useState<'balance' | 'spend' | 'edit' | 'delete'>('balance')
+  const [tab, setTab] = useState<'balance' | 'spend' | 'edit' | 'delete' | 'native script'>('balance')
   const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
 
   return (
@@ -192,6 +250,12 @@ const GetPolicy: NextPage = () => {
                 className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
                 Edit
               </button>
+              <button
+                onClick={() => setTab('native script')}
+                disabled={tab === 'native script'}
+                className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+                Native Script
+              </button>
               {account && <button
                 onClick={() => setTab('delete')}
                 disabled={tab === 'delete'}
@@ -206,6 +270,7 @@ const GetPolicy: NextPage = () => {
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
         {tab === 'edit' && <EditAccount cardano={cardano} account={account} />}
         {tab === 'delete' && account && <Delete account={account} />}
+        {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}
     </Layout>
   )
