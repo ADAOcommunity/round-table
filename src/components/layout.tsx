@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { FC, ReactNode } from 'react'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon } from '@heroicons/react/24/solid'
@@ -184,13 +185,15 @@ const AccountList: FC<{
     fetchPolicy: 'cache-first',
     pollInterval: 10000
   })
-  const balanceMap = new Map<string, Value>()
-  data?.paymentAddresses.forEach((paymentAddress) => {
-    const address = paymentAddress.address
-    const balance = getBalanceByPaymentAddresses([paymentAddress])
-    balanceMap.set(address, balance)
-  })
-  const balances = (addresses ?? []).map((address) => balanceMap.get(address))
+  const balances = useMemo(() => {
+    const balanceMap = new Map<string, Value>()
+    data?.paymentAddresses.forEach((paymentAddress) => {
+      const address = paymentAddress.address
+      const balance = getBalanceByPaymentAddresses([paymentAddress])
+      balanceMap.set(address, balance)
+    })
+    return (addresses ?? []).map((address) => balanceMap.get(address))
+  }, [addresses, data])
 
   return (
     <nav className='block w-full'>
