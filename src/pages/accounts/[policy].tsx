@@ -268,7 +268,7 @@ const GetPolicy: NextPage = () => {
         </Hero>
         {tab === 'balance' && <Balance addresses={[result.address]} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
-        {tab === 'edit' && <EditAccount cardano={cardano} account={account} />}
+        {tab === 'edit' && <EditAccount cardano={cardano} initialName={account?.name} initialDescription={account?.description} initialPolicy={result.policy} />}
         {tab === 'delete' && account && <Delete account={account} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}

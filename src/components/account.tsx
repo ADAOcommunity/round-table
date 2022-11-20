@@ -391,11 +391,13 @@ const EditPolicy: FC<{
 
 const EditAccount: FC<{
   cardano: Cardano
-  account?: Account
-}> = ({ account, cardano }) => {
-  const [name, setName] = useState(account?.name ?? '')
-  const [description, setDescription] = useState(account?.description ?? '')
-  const [policy, setPolicy] = useState<Policy>(account?.policy ?? { type: 'All', policies: [] })
+  initialName?: string
+  initialDescription?: string
+  initialPolicy?: Policy
+}> = ({ cardano, initialName, initialDescription, initialPolicy }) => {
+  const [name, setName] = useState(initialName ?? '')
+  const [description, setDescription] = useState(initialDescription ?? '')
+  const [policy, setPolicy] = useState<Policy>(initialPolicy ?? { type: 'All', policies: [] })
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
   const [config, _] = useContext(ConfigContext)
