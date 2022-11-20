@@ -200,7 +200,7 @@ const GetPolicy: NextPage = () => {
               </button>}
             </nav>
           </div>
-          {tab === 'edit' && <div>NOTE: You can create a new account by editing the policy.</div>}
+          {tab === 'edit' && <div>NOTE: You can create a new account by editing the policy. The assets in the original one will remain untouched.</div>}
         </Hero>
         {tab === 'balance' && <Balance addresses={[result.address]} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
