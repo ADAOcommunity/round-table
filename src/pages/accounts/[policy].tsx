@@ -3,7 +3,8 @@ import { useRouter } from 'next/router'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
-import { db, Policy } from '../../db'
+import { db } from '../../db'
+import type { Account, Policy } from '../../db'
 import { useContext, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
@@ -15,6 +16,7 @@ import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
 import { EditAccount } from '../../components/account'
 import { NewTransaction } from '../../components/transaction'
 import { Modal } from '../../components/modal'
+import { NotificationContext } from '../../components/notification'
 
 const Balance: FC<{
   addresses: string[]
@@ -96,6 +98,48 @@ const Spend: FC<{
   )
 }
 
+const Delete: FC<{
+  account: Account
+}> = ({ account }) => {
+  const [name, setName] = useState('')
+  const router = useRouter()
+  const { notify } = useContext(NotificationContext)
+
+  const deleteHandler = () => {
+    db
+      .accounts
+      .delete(account.id)
+      .then(() => router.push('/'))
+      .catch((error) => {
+        notify('error', 'Failed to delete')
+        console.error(error)
+      })
+  }
+
+  return (
+    <Panel>
+      <div className='p-4 space-y-2'>
+        <h2 className='font-semibold'>Delete Account</h2>
+        <p>By deleting the account you will just remove the record in your browser. Others might still have it and the assets in it remain untouched. Type the account name below to proceed.</p>
+        <input
+          className='p-2 border rounded'
+          type='text'
+          placeholder='Type account name'
+          value={name}
+          onChange={(e) => setName(e.target.value)} />
+      </div>
+      <footer className='flex justify-end p-4 bg-gray-100'>
+        <button
+          className='px-4 py-2 bg-red-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
+          disabled={account.name !== name}
+          onClick={deleteHandler}>
+          DELETE
+        </button>
+      </footer>
+    </Panel>
+  )
+}
+
 const GetPolicy: NextPage = () => {
   const [config, _] = useContext(ConfigContext)
   const cardano = useCardanoMultiplatformLib()
@@ -110,7 +154,7 @@ const GetPolicy: NextPage = () => {
     const address = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
     return { policy, address }
   }, [cardano, config, policyContent])
-  const [tab, setTab] = useState<'balance' | 'spend' | 'edit'>('balance')
+  const [tab, setTab] = useState<'balance' | 'spend' | 'edit' | 'delete'>('balance')
   const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
 
   return (
@@ -148,6 +192,12 @@ const GetPolicy: NextPage = () => {
                 className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
                 Edit
               </button>
+              {account && <button
+                onClick={() => setTab('delete')}
+                disabled={tab === 'delete'}
+                className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+                Delete
+              </button>}
             </nav>
           </div>
           {tab === 'edit' && <div>NOTE: You can create a new account by editing the policy.</div>}
@@ -155,6 +205,7 @@ const GetPolicy: NextPage = () => {
         {tab === 'balance' && <Balance addresses={[result.address]} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
         {tab === 'edit' && <EditAccount cardano={cardano} account={account} />}
+        {tab === 'delete' && account && <Delete account={account} />}
       </div>}
     </Layout>
   )
