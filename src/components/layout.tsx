@@ -256,6 +256,7 @@ const Layout: FC<{
       <div className='flex flex-row-reverse'>
         <NotificationCenter className='fixed space-y-2 w-1/4 p-4' />
       </div>
+      <div id='modal-root'></div>
     </div>
   )
 }
