@@ -55,7 +55,7 @@ const ExportUserDataButton: FC = () => {
 
   const userData: UserData = {
     isMainnet: config.isMainnet,
-    version: '1',
+    version: '2',
     accounts
   }
   const filename = `roundtable-backup.${config.isMainnet ? 'mainnet' : 'testnet'}.json`
@@ -105,7 +105,7 @@ const ImportUserData: FC = () => {
   const importUserData = (userData: UserData) => {
     const version = userData.version
 
-    if (version === '1') {
+    if (version === '2') {
       const accounts: Account[] = userData.accounts
       db.accounts.bulkAdd(accounts)
     }
