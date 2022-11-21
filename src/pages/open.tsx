@@ -1,7 +1,6 @@
 import type { NextPage } from 'next'
 import { Hero, Layout, Panel } from '../components/layout'
 import { getResult, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
-import { SpinnerIcon } from '../components/status'
 import { useMemo, useState } from 'react'
 import { TransactionReviewButton } from '../components/transaction'
 
