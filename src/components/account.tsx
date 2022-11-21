@@ -92,7 +92,7 @@ const RequiredNumberInput: FC<{
   )
 }
 
-const TimeLockInput: FC<{
+const TimelockInput: FC<{
   className?: string
   children: ReactNode
   value: number
@@ -141,7 +141,7 @@ const AddTimelock: FC<{
           </button>
         </nav>
       </div>
-      <TimeLockInput
+      <TimelockInput
         isLocked={type === 'TimelockStart' ? () => false : (date) => date <= now}
         className='space-y-1'
         value={slot}
@@ -160,7 +160,7 @@ const AddTimelock: FC<{
           </h6>
           <p>Be careful with this option. It returns false after the slot/time is passed which could lead to coins locked/burned forever when it is combined with All policy and At Least policy or used alone.</p>
         </div>}
-      </TimeLockInput>
+      </TimelockInput>
       <nav className='flex justify-end space-x-2'>
         <button
           onClick={cancel}
