@@ -1,6 +1,5 @@
 import type { FC, ReactNode, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
-import { useMemo } from 'react'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState, useMemo } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
@@ -51,7 +50,7 @@ const NumberInput: FC<{
   }
 
   const keyPressHandle: KeyboardEventHandler<HTMLInputElement> = (event) => {
-    if (!/[0-9]/.test(event.code)) {
+    if (!/\d/.test(event.code)) {
       event.preventDefault()
     }
   }
@@ -198,7 +197,7 @@ const AddAddress: FC<{
   }), [address, cardano, config])
 
   const enterPressHandle: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
-    if (event.shiftKey == false && event.key === 'Enter') {
+    if (!event.shiftKey && event.key === 'Enter') {
       event.preventDefault()
       add(address)
     }

@@ -1,5 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Ed25519KeyHash, NativeScript, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import type { Policy } from '../db'
