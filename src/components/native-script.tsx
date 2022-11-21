@@ -1,12 +1,11 @@
 import type { BigNum, NativeScript, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { useMemo } from 'react'
+import { useContext, useMemo } from 'react'
 import type { FC, ReactNode } from 'react'
 import { toIter } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { NoSymbolIcon, ClipboardDocumentCheckIcon, ClipboardDocumentIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { CopyButton } from './layout'
 import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
-import { useContext } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { DateContext } from './time'
 
@@ -141,10 +140,6 @@ const NativeScriptViewer: FC<{
   className?: string
   verifyingData?: VerifyingData
 }> = ({ cardano, className, headerClassName, ulClassName, liClassName, nativeScript, verifyingData }) => {
-  const [config, _] = useContext(ConfigContext)
-  const [now, _t] = useContext(DateContext)
-  const currentSlot = estimateSlotByDate(now, config.isMainnet)
-
   let script;
 
   script = nativeScript.as_script_pubkey()
