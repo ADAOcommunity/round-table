@@ -5,7 +5,7 @@ import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
 import { Panel } from '../components/layout'
-import { ExclamationCircleIcon, PlusIcon, XMarkIcon, NoSymbolIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
+import { ExclamationCircleIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { Calendar, DateContext } from '../components/time'
 import { Modal } from '../components/modal'
 import { useRouter } from 'next/router'
@@ -13,7 +13,7 @@ import { NotificationContext } from '../components/notification'
 import { db } from '../db'
 import type { AccountParams, Policy } from '../db'
 import { getAccountPath } from '../route'
-import { ExpiryBadge, SignatureBadge, StartBadge } from './native-script'
+import { SignatureBadge, Timelock } from './native-script'
 
 const NumberInput: FC<{
   step?: number
@@ -252,11 +252,8 @@ const EditPolicy: FC<{
   policy: Policy
   setPolicy: (policy: Policy) => void
 }> = ({ cardano, className, ulClassName, liClassName, policy, setPolicy }) => {
-  const [config, _] = useContext(ConfigContext)
   const [modal, setModal] = useState<'address' | 'timelock' | undefined>()
   const closeModal = () => setModal(undefined)
-  const [now, _t] = useContext(DateContext)
-  const currentSlot = estimateSlotByDate(now, config.isMainnet)
 
   if (typeof policy === 'string') return (
     <>
@@ -266,35 +263,11 @@ const EditPolicy: FC<{
   )
 
   if (policy.type === 'TimelockStart') return (
-    <>
-      <StartBadge />
-      <div className={['flex', 'space-x-1', currentSlot <= policy.slot ? 'text-red-500' : 'text-green-500'].join(' ')}>
-        <span>{policy.slot}</span>
-        <span>(est. {estimateDateBySlot(policy.slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot <= policy.slot && <>
-          <NoSymbolIcon className='w-4' />
-        </>}
-        {currentSlot > policy.slot && <>
-          <ShieldCheckIcon className='w-4' />
-        </>}
-      </div>
-    </>
+    <Timelock type={policy.type} slot={policy.slot} />
   )
 
   if (policy.type === 'TimelockExpiry') return (
-    <>
-      <ExpiryBadge />
-      <div className={['flex', 'space-x-1', currentSlot >= policy.slot ? 'text-red-500' : 'text-green-500'].join(' ')}>
-        <span>{policy.slot}</span>
-        <span>(est. {estimateDateBySlot(policy.slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot >= policy.slot && <>
-          <NoSymbolIcon className='w-4' />
-        </>}
-        {currentSlot < policy.slot && <>
-          <ShieldCheckIcon className='w-4' />
-        </>}
-      </div>
-    </>
+    <Timelock type={policy.type} slot={policy.slot} />
   )
 
   const addPolicy = (newPolicy: Policy) => {

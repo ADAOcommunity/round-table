@@ -1,4 +1,5 @@
 import type { BigNum, NativeScript, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import { useMemo } from 'react'
 import type { FC, ReactNode } from 'react'
 import { toIter } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
@@ -106,6 +107,31 @@ const StartBadge: FC = () => {
   )
 }
 
+const Timelock: FC<{
+  slot: number
+  type: 'TimelockStart' | 'TimelockExpiry'
+}> = ({ slot, type }) => {
+  const [config, _] = useContext(ConfigContext)
+  const [now, _t] = useContext(DateContext)
+  const currentSlot = estimateSlotByDate(now, config.isMainnet)
+  const isValid: boolean = useMemo(() => {
+    switch (type) {
+      case 'TimelockStart': return currentSlot > slot
+      case 'TimelockExpiry': return currentSlot < slot
+    }
+  }, [slot, currentSlot, type])
+  return (
+    <div className={['flex', 'space-x-1', 'items-center', isValid ? 'text-green-500' : 'text-red-500'].join(' ')}>
+      {type === 'TimelockStart' && <StartBadge />}
+      {type === 'TimelockExpiry' && <ExpiryBadge />}
+      <span>{slot}</span>
+      <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
+      {!isValid && <NoSymbolIcon className='w-4' />}
+      {isValid && <ShieldCheckIcon className='w-4' />}
+    </div>
+  )
+}
+
 const NativeScriptViewer: FC<{
   nativeScript: NativeScript
   cardano?: Cardano
@@ -139,42 +165,16 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_timelock_expiry()
   if (script) {
     const slot = parseInt(script.slot().to_str())
-    let color = ''
-    if (currentSlot >= slot) color = 'text-red-500'
-    if (currentSlot < slot) color = 'text-green-500'
     return (
-      <div className={['flex space-x-1 items-center', color].join(' ')}>
-        <ExpiryBadge />
-        <span>{slot}</span>
-        <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot >= slot && <>
-          <NoSymbolIcon className='w-4' />
-        </>}
-        {currentSlot < slot && <>
-          <ShieldCheckIcon className='w-4' />
-        </>}
-      </div>
+      <Timelock type='TimelockExpiry' slot={slot} />
     )
   }
 
   script = nativeScript.as_timelock_start()
   if (script) {
     const slot = parseInt(script.slot().to_str())
-    let color = ''
-    if (currentSlot <= slot) color = 'text-red-500'
-    if (currentSlot > slot) color = 'text-green-500'
     return (
-      <div className={['flex space-x-1 items-center', color].join(' ')}>
-        <StartBadge />
-        <span>{slot}</span>
-        <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot <= slot && <>
-          <NoSymbolIcon className='w-4' />
-        </>}
-        {currentSlot > slot && <>
-          <ShieldCheckIcon className='w-4' />
-        </>}
-      </div>
+      <Timelock type='TimelockStart' slot={slot} />
     )
   }
 
@@ -245,4 +245,4 @@ const NativeScriptViewer: FC<{
 }
 
 export type { VerifyingData }
-export { suggestStartSlot, suggestExpirySlot, SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer }
+export { suggestStartSlot, suggestExpirySlot, SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer, Timelock }
