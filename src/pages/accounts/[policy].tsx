@@ -108,6 +108,16 @@ const Delete: FC<{
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
 
+  useEffect(() => {
+    let isMounted = true
+
+    isMounted && setName('')
+
+    return () => {
+      isMounted = false
+    }
+  }, [account])
+
   const deleteHandler = () => {
     db
       .accounts
