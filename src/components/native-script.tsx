@@ -140,17 +140,17 @@ const NativeScriptViewer: FC<{
   if (script) {
     const slot = parseInt(script.slot().to_str())
     let color = ''
-    if (currentSlot && currentSlot >= slot) color = 'text-red-500'
-    if (currentSlot && currentSlot < slot) color = 'text-green-500'
+    if (currentSlot >= slot) color = 'text-red-500'
+    if (currentSlot < slot) color = 'text-green-500'
     return (
       <div className={['flex space-x-1 items-center', color].join(' ')}>
         <ExpiryBadge />
         <span>{slot}</span>
         <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot && currentSlot >= slot && <>
+        {currentSlot >= slot && <>
           <NoSymbolIcon className='w-4' />
         </>}
-        {currentSlot && currentSlot < slot && <>
+        {currentSlot < slot && <>
           <ShieldCheckIcon className='w-4' />
         </>}
       </div>
@@ -161,17 +161,17 @@ const NativeScriptViewer: FC<{
   if (script) {
     const slot = parseInt(script.slot().to_str())
     let color = ''
-    if (currentSlot && currentSlot <= slot) color = 'text-red-500'
-    if (currentSlot && currentSlot > slot) color = 'text-green-500'
+    if (currentSlot <= slot) color = 'text-red-500'
+    if (currentSlot > slot) color = 'text-green-500'
     return (
       <div className={['flex space-x-1 items-center', color].join(' ')}>
         <StartBadge />
         <span>{slot}</span>
         <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot && currentSlot <= slot && <>
+        {currentSlot <= slot && <>
           <NoSymbolIcon className='w-4' />
         </>}
-        {currentSlot && currentSlot > slot && <>
+        {currentSlot > slot && <>
           <ShieldCheckIcon className='w-4' />
         </>}
       </div>

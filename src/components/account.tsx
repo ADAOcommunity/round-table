@@ -287,10 +287,10 @@ const EditPolicy: FC<{
       <div className={['flex', 'space-x-1', currentSlot >= policy.slot ? 'text-red-500' : 'text-green-500'].join(' ')}>
         <span>{policy.slot}</span>
         <span>(est. {estimateDateBySlot(policy.slot, config.isMainnet).toLocaleString()})</span>
-        {currentSlot && currentSlot >= policy.slot && <>
+        {currentSlot >= policy.slot && <>
           <NoSymbolIcon className='w-4' />
         </>}
-        {currentSlot && currentSlot < policy.slot && <>
+        {currentSlot < policy.slot && <>
           <ShieldCheckIcon className='w-4' />
         </>}
       </div>
