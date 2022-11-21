@@ -4,8 +4,8 @@ import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { Account, Policy } from '../../db'
-import { useContext, useMemo, useState } from 'react'
+import type { Account, AccountParams, Policy } from '../../db'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
 import { CopyButton, Hero, Layout, Panel } from '../../components/layout'
@@ -214,6 +214,19 @@ const GetPolicy: NextPage = () => {
   }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'balance' | 'spend' | 'edit' | 'delete' | 'native script'>('balance')
   const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
+  const [accountParams, setAccountParams] = useState<AccountParams | undefined>()
+
+  useEffect(() => {
+    let isMounted = true
+
+    if (isMounted && account) {
+      setAccountParams(account)
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [account])
 
   return (
     <Layout>
@@ -268,7 +281,7 @@ const GetPolicy: NextPage = () => {
         </Hero>
         {tab === 'balance' && <Balance addresses={[result.address]} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
-        {tab === 'edit' && <EditAccount cardano={cardano} initialName={account?.name} initialDescription={account?.description} initialPolicy={result.policy} />}
+        {tab === 'edit' && accountParams && <EditAccount cardano={cardano} params={accountParams} setParams={setAccountParams} />}
         {tab === 'delete' && account && <Delete account={account} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}

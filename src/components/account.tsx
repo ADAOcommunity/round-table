@@ -12,7 +12,7 @@ import { Modal } from '../components/modal'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
-import type { Account, Policy } from '../db'
+import type { AccountParams, Policy } from '../db'
 import { getAccountPath } from '../route'
 import { ExpiryBadge, SignatureBadge, StartBadge } from './native-script'
 
@@ -391,25 +391,23 @@ const EditPolicy: FC<{
 
 const EditAccount: FC<{
   cardano: Cardano
-  initialName?: string
-  initialDescription?: string
-  initialPolicy?: Policy
-}> = ({ cardano, initialName, initialDescription, initialPolicy }) => {
-  const [name, setName] = useState(initialName ?? '')
-  const [description, setDescription] = useState(initialDescription ?? '')
-  const [policy, setPolicy] = useState<Policy>(initialPolicy ?? { type: 'All', policies: [] })
+  params: AccountParams
+  setParams: (params: AccountParams) => void
+}> = ({ cardano, params, setParams }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
   const [config, _] = useContext(ConfigContext)
-
-  const canSave = name.length > 0 && policy
+  const { name, description, policy } = params
+  const setName = (name: string) => setParams({ ...params, name })
+  const setDescription = (description: string) => setParams({ ...params, description })
+  const setPolicy = (policy: Policy) => setParams({ ...params, policy })
+  const canSave = name.length > 0
 
   const save = () => {
     const id = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
-    const account: Account = { name, description, policy, id, updatedAt: new Date() }
     db.accounts
-      .put(account, id)
-      .then(() => router.push(getAccountPath(account.policy)))
+      .put({ name, description, policy, id, updatedAt: new Date() }, id)
+      .then(() => router.push(getAccountPath(params.policy)))
       .catch(() => notify('error', 'Failed to save'))
   }
 

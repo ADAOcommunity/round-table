@@ -8,13 +8,17 @@ type Policy =
   | { type: 'TimelockExpiry', slot: number }
   | string
 
-interface Account {
-  id: string
+type AccountParams = {
   name: string
   description: string
   policy: Policy
+}
+
+interface Timestamp {
   updatedAt: Date
 }
+
+type Account = { id: string } & AccountParams & Timestamp
 
 class LocalDatabase extends Dexie {
   accounts!: Table<Account>
@@ -30,5 +34,5 @@ class LocalDatabase extends Dexie {
 
 const db = new LocalDatabase()
 
-export type { Account, Policy }
+export type { Account, AccountParams, Policy }
 export { db }
