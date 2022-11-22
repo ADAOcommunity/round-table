@@ -1,5 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import type { Address, BigNum, Ed25519KeyHash, NativeScript, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import type { Policy } from '../db'
@@ -294,6 +294,19 @@ class Cardano {
     const payment = StakeCredential.from_scripthash(paymentScript.hash())
     const staking = StakeCredential.from_scripthash(stakingScript.hash())
     return BaseAddress.new(networkId.network_id(), payment, staking).to_address()
+  }
+
+  public getPolicyRewardAddress(policy: Policy, isMainnet: boolean): RewardAddress {
+    const { RewardAddress, StakeCredential, NetworkInfo } = this.lib
+    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+    const networkId = networkInfo.network_id()
+    if (typeof policy === 'string') {
+      const credential = this.parseAddress(policy).staking_cred()
+      if (!credential) throw new Error('Staking credential is missing')
+      return RewardAddress.new(networkId, credential)
+    }
+    const script = this.getStakingNativeScriptFromPolicy(policy)
+    return RewardAddress.new(networkId, StakeCredential.from_scripthash(script.hash()))
   }
 
   public getRequiredSignatures(script: NativeScript): number {

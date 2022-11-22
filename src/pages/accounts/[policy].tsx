@@ -215,14 +215,20 @@ const GetPolicy: NextPage = () => {
   const cardano = useCardanoMultiplatformLib()
   const router = useRouter()
   const policyContent = router.query.policy
-  const result: { policy: Policy, address: string } | undefined = useMemo(() => {
+  const result: { policy: Policy, address: string, rewardAddress: string } | undefined = useMemo(() => {
     if (!cardano || !policyContent) return
     if (typeof policyContent !== 'string') throw new Error('Cannot parse the policy')
     const { Address } = cardano.lib
-    if (Address.is_valid_bech32(policyContent)) return { policy: policyContent, address: policyContent }
+    const { isMainnet } = config
+    if (Address.is_valid_bech32(policyContent)) return {
+      policy: policyContent,
+      address: policyContent,
+      rewardAddress: cardano.getPolicyRewardAddress(policyContent, isMainnet).to_address().to_bech32()
+    }
     const policy: Policy = JSON.parse(policyContent)
-    const address = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
-    return { policy, address }
+    const address = cardano.getPolicyAddress(policy, isMainnet).to_bech32()
+    const rewardAddress = cardano.getPolicyRewardAddress(policy, isMainnet).to_address().to_bech32()
+    return { policy, address, rewardAddress }
   }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'balance' | 'spend' | 'edit' | 'delete' | 'native script'>('balance')
   const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
@@ -251,6 +257,12 @@ const GetPolicy: NextPage = () => {
             <div className='flex items-center'>
               <span>{result.address}</span>
               <CopyButton className='p-2 text-sm text-white' getContent={() => result.address} ms={500}>
+                <DocumentDuplicateIcon className='w-4' />
+              </CopyButton>
+            </div>
+            <div className='flex items-center'>
+              <span>{result.rewardAddress}</span>
+              <CopyButton className='p-2 text-sm text-white' getContent={() => result.rewardAddress} ms={500}>
                 <DocumentDuplicateIcon className='w-4' />
               </CopyButton>
             </div>
