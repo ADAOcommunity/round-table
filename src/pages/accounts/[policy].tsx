@@ -22,10 +22,11 @@ import { DownloadButton } from '../../components/user-data'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const Balance: FC<{
-  addresses: string[]
-}> = ({ addresses }) => {
+  address: string
+  rewardAddress: string
+}> = ({ address, rewardAddress }) => {
   const { data } = usePaymentAddressesQuery({
-    variables: { addresses },
+    variables: { addresses: [address] },
     fetchPolicy: 'cache-first',
     pollInterval: 5000
   })
@@ -44,26 +45,29 @@ const Balance: FC<{
 
   return (
     <Panel className='p-4 space-y-2'>
-      <h2 className='font-semibold'>Balance</h2>
-      <ul className='divide-y rounded border'>
-        <li className='p-2'><ADAAmount lovelace={balance.lovelace} /></li>
-        {Array.from(balance.assets).map(([id, quantity]) => {
-          const symbol = Buffer.from(getAssetName(id), 'hex').toString('ascii')
-          return (
-            <li key={id} className='p-2'>
-              <AssetAmount
-                quantity={quantity}
-                decimals={0}
-                symbol={symbol} />
-              <div className='space-x-1'>
-                <span>Policy ID:</span>
-                <span>{getPolicyId(id)}</span>
-              </div>
-            </li>
-          )
-        }
-        )}
-      </ul>
+      <div className='space-y-1'>
+        <h2 className='font-semibold'>Balance</h2>
+        <div><ADAAmount lovelace={balance.lovelace} /></div>
+      </div>
+      {balance.assets.size > 0 && <div className='space-y-1'>
+        <h2 className='font-semibold'>Assets</h2>
+        <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
+          {Array.from(balance.assets).map(([id, quantity]) => {
+            const symbol = Buffer.from(getAssetName(id), 'hex').toString('ascii')
+            return (
+              <li key={id} className='p-2 border rounded'>
+                <AssetAmount
+                  quantity={quantity}
+                  decimals={0}
+                  symbol={symbol} />
+                <div className='space-x-1 text-sm'>
+                  <span>{getPolicyId(id)}</span>
+                </div>
+              </li>
+            )}
+          )}
+        </ul>
+      </div>}
     </Panel>
   )
 }
@@ -307,7 +311,7 @@ const GetPolicy: NextPage = () => {
             <span>You can create a new account by editing the policy. The assets in the original one will remain untouched.</span>
           </div>}
         </Hero>
-        {tab === 'balance' && <Balance addresses={[result.address]} />}
+        {tab === 'balance' && <Balance address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
         {tab === 'edit' && accountParams && <EditAccount cardano={cardano} params={accountParams} setParams={setAccountParams} />}
         {tab === 'delete' && account && <Delete account={account} />}
