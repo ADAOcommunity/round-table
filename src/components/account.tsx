@@ -1,5 +1,5 @@
+import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import type { FC, ReactNode, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
-import { useContext, useEffect, useState, useMemo } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
@@ -11,7 +11,7 @@ import { Modal } from '../components/modal'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
-import type { AccountParams, Policy } from '../db'
+import type { Account, AccountParams, Policy } from '../db'
 import { getAccountPath } from '../route'
 import { SignatureBadge, Timelock } from './native-script'
 
@@ -427,4 +427,6 @@ const EditAccount: FC<{
   )
 }
 
-export { EditAccount }
+const CurrentAccountContext = createContext<[Account | undefined, (account: Account) => void]>([undefined, (_: Account) => {}])
+
+export { CurrentAccountContext, EditAccount }

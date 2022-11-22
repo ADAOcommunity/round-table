@@ -13,7 +13,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
-import { EditAccount } from '../../components/account'
+import { CurrentAccountContext, EditAccount } from '../../components/account'
 import { NewTransaction } from '../../components/transaction'
 import { Modal } from '../../components/modal'
 import { NotificationContext } from '../../components/notification'
@@ -209,7 +209,8 @@ const ShowNativeScript: FC<{
 }
 
 const GetPolicy: NextPage = () => {
-  const [config, _] = useContext(ConfigContext)
+  const [config, _c] = useContext(ConfigContext)
+  const [_a, setCurrentAccount] = useContext(CurrentAccountContext)
   const cardano = useCardanoMultiplatformLib()
   const router = useRouter()
   const policyContent = router.query.policy
@@ -231,6 +232,7 @@ const GetPolicy: NextPage = () => {
 
     if (isMounted && account) {
       setAccountParams(account)
+      setCurrentAccount(account)
     }
 
     return () => {

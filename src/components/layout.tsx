@@ -15,6 +15,7 @@ import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
 import { getAccountPath } from '../route'
 import { SpinnerIcon } from './status'
+import { CurrentAccountContext } from './account'
 
 const Toggle: FC<{
   isOn: boolean
@@ -164,15 +165,17 @@ const AccountListing: FC<{
   account: Account
   balance?: Value
 }> = ({ account, balance }) => {
+  const [currentAccount, _] = useContext(CurrentAccountContext)
   const lovelace = balance?.lovelace
+  const isOnPage = currentAccount?.id === account.id
+
   return (
-    <NavLink
-      href={getAccountPath(account.policy)}
-      onPageClassName='bg-sky-700 font-semibold'
-      className='block w-full p-4 hover:bg-sky-700'>
-      <div className='truncate'>{account.name}</div>
-      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}</div>
-    </NavLink>
+    <Link href={getAccountPath(account.policy)}>
+      <a className={['block w-full p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-700 font-semibold' : ''].join(' ')}>
+        <div className='truncate'>{account.name}</div>
+        <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}</div>
+      </a>
+    </Link>
   )
 }
 
