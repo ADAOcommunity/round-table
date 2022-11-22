@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { MouseEventHandler, FC, ReactNode, ChangeEventHandler } from 'react'
-import { AssetAmount, ADAAmount, LabeledCurrencyInput, getADASymbol } from './currency'
+import { AssetAmount, ADAAmount, LabeledCurrencyInput, getADASymbol, ADAInput } from './currency'
 import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
@@ -806,9 +806,8 @@ const NewTransaction: FC<{
   protocolParameters: ProtocolParams
   policy: Policy
   utxos: TransactionOutput[]
-  minLovelace: bigint
   defaultChangeAddress: string
-}> = ({ cardano, protocolParameters, policy, utxos, minLovelace, defaultChangeAddress }) => {
+}> = ({ cardano, protocolParameters, policy, utxos, defaultChangeAddress }) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
@@ -816,6 +815,7 @@ const NewTransaction: FC<{
   const [changeAddress, setChangeAddress] = useState<string>(defaultChangeAddress)
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
+  const [minLovelaceForChange, setMinLovelaceForChange] = useState(BigInt(5e6))
 
   useEffect(() => {
     let isMounted = true
@@ -868,7 +868,7 @@ const NewTransaction: FC<{
             })
           }
         })
-        const result = select(inputs, outputs, { lovelace: minLovelace, assets: [] })
+        const result = select(inputs, outputs, { lovelace: minLovelaceForChange, assets: [] })
         const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
         txOutputs && setInputs(txOutputs)
       })
@@ -877,7 +877,7 @@ const NewTransaction: FC<{
     return () => {
       isMounted = false
     }
-  }, [utxos, recipients, willSpendAll, minLovelace])
+  }, [utxos, recipients, willSpendAll, minLovelaceForChange])
 
   const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
 
@@ -985,6 +985,17 @@ const NewTransaction: FC<{
             disabled={isChangeSettingDisabled && recipients.length > 0}
             address={changeAddress}
             setAddress={setChangeAddress} />
+          {!willSpendAll && <div className='space-y-1'>
+            <label className='flex block border rounded overflow-hidden'>
+              <span className='p-2 bg-gray-100 border-r'>Least Change ADA</span>
+              <ADAInput
+                disabled={isChangeSettingDisabled}
+                className='p-2 grow outline-none disabled:bg-gray-100'
+                lovelace={minLovelaceForChange}
+                setLovelace={setMinLovelaceForChange} />
+            </label>
+            <div className='text-sm'>Default to 5. The more tokens you have the larger it needs to create transaction properly.</div>
+          </div>}
           {!isChangeSettingDisabled && recipients.length > 0 && <div>
             <label className='items-center space-x-1'>
               <input

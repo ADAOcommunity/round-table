@@ -73,7 +73,6 @@ const Spend: FC<{
   cardano: Cardano
   policy: Policy
 }> = ({ address, cardano, policy }) => {
-  const minLovelace = BigInt(5e6)
   const { loading, error, data } = useGetUTxOsToSpendQuery({
     variables: { addresses: [address] },
     fetchPolicy: 'network-only'
@@ -96,7 +95,6 @@ const Spend: FC<{
       policy={policy}
       protocolParameters={protocolParameters}
       utxos={data.utxos}
-      minLovelace={minLovelace}
       defaultChangeAddress={address} />
   )
 }

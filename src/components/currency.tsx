@@ -19,12 +19,13 @@ const removeTrailingZero = (value: string): string =>
     .replace(/\.0+$/, '')
 
 const CurrencyInput: FC<{
+  disabled?: boolean
   value: bigint
   onChange: (_: bigint) => void
   decimals: number
   className?: string
   placeholder?: string
-}> = ({ value, onChange, decimals, ...props }) => {
+}> = ({ disabled, value, onChange, decimals, ...props }) => {
   const inputValue = toDecimal(value, decimals)
 
   const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -45,6 +46,7 @@ const CurrencyInput: FC<{
       decimalScale={decimals}
       fixedDecimalScale={true}
       onChange={changeHandle}
+      disabled={disabled}
       {...props} />
   )
 }
@@ -112,4 +114,15 @@ const LabeledCurrencyInput: FC<{
   )
 }
 
-export { getADASymbol, removeTrailingZero, toDecimal, ADAAmount, AssetAmount, CurrencyInput, LabeledCurrencyInput }
+const ADAInput: FC<{
+  className?: string
+  disabled?: boolean
+  lovelace: bigint
+  setLovelace: (_: bigint) => void
+}> = ({ className, disabled, lovelace, setLovelace }) => {
+  return (
+    <CurrencyInput className={className} value={lovelace} onChange={setLovelace} decimals={6} disabled={disabled} />
+  )
+}
+
+export { getADASymbol, removeTrailingZero, toDecimal, ADAAmount, ADAInput, AssetAmount, CurrencyInput, LabeledCurrencyInput }
