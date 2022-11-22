@@ -133,11 +133,14 @@ const Delete: FC<{
     <Panel>
       <div className='p-4 space-y-2'>
         <h2 className='font-semibold'>Delete Account</h2>
-        <p>By deleting the account you will just remove the record in your browser. Others might still have it and the assets in it remain untouched. Type the account name below to proceed.</p>
+        <div>
+          <p>Do you really want to delete <strong className='font-semibold'>{account.name}</strong>?</p>
+          <p>By deleting the account you will just remove the record in your browser. Others might still have it and the assets in it remain untouched. Type the account name below to confirm.</p>
+        </div>
         <input
-          className='p-2 border rounded'
+          className='p-2 border rounded w-full'
           type='text'
-          placeholder='Type account name'
+          placeholder='Type the account name to confirm'
           value={name}
           onChange={(e) => setName(e.target.value)} />
       </div>
