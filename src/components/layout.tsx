@@ -171,7 +171,7 @@ const AccountListing: FC<{
 
   return (
     <Link href={getAccountPath(account.policy)}>
-      <a className={['block w-full p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-700 font-semibold' : ''].join(' ')}>
+      <a className={['block p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
         <div className='truncate'>{account.name}</div>
         <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}</div>
       </a>
