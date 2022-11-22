@@ -239,7 +239,7 @@ const GetPolicy: NextPage = () => {
     return () => {
       isMounted = false
     }
-  }, [account])
+  }, [account, setCurrentAccount])
 
   return (
     <Layout>
