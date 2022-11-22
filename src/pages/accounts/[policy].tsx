@@ -12,7 +12,7 @@ import { CopyButton, Hero, Layout, Panel } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
-import { DocumentDuplicateIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import { CurrentAccountContext, EditAccount } from '../../components/account'
 import { NewTransaction } from '../../components/transaction'
 import { Modal } from '../../components/modal'
@@ -292,7 +292,10 @@ const GetPolicy: NextPage = () => {
               </button>}
             </nav>
           </div>
-          {tab === 'edit' && <div>NOTE: You can create a new account by editing the policy. The assets in the original one will remain untouched.</div>}
+          {tab === 'edit' && <div className='flex items-center space-x-1'>
+            <InformationCircleIcon className='w-4' />
+            <span>You can create a new account by editing the policy. The assets in the original one will remain untouched.</span>
+          </div>}
         </Hero>
         {tab === 'balance' && <Balance addresses={[result.address]} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
