@@ -1,6 +1,6 @@
 import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
-import type { Cardano, PaymentAddress, TransactionOutput } from '@cardano-graphql/client-ts'
+import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation } from '@cardano-graphql/client-ts'
 import { Config } from './config'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
@@ -129,5 +129,72 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
   return balance
 }
 
+const SummaryQuery = gql`
+query Summary($address: String!, $rewardAddress: StakeAddress!) {
+  paymentAddresses(addresses: [$address]) {
+    address
+    summary {
+      assetBalances {
+        asset {
+          assetId
+        }
+        quantity
+      }
+    }
+  }
+  rewards_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      sum {
+        amount
+      }
+    }
+  }
+  withdrawals_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      sum {
+        amount
+      }
+    }
+  }
+  stakeRegistrations_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      count
+    }
+  }
+  stakeDeregistrations_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      count
+    }
+  }
+  delegations(
+    limit: 1
+    order_by: { transaction: { block: { slotNo: desc } } }
+    where: { address: { _eq: $rewardAddress } }
+  ) {
+    address
+    stakePool {
+      id
+      url
+    }
+  }
+}`
+
+const useSummaryQuery: Query<
+  { paymentAddresses: PaymentAddress[], rewards_aggregate: Reward_Aggregate, withdrawals_aggregate: Withdrawal_Aggregate, stakeRegistrations_aggregate: StakeRegistration_Aggregate, stakeDeregistrations_aggregate: StakeDeregistration_Aggregate, delegations: Delegation[] },
+  { address: string, rewardAddress: string }
+> = (options) => useQuery(SummaryQuery, options)
+
+function getCurrentDelegation(stakeRegistrationsAggregate: StakeRegistration_Aggregate, stakeDeregistrationsAggregate: StakeDeregistration_Aggregate, delegations: Delegation[]): Delegation | undefined {
+  const registrationCount = parseInt(stakeRegistrationsAggregate.aggregate?.count ?? '0')
+  const deregistrationCount = parseInt(stakeDeregistrationsAggregate.aggregate?.count ?? '0')
+  if (registrationCount > deregistrationCount) return delegations[0]
+}
+
+function getAvailableReward(rewardsAggregate: Reward_Aggregate, withdrawalsAggregate: Withdrawal_Aggregate): bigint {
+  const rewardSum: bigint = BigInt(rewardsAggregate.aggregate?.sum.amount ?? 0)
+  const withdrawalSum: bigint = BigInt(withdrawalsAggregate.aggregate?.sum.amount ?? 0)
+  return rewardSum - withdrawalSum
+}
+
 export type { Value }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward }

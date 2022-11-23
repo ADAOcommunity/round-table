@@ -10,7 +10,8 @@ import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
 import { CopyButton, Hero, Layout, Panel } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { getAssetName, getBalanceByPaymentAddresses, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from '../../cardano/query-api'
+import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurrentDelegation, getPolicyId, useGetUTxOsToSpendQuery, useSummaryQuery } from '../../cardano/query-api'
+import type { Value } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import { CurrentAccountContext, EditAccount } from '../../components/account'
@@ -20,34 +21,83 @@ import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Delegation } from '@cardano-graphql/client-ts'
+
+type StakePoolMetaData = { name: string, description: string, ticker: string, homepage: string }
+const fetchStakePoolMetaData = async (URL: string): Promise<StakePoolMetaData> => fetch(URL).then((response) => {
+  if (!response.ok) throw new Error(`Failed to fetch ${URL}`)
+  return response.json()
+})
+
+const ShowDelegation: FC<{
+  className?: string
+  delegation: Delegation
+}> = ({ className, delegation }) => {
+  const [metaData, setMetaData] = useState<StakePoolMetaData | undefined>()
+
+  useEffect(() => {
+    let isMounted = true
+    const URL = delegation.stakePool.url
+
+    URL && fetchStakePoolMetaData(URL).then((data) => isMounted && setMetaData(data))
+
+    return () => {
+      isMounted = false
+    }
+  }, [delegation])
+
+  return (
+    <div className={className}>
+      <div>{metaData?.ticker ?? 'Unknown'}</div>
+      <div>{delegation.stakePool.id}</div>
+    </div>
+  )
+}
 
 const Summary: FC<{
   address: string
   rewardAddress: string
 }> = ({ address, rewardAddress }) => {
-  const { data } = usePaymentAddressesQuery({
-    variables: { addresses: [address] },
+  const { data } = useSummaryQuery({
+    variables: { address, rewardAddress },
     fetchPolicy: 'cache-first',
-    pollInterval: 5000
+    pollInterval: 10000
   })
 
-  const balance = useMemo(() => {
-    const paymentAddresses = data?.paymentAddresses
-    if (!paymentAddresses) return
-    return getBalanceByPaymentAddresses(paymentAddresses)
+  const result: { balance: Value, reward: bigint, delegation?: Delegation } | undefined = useMemo(() => {
+    if (!data) return
+    const { paymentAddresses, rewards_aggregate, withdrawals_aggregate, stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations } = data
+    return {
+      balance: getBalanceByPaymentAddresses(paymentAddresses),
+      reward: getAvailableReward(rewards_aggregate, withdrawals_aggregate),
+      delegation: getCurrentDelegation(stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations)
+    }
   }, [data])
 
-  if (!balance) return (
+  if (!result) return (
     <Modal>
       <Loading />
     </Modal>
   )
 
+  const { balance, reward, delegation } = result
+
   return (
     <Panel className='p-4 space-y-2'>
-      <div className='space-y-1'>
-        <h2 className='font-semibold'>Balance</h2>
-        <div><ADAAmount lovelace={balance.lovelace} /></div>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+        <div className='space-y-1'>
+          <h2 className='font-semibold'>Balance</h2>
+          <div>
+            <ADAAmount lovelace={balance.lovelace} />
+            <span> + </span>
+            (<ADAAmount lovelace={reward} /> reward)
+          </div>
+        </div>
+        <div className='space-y-1'>
+          <h2 className='font-semibold'>Delegation</h2>
+          {delegation && <ShowDelegation delegation={delegation} />}
+          {!delegation && <div>N/A</div>}
+        </div>
       </div>
       {balance.assets.size > 0 && <div className='space-y-1'>
         <h2 className='font-semibold'>Assets</h2>
