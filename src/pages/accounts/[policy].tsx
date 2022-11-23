@@ -21,7 +21,7 @@ import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 
-const Balance: FC<{
+const Summary: FC<{
   address: string
   rewardAddress: string
 }> = ({ address, rewardAddress }) => {
@@ -234,7 +234,7 @@ const GetPolicy: NextPage = () => {
     const rewardAddress = cardano.getPolicyRewardAddress(policy, isMainnet).to_address().to_bech32()
     return { policy, address, rewardAddress }
   }, [cardano, config, policyContent])
-  const [tab, setTab] = useState<'balance' | 'spend' | 'edit' | 'delete' | 'native script'>('balance')
+  const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'delete' | 'native script'>('summary')
   const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
   const [accountParams, setAccountParams] = useState<AccountParams | undefined>()
 
@@ -275,10 +275,10 @@ const GetPolicy: NextPage = () => {
           <div className='flex'>
             <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
               <button
-                onClick={() => setTab('balance')}
-                disabled={tab === 'balance'}
+                onClick={() => setTab('summary')}
+                disabled={tab === 'summary'}
                 className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-                Balance
+                Summary
               </button>
               <button
                 onClick={() => setTab('spend')}
@@ -311,7 +311,7 @@ const GetPolicy: NextPage = () => {
             <span>You can create a new account by editing the policy. The assets in the original one will remain untouched.</span>
           </div>}
         </Hero>
-        {tab === 'balance' && <Balance address={result.address} rewardAddress={result.rewardAddress} />}
+        {tab === 'summary' && <Summary address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
         {tab === 'edit' && accountParams && <EditAccount cardano={cardano} params={accountParams} setParams={setAccountParams} />}
         {tab === 'delete' && account && <Delete account={account} />}
