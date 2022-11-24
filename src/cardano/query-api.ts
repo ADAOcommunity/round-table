@@ -78,7 +78,8 @@ query getUTxOsToSpend($addresses: [String]!) {
       }
     }
   }
-}`
+}
+`
 
 const useGetUTxOsToSpendQuery: Query<
   { utxos: TransactionOutput[], cardano: Cardano },
@@ -129,7 +130,31 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
   return balance
 }
 
+const StakePoolFields = gql`
+fragment StakePoolFields on StakePool {
+  id
+  margin
+  fixedCost
+  pledge
+  hash
+  metadataHash
+  activeStake_aggregate {
+    aggregate {
+      sum {
+        amount
+      }
+    }
+  }
+  blocks_aggregate {
+    aggregate {
+      count
+    }
+  }
+}
+`
+
 const SummaryQuery = gql`
+${StakePoolFields}
 query Summary($address: String!, $rewardAddress: StakeAddress!) {
   paymentAddresses(addresses: [$address]) {
     address
@@ -173,11 +198,11 @@ query Summary($address: String!, $rewardAddress: StakeAddress!) {
   ) {
     address
     stakePool {
-      id
-      url
+      ...StakePoolFields
     }
   }
-}`
+}
+`
 
 const useSummaryQuery: Query<
   { paymentAddresses: PaymentAddress[], rewards_aggregate: Reward_Aggregate, withdrawals_aggregate: Withdrawal_Aggregate, stakeRegistrations_aggregate: StakeRegistration_Aggregate, stakeDeregistrations_aggregate: StakeDeregistration_Aggregate, delegations: Delegation[] },
