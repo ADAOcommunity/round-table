@@ -21,7 +21,7 @@ import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
-import type { Delegation } from '@cardano-graphql/client-ts'
+import type { Delegation } from '@cardano-graphql/client-ts/api'
 
 type StakePoolMetaData = { name: string, description: string, ticker: string, homepage: string }
 const fetchStakePoolMetaData = async (URL: string): Promise<StakePoolMetaData> => fetch(URL).then((response) => {

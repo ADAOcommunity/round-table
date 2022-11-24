@@ -11,8 +11,8 @@
     "cypress:headless": "cypress run"
   },
   "dependencies": {
-    "@apollo/client": "^3.5.10",
-    "@cardano-graphql/client-ts": "^7.0.0",
+    "@apollo/client": "^3.7.1",
+    "@cardano-graphql/client-ts": "^7.0.2",
     "@dcspark/cardano-multiplatform-lib-browser": "^3.1.0",
     "@heroicons/react": "^2.0.12",
     "buffer": "^6.0.3",
