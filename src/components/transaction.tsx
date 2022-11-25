@@ -949,9 +949,9 @@ const NewTransaction: FC<{
       <ul>
         {recipients.map((recipient, index) =>
           <li key={recipient.id}>
-            <header className='flex px-4 py-2 bg-gray-100'>
-              <h2 className='grow font-semibold'>Recipient #{index + 1}</h2>
-              <nav className='flex justify-between items-center'>
+            <header className='flex justify-between px-4 py-2 bg-gray-100'>
+              <h2 className='font-semibold'>Recipient #{index + 1}</h2>
+              <nav className='flex items-center'>
                 <button onClick={() => deleteRecipient(recipient)}>
                   <XMarkIcon className='w-4' />
                 </button>
@@ -966,6 +966,21 @@ const NewTransaction: FC<{
           </li>
         )}
       </ul>
+      {delegation && <div>
+        <header className='flex justify-between px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Delegation</h2>
+          <nav className='flex items-center'>
+            <button onClick={() => setDelegation(undefined)}>
+              <XMarkIcon className='w-4' />
+            </button>
+          </nav>
+        </header>
+        <div className='p-4'>
+          <div className='grid grid-cols-1 lg:grid-cols-4 gap-2'>
+            <StakePoolInfo stakePool={delegation} />
+          </div>
+        </div>
+      </div>}
       <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>{recipients.length > 0 ? 'Change' : 'Send All'}</h2>
