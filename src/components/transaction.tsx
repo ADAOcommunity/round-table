@@ -9,7 +9,7 @@ import type { Address, Transaction, TransactionBody, TransactionHash, Vkeywitnes
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
-import { BackButton, CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle } from './layout'
+import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle } from './layout'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import Gun from 'gun'
@@ -1045,7 +1045,6 @@ const NewTransaction: FC<{
           </p>}
         </div>
         <nav className='flex justify-end space-x-2'>
-          <BackButton className='p-2 rounded text-sky-700 border'>Back</BackButton>
           <button
             className='p-2 rounded text-sky-700 border'
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
