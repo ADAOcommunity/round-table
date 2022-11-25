@@ -15,44 +15,13 @@ import type { Value } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import { CurrentAccountContext, EditAccount } from '../../components/account'
-import { NewTransaction } from '../../components/transaction'
+import { NewTransaction, StakePoolInfo } from '../../components/transaction'
 import { Modal } from '../../components/modal'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
 import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Delegation } from '@cardano-graphql/client-ts/api'
-
-type StakePoolMetaData = { name: string, description: string, ticker: string, homepage: string }
-const fetchStakePoolMetaData = async (URL: string): Promise<StakePoolMetaData> => fetch(URL).then((response) => {
-  if (!response.ok) throw new Error(`Failed to fetch ${URL}`)
-  return response.json()
-})
-
-const ShowDelegation: FC<{
-  className?: string
-  delegation: Delegation
-}> = ({ className, delegation }) => {
-  const [metaData, setMetaData] = useState<StakePoolMetaData | undefined>()
-
-  useEffect(() => {
-    let isMounted = true
-    const URL = delegation.stakePool.url
-
-    URL && fetchStakePoolMetaData(URL).then((data) => isMounted && setMetaData(data))
-
-    return () => {
-      isMounted = false
-    }
-  }, [delegation])
-
-  return (
-    <div className={className}>
-      <div>{metaData?.ticker ?? 'Unknown'}</div>
-      <div>{delegation.stakePool.id}</div>
-    </div>
-  )
-}
 
 const Summary: FC<{
   address: string
@@ -95,7 +64,7 @@ const Summary: FC<{
         </div>
         <div className='space-y-1'>
           <h2 className='font-semibold'>Delegation</h2>
-          {delegation && <ShowDelegation delegation={delegation} />}
+          {delegation && <StakePoolInfo stakePool={delegation.stakePool} />}
           {!delegation && <div>N/A</div>}
         </div>
       </div>
@@ -114,7 +83,8 @@ const Summary: FC<{
                   <span>{getPolicyId(id)}</span>
                 </div>
               </li>
-            )}
+            )
+          }
           )}
         </ul>
       </div>}

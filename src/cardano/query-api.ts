@@ -1,6 +1,6 @@
 import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
-import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation } from '@cardano-graphql/client-ts/api'
+import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation, StakePool } from '@cardano-graphql/client-ts/api'
 import { Config } from './config'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
@@ -221,5 +221,42 @@ function getAvailableReward(rewardsAggregate: Reward_Aggregate, withdrawalsAggre
   return rewardSum - withdrawalSum
 }
 
+const StakePoolRetirementFields = gql`
+fragment RetirementFields on StakePool {
+  retirements {
+    retiredInEpoch {
+      number
+    }
+    announcedIn {
+      hash
+    }
+    inEffectFrom
+  }
+}
+`
+
+const StakePoolsQuery = gql`
+${StakePoolFields}
+${StakePoolRetirementFields}
+query StakePools($id: StakePoolID, $limit: Int!, $offset: Int!) {
+  stakePools(
+    limit: $limit
+    offset: $offset
+    order_by: { pledge: desc, fixedCost: asc, margin: asc }
+    where: {
+      id: { _eq: $id }
+    }
+  ) {
+    ...StakePoolFields
+    ...RetirementFields
+  }
+}
+`
+
+const useStakePoolsQuery: Query<
+  { stakePools: StakePool[] },
+  { id?: string, limit: number, offset: number }
+> = (options) => useQuery(StakePoolsQuery, options)
+
 export type { Value }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery }

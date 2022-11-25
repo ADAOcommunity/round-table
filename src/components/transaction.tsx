@@ -1,12 +1,12 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { MouseEventHandler, FC, ReactNode, ChangeEventHandler } from 'react'
 import { AssetAmount, ADAAmount, LabeledCurrencyInput, getADASymbol, ADAInput } from './currency'
-import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId } from '../cardano/query-api'
+import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePoolsQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
 import type { Address, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
 import { BackButton, CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle } from './layout'
@@ -15,10 +15,10 @@ import Image from 'next/image'
 import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
-import { Loading } from './status'
+import { Loading, ProgressBar } from './status'
 import { NativeScriptViewer, suggestExpirySlot, suggestStartSlot } from './native-script'
 import type { Policy } from '../db'
-import type { TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
+import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
 import { Modal } from './modal'
@@ -816,17 +816,18 @@ const NewTransaction: FC<{
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
   const [minLovelaceForChange, setMinLovelaceForChange] = useState(BigInt(5e6))
+  const [isDelegationModalOn, setIsDelegationModalOn] = useState(false)
+  const [delegation, setDelegation] = useState<StakePool | undefined>()
+
+  const delegate = (stakePool: StakePool) => {
+    setDelegation(stakePool)
+    setIsDelegationModalOn(false)
+  }
 
   useEffect(() => {
-    let isMounted = true
-
-    if (isMounted && isChangeSettingDisabled) {
+    if (isChangeSettingDisabled) {
       setChangeAddress(defaultChangeAddress)
       setWillSpendAll(false)
-    }
-
-    return () => {
-      isMounted = false
     }
   }, [defaultChangeAddress, isChangeSettingDisabled])
 
@@ -1035,6 +1036,14 @@ const NewTransaction: FC<{
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
           </button>
+          <button
+            className='p-2 rounded text-sky-700 border'
+            onClick={() => setIsDelegationModalOn(true)}>
+            Delegate
+          </button>
+          {isDelegationModalOn && <Modal className='bg-white p-4 rounded w-full lg:w-1/2' onBackgroundClick={() => setIsDelegationModalOn(false)}>
+            <StakePoolPicker className='space-y-2' delegate={delegate} />
+          </Modal>}
           {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
         </nav>
       </footer>
@@ -1042,4 +1051,139 @@ const NewTransaction: FC<{
   )
 }
 
-export { AddressViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction }
+const StakePoolPicker: FC<{
+  className?: string
+  delegate: (_: StakePool) => void
+}> = ({ className, delegate }) => {
+  const limit = 6
+  const [id, setId] = useState('')
+  const [page, setPage] = useState(1)
+  const isIdBlank = id.trim().length === 0
+  const { data } = useStakePoolsQuery({
+    variables: {
+      id: isIdBlank ? undefined : id,
+      limit,
+      offset: (page - 1) * limit
+    }
+  })
+  const stakePools = data?.stakePools
+
+  return (
+    <div className={className}>
+      <h2 className='text-lg font-semibold'>Staking Pools</h2>
+      <div className='flex items-center border rounded overflow-hidden'>
+        <input
+          onChange={(e) => setId(e.target.value)}
+          type='search'
+          className='block p-2 grow outline-none'
+          placeholder='Search by Pool ID' />
+        <span className='p-2'>
+          <MagnifyingGlassIcon className='w-4' />
+        </span>
+      </div>
+      {stakePools && <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
+        {stakePools.map((stakePool) => <StakePoolInfo stakePool={stakePool} delegate={delegate} />)}
+      </div>}
+      {isIdBlank && data && <nav className='flex items-center justify-between'>
+        <button
+          className='px-2 py-1 border rounded text-sky-700 disabled:text-gray-100'
+          onClick={() => setPage(page - 1)}
+          disabled={page === 1}>
+          <ChevronLeftIcon className='w-4' />
+        </button>
+        <button
+          onClick={() => setPage(page + 1)}
+          className='px-2 py-1 border rounded text-sky-700'>
+          <ChevronRightIcon className='w-4' />
+        </button>
+      </nav>}
+    </div>
+  )
+}
+
+type StakePoolMetaData = { name: string, description: string, ticker: string, homepage: string }
+
+const fetchStakePoolMetaData = async (url: string): Promise<StakePoolMetaData> =>
+  fetch(url)
+    .then((response) => {
+      if (!response.ok) throw new Error(`Failed to fetch ${URL}`)
+      return response.json()
+    }).catch((error) => console.error(error))
+
+const StakePoolInfo: FC<{
+  stakePool: StakePool
+  delegate?: (_: StakePool) => void
+}> = ({ delegate, stakePool }) => {
+  const [metaData, setMetaData] = useState<StakePoolMetaData | undefined>()
+  const [config, _] = useContext(ConfigContext)
+  const stakedAmount = parseInt(stakePool.activeStake_aggregate?.aggregate?.sum.amount ?? '0')
+  const maxStaked = 64e12
+  const isRetired = stakePool.retirements && stakePool.retirements.length > 0
+
+  useEffect(() => {
+    let isMounted = true
+
+    const id: string = stakePool.hash
+    const hash: string | undefined = stakePool.metadataHash
+    const url = hash && new URL(['api/v1/metadata', id, hash].join('/'), config.SMASH)
+
+    url && fetchStakePoolMetaData(url.toString()).then((data) => isMounted && setMetaData(data))
+
+    return () => {
+      isMounted = false
+    }
+  }, [stakePool])
+
+  return (
+    <div className='border rounded divide-y shadow'>
+      <header className='space-y-1 p-2'>
+        {metaData ? <Link href={metaData.homepage}>
+          <a className='block text-sky-700 truncate' target='_blank'>
+            [<strong>{metaData.ticker}</strong>] {metaData.name}
+          </a>
+        </Link> : <div className='text-gray-700'>{isRetired ? 'Retired' : 'Unknown'}</div>}
+        <div className='text-xs break-all'>{stakePool.id}</div>
+      </header>
+      <div className='p-2 text-sm space-y-1'>
+        <div>
+          <div className='flex space-x-1 items-center justify-between'>
+            <span className='font-semibold'>Saturation:</span>
+            <div className='grow'>
+              <div className='rounded bg-gray-700 overflow-hidden relative'>
+                <ProgressBar className='bg-green-700 h-4' value={stakedAmount} max={maxStaked} />
+                <div className='absolute inset-0 text-xs text-center text-white'>
+                  {Math.round(stakedAmount / maxStaked * 100)}%
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className='flex space-x-1 items-center justify-between'>
+            <span className='font-semibold'>Margin:</span>
+            <span>{stakePool.margin * 100}%</span>
+          </div>
+          <div className='flex space-x-1 items-center justify-between'>
+            <span className='font-semibold'>Fixed Fees:</span>
+            <ADAAmount lovelace={BigInt(stakePool.fixedCost)} />
+          </div>
+          <div className='flex space-x-1 items-center justify-between'>
+            <span className='font-semibold'>Pledge:</span>
+            <ADAAmount lovelace={BigInt(stakePool.pledge)} />
+          </div>
+          <div className='flex space-x-1 items-center justify-between'>
+            <span className='font-semibold'>Produced Blocks:</span>
+            <span>{stakePool.blocks_aggregate.aggregate?.count}</span>
+          </div>
+        </div>
+        {delegate && <nav>
+          <button
+            className='block w-full border rounded text-sm text-white p-1 bg-sky-700'
+            onClick={() => delegate(stakePool)}>
+            Delegate
+          </button>
+        </nav>}
+      </div>
+    </div>
+  )
+}
+
+export { AddressViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction, StakePoolInfo }
