@@ -834,15 +834,15 @@ const NewTransaction: FC<{
   useEffect(() => {
     let isMounted = true
 
-    if (isMounted) {
-      if (willSpendAll || recipients.length === 0) {
-        setInputs(utxos)
-        return
-      }
+    if (willSpendAll || recipients.length === 0) {
+      setInputs(utxos)
+      return
+    }
 
-      setInputs([])
+    setInputs([])
 
-      init().then(() => {
+    init().then(() => {
+      if (isMounted) {
         const inputs: Output[] = utxos.map((txOutput) => {
           return {
             data: txOutput,
@@ -872,8 +872,8 @@ const NewTransaction: FC<{
         const result = select(inputs, outputs, { lovelace: minLovelaceForChange, assets: [] })
         const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
         txOutputs && setInputs(txOutputs)
-      })
-    }
+      }
+    })
 
     return () => {
       isMounted = false
