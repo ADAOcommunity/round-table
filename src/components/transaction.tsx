@@ -161,12 +161,12 @@ const TransactionBodyViewer: FC<{
           </span>
         </div>
       </div>
-      <div className='flex space-x-2'>
-        <div className='basis-1/2 space-y-1'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+        <div className='space-y-1'>
           <div className='font-semibold'>Inputs</div>
           <TransactionInputList ulClassName='space-y-1' liClassName='p-2 border rounded break-all' inputs={txInputs} />
         </div>
-        <div className='basis-1/2 space-y-1'>
+        <div className='space-y-1'>
           <div className='font-semibold'>Outputs</div>
           <ul className='space-y-1'>
             {recipients.map(({ id, address, value }) =>
