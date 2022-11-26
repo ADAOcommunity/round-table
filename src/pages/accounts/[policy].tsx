@@ -79,7 +79,7 @@ const Summary: FC<{
                   quantity={quantity}
                   decimals={0}
                   symbol={symbol} />
-                <div className='space-x-1 text-sm'>
+                <div className='space-x-1 text-sm truncate'>
                   <span>{getPolicyId(id)}</span>
                 </div>
               </li>
