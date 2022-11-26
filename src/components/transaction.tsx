@@ -5,7 +5,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePool
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Transaction, TransactionBody, TransactionHash, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -33,24 +33,36 @@ const TransactionReviewButton: FC<{
   )
 }
 
+const TransactionInputListing: FC<{
+  className?: string
+  input: TransactionInput
+}> = ({ className, input }) => {
+  const hash = useMemo(() => input.transaction_id().to_hex(), [input])
+  const index = useMemo(() => input.index().to_str(), [input])
+  return (
+    <li className={className}>{hash}#{index}</li>
+  )
+}
+
+const TransactionInputList: FC<{
+  ulClassName?: string
+  liClassName?: string
+  inputs: TransactionInput[]
+}> = ({ ulClassName, liClassName, inputs }) => {
+  return (
+    <ul className={ulClassName}>
+      {inputs.map((input, index) => <TransactionInputListing className={liClassName} key={index} input={input} />)}
+    </ul>
+  )
+}
+
 const TransactionBodyViewer: FC<{
   txBody: TransactionBody
   cardano: Cardano
 }> = ({ cardano, txBody }) => {
-  const txHash = cardano.lib.hash_transaction(txBody)
-
-  const fee = BigInt(txBody.fee().to_str())
-  type TxInputSet = { isQueried: false, data: { txHash: string, index: number }[] }
-  const txInputs: TxInputSet = {
-    isQueried: false,
-    data: Array.from({ length: txBody.inputs().len() }, (_, i) => {
-      const input = txBody.inputs().get(i)
-      return {
-        txHash: toHex(input.transaction_id()),
-        index: parseInt(input.index().to_str())
-      }
-    })
-  }
+  const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
+  const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
+  const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
 
   const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
     const id = i.toString()
@@ -97,15 +109,11 @@ const TransactionBodyViewer: FC<{
       </div>
       <div className='flex space-x-2'>
         <div className='basis-1/2 space-y-1'>
-          <div className='font-semibold'>From</div>
-          <ul className='space-y-1'>
-            {!txInputs.isQueried && txInputs.data.map(({ txHash, index }) =>
-              <li key={`${txHash}${index}`} className='p-2 border rounded-md break-all'>{txHash}#{index}</li>
-            )}
-          </ul>
+          <div className='font-semibold'>Inputs</div>
+          <TransactionInputList ulClassName='space-y-1' liClassName='p-2 border rounded break-all' inputs={txInputs} />
         </div>
         <div className='basis-1/2 space-y-1'>
-          <div className='font-semibold'>To</div>
+          <div className='font-semibold'>Outputs</div>
           <ul className='space-y-1'>
             {recipients.map(({ id, address, value }) =>
               <li key={id} className='p-2 border rounded-md'>
