@@ -1,10 +1,38 @@
-const SlotLength = 432000
-const shelleyStart = (isMainnet: boolean): number => isMainnet ? 4924800 : 4924800 + 129600 - SlotLength
-const networkOffset = (isMainnet: boolean): number => isMainnet ? 1596491091 : 1599294016 + 129600 - SlotLength
-const estimateDateBySlot = (slot: number, isMainnet: boolean): Date => new Date((slot - shelleyStart(isMainnet) + networkOffset(isMainnet)) * 1000)
-const estimateSlotByDate = (date: Date, isMainnet: boolean): number => Math.floor(date.getTime() / 1000) + shelleyStart(isMainnet) - networkOffset(isMainnet)
-const slotSinceShelley = (slot: number, isMainnet: boolean): number => slot - shelleyStart(isMainnet)
-const getEpochBySlot = (slot: number, isMainnet: boolean) => Math.floor(slotSinceShelley(slot, isMainnet) / SlotLength) + (isMainnet ? 208 : 80) + 1
-const getSlotInEpochBySlot = (slot: number, isMainnet: boolean) => slotSinceShelley(slot, isMainnet) % SlotLength
+import type { Network } from "./config"
 
-export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength }
+const slotLength = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 432000
+    case 'testnet': return 432000
+  }
+}
+
+const shelleyStart = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 4924800
+    case 'testnet': return 4924800 + 129600 - slotLength(network)
+  }
+}
+
+const networkOffset = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 1596491091
+    case 'testnet': return 1599294016 + 129600 - slotLength(network)
+  }
+}
+
+const estimateDateBySlot = (slot: number, network: Network): Date => new Date((slot - shelleyStart(network) + networkOffset(network)) * 1000)
+const estimateSlotByDate = (date: Date, network: Network): number => Math.floor(date.getTime() / 1000) + shelleyStart(network) - networkOffset(network)
+const slotSinceShelley = (slot: number, network: Network): number => slot - shelleyStart(network)
+
+const epochBeforeShelly = (network: Network): number => {
+  switch(network) {
+    case 'mainnet': return 208
+    case 'testnet': return 80
+  }
+}
+
+const getEpochBySlot = (slot: number, network: Network) => Math.floor(slotSinceShelley(slot, network) / slotLength(network)) + 1 + epochBeforeShelly(network)
+const getSlotInEpochBySlot = (slot: number, network: Network) => slotSinceShelley(slot, network) % slotLength(network)
+
+export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength }

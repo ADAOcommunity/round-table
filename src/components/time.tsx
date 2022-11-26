@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
-import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength } from '../cardano/utils'
+import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength } from '../cardano/utils'
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
 const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
@@ -14,14 +14,15 @@ const ChainProgress: FC<{
   const [_date, setDate] = useContext(DateContext)
   const [text, setText] = useState('')
   const [style, setStyle] = useState<{ width: string }>({ width: '0' })
-  const { isMainnet } = config
+  const { network } = config
 
   useEffect(() => {
     const id = setInterval(() => {
       const date = new Date()
-      const slot = estimateSlotByDate(date, isMainnet)
-      const slotInEpoch = getSlotInEpochBySlot(slot, isMainnet)
-      const epoch = getEpochBySlot(slot, isMainnet)
+      const slot = estimateSlotByDate(date, network)
+      const slotInEpoch = getSlotInEpochBySlot(slot, network)
+      const epoch = getEpochBySlot(slot, network)
+      const SlotLength = slotLength(network)
       const progress = slotInEpoch / SlotLength * 100
 
       setStyle({ width: `${progress}%` })
@@ -32,7 +33,7 @@ const ChainProgress: FC<{
     return () => {
       clearInterval(id)
     }
-  }, [setDate, isMainnet])
+  }, [setDate, network])
 
   return (
     <div className={className}>

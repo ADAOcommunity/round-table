@@ -56,7 +56,7 @@ const Timelock: FC<{
 }> = ({ slot, type }) => {
   const [config, _] = useContext(ConfigContext)
   const [now, _t] = useContext(DateContext)
-  const currentSlot = estimateSlotByDate(now, config.isMainnet)
+  const currentSlot = estimateSlotByDate(now, config.network)
   const isValid: boolean = useMemo(() => {
     switch (type) {
       case 'TimelockStart': return currentSlot >= slot
@@ -68,7 +68,7 @@ const Timelock: FC<{
       {type === 'TimelockStart' && <StartBadge />}
       {type === 'TimelockExpiry' && <ExpiryBadge />}
       <span>{slot}</span>
-      <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
+      <span>(est. {estimateDateBySlot(slot, config.network).toLocaleString()})</span>
       {!isValid && <NoSymbolIcon className='w-4' />}
       {isValid && <ShieldCheckIcon className='w-4' />}
     </div>

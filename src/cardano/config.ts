@@ -7,8 +7,11 @@ type GraphQL = {
 
 type QueryAPI = GraphQL
 
+type Network = 'mainnet' | 'testnet'
+
 type Config = {
   isMainnet: boolean
+  network: Network
   queryAPI: QueryAPI
   submitAPI: string[]
   SMASH: string
@@ -30,14 +33,24 @@ const defaultSMASHTestnet = 'https://preview-smash.panl.org'
 
 const defaultConfig: Config = {
   isMainnet: true,
+  network: 'mainnet',
   queryAPI: { type: 'graphql', URI: defaultGraphQLMainnet },
   submitAPI: defaultSubmitURIMainnet,
   SMASH: defaultSMASHMainnet,
   gunPeers: []
 }
 
+const parseNetwork = (text: string): Network => {
+  switch (text) {
+    case 'mainnet': return 'mainnet'
+    case 'testnet': return 'testnet'
+    default: throw new Error('Unknown network')
+  }
+}
+
 const createConfig = (): Config => {
   const isMainnet = !process.env.NEXT_PUBLIC_TESTNET
+  const network = parseNetwork(process.env.NEXT_PUBLIC_NETWORK ?? 'mainnet')
   const defaultGraphQL = isMainnet ? defaultGraphQLMainnet : defaultGraphQLTestnet
   const defaultSubmitURI = isMainnet ? defaultSubmitURIMainnet : defaultSubmitURITestnet
   const grapQLURI = process.env.NEXT_PUBLIC_GRAPHQL ?? defaultGraphQL
@@ -49,6 +62,7 @@ const createConfig = (): Config => {
 
   return {
     isMainnet,
+    network,
     queryAPI: { type: 'graphql', URI: grapQLURI },
     submitAPI: submitURI,
     SMASH,
@@ -60,5 +74,5 @@ const config = createConfig()
 
 const ConfigContext = createContext<[Config, (x: Config) => void]>([defaultConfig, (_) => {}])
 
-export type { Config }
+export type { Config, Network }
 export { ConfigContext, config }

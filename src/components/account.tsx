@@ -100,12 +100,12 @@ const TimelockInput: FC<{
   isLocked: (_: Date) => boolean
 }> = ({ className, children, value, setValue, isLocked }) => {
   const [config, _] = useContext(ConfigContext)
-  const date = estimateDateBySlot(value, config.isMainnet)
+  const date = estimateDateBySlot(value, config.network)
   return (
     <div className={className}>
       {children}
       <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />
-      <Calendar isRed={isLocked} selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.isMainnet))} />
+      <Calendar isRed={isLocked} selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.network))} />
     </div>
   )
 }
@@ -119,7 +119,7 @@ const AddTimelock: FC<{
   const [config, _] = useContext(ConfigContext)
   const currentDate = new Date()
   currentDate.setHours(0, 0, 0, 0)
-  const currentSlot = estimateSlotByDate(currentDate, config.isMainnet)
+  const currentSlot = estimateSlotByDate(currentDate, config.network)
   const [slot, setSlot] = useState(currentSlot)
   const [now, _t] = useContext(DateContext)
 
