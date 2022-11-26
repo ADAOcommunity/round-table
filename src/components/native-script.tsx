@@ -120,7 +120,7 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_script_all()
   if (script) return (
     <div className={className}>
-      <header className={headerClassName}>Require all to spend</header>
+      <header className={headerClassName}>Require all</header>
       <ul className={ulClassName}>
         {Array.from(toIter(script.native_scripts())).map((nativeScript, index) =>
           <li key={index} className={liClassName}>
@@ -141,7 +141,7 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_script_any()
   if (script) return (
     <div className={className}>
-      <header className={headerClassName}>Require any to spend</header>
+      <header className={headerClassName}>Require any</header>
       <ul className={ulClassName}>
         {Array.from(toIter(script.native_scripts())).map((nativeScript, index) =>
           <li key={index} className={liClassName}>
@@ -162,7 +162,7 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_script_n_of_k()
   if (script) return (
     <div className={className}>
-      <header className={headerClassName}>Require least {script.n()} to spend</header>
+      <header className={headerClassName}>Require least {script.n()}</header>
       <ul className={ulClassName}>
         {Array.from(toIter(script.native_scripts())).map((nativeScript, index) =>
           <li key={index} className={liClassName}>
