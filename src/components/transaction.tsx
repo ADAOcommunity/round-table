@@ -555,39 +555,41 @@ const TransactionViewer: FC<{
         <div className='font-semibold'>Message</div>
         <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
       </Panel>}
-      {nativeScripts?.map((script, index) =>
-        <Panel key={index} className='space-y-1'>
-          <div className='p-4 space-y-1'>
-            <div className='font-semibold'>Script Details</div>
-            <NativeScriptViewer
-              cardano={cardano}
-              verifyingData={signatureMap}
-              className='p-2 border rounded space-y-2'
-              headerClassName='font-semibold'
-              ulClassName='space-y-1'
-              nativeScript={script} />
-          </div>
-          <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
-            <div className='flex space-x-1 items-center'>
-              <SignatureSync
+      {nativeScripts && nativeScripts.length > 0 && <Panel>
+        <div className='p-4 space-y-2'>
+          <h2 className='font-semibold'>Native Scripts</h2>
+          <ul className='space-y-1'>
+            {nativeScripts.map((script, index) => <li key={index}>
+              <NativeScriptViewer
                 cardano={cardano}
-                txHash={txHash}
-                signatures={signatureMap}
-                signHandle={signHandle}
-                signers={signerRegistry}
-                config={config} />
-              <div className='text-sm'>Auto sync the signatures with other signers</div>
-            </div>
-            <CopyVkeysButton
+                verifyingData={signatureMap}
+                className='p-2 border rounded space-y-2'
+                headerClassName='font-semibold'
+                ulClassName='space-y-1'
+                nativeScript={script} />
+            </li>)}
+          </ul>
+        </div>
+        <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
+          <div className='flex space-x-1 items-center'>
+            <SignatureSync
               cardano={cardano}
-              vkeys={Array.from(signatureMap.values())}
-              className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
-              <ShareIcon className='w-4' />
-              <span>Copy my signatures</span>
-            </CopyVkeysButton>
-          </footer>
-        </Panel>
-      )}
+              txHash={txHash}
+              signatures={signatureMap}
+              signHandle={signHandle}
+              signers={signerRegistry}
+              config={config} />
+            <div className='text-sm'>Auto sync the signatures with other signers</div>
+          </div>
+          <CopyVkeysButton
+            cardano={cardano}
+            vkeys={Array.from(signatureMap.values())}
+            className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+            <ShareIcon className='w-4' />
+            <span>Copy my signatures</span>
+          </CopyVkeysButton>
+        </footer>
+      </Panel>}
       <ManualSign signHandle={signHandle}>
         <SignTxButton
           transaction={transaction}
