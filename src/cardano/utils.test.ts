@@ -4,12 +4,14 @@ test('estimateSlotByDate', () => {
   expect(estimateSlotByDate(new Date('2022-04-21T22:26:39.000Z'), 'mainnet')).toBe(59013708)
   expect(estimateSlotByDate(new Date('2022-04-21T22:28:04.000Z'), 'testnet')).toBe(56210868)
   expect(estimateSlotByDate(new Date('2022-04-28T01:56:00.000Z'), 'testnet')).toBe(56741744)
+  expect(estimateSlotByDate(new Date('2022-11-26T23:51:57Z'), 'preview')).toBe(2850717)
 })
 
 test('estimateDateBySlot', () => {
   expect(estimateDateBySlot(59013708, 'mainnet').toISOString()).toBe('2022-04-21T22:26:39.000Z')
   expect(estimateDateBySlot(56210868, 'testnet').toISOString()).toBe('2022-04-21T22:28:04.000Z')
   expect(estimateDateBySlot(56741744, 'testnet').toISOString()).toBe('2022-04-28T01:56:00.000Z')
+  expect(estimateDateBySlot(2850717, 'preview').toISOString()).toBe('2022-11-26T23:51:57.000Z')
 })
 
 test('estimateDateBySlot', () => {
@@ -18,6 +20,7 @@ test('estimateDateBySlot', () => {
   expect(getEpochBySlot(56210868, 'testnet')).toBe(200)
   expect(getEpochBySlot(56211570, 'testnet')).toBe(200)
   expect(getEpochBySlot(56213638, 'testnet')).toBe(200)
+  expect(getEpochBySlot(2851702, 'preview')).toBe(33)
 })
 
 test('getSlotInEpochBySlot', () => {

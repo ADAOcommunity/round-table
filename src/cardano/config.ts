@@ -7,7 +7,16 @@ type GraphQL = {
 
 type QueryAPI = GraphQL
 
-type Network = 'mainnet' | 'testnet'
+type Network = 'mainnet' | 'testnet' | 'preview'
+
+const parseNetwork = (text: string): Network => {
+  switch (text) {
+    case 'mainnet': return 'mainnet'
+    case 'testnet': return 'testnet'
+    case 'preview': return 'preview'
+    default: throw new Error('Unknown network')
+  }
+}
 
 type Config = {
   isMainnet: boolean
@@ -38,14 +47,6 @@ const defaultConfig: Config = {
   submitAPI: defaultSubmitURIMainnet,
   SMASH: defaultSMASHMainnet,
   gunPeers: []
-}
-
-const parseNetwork = (text: string): Network => {
-  switch (text) {
-    case 'mainnet': return 'mainnet'
-    case 'testnet': return 'testnet'
-    default: throw new Error('Unknown network')
-  }
 }
 
 const createConfig = (): Config => {
