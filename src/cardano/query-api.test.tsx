@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { getAssetName, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
+import { getAssetName, getPolicyId, useUTxOSummaryQuery, usePaymentAddressesQuery } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import type { FC, ReactNode } from 'react'
@@ -38,7 +38,7 @@ describe('GraphQL API', () => {
 
   test('useGetUTxOsToSpendQuery', async () => {
     const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result } = renderHook(() => useGetUTxOsToSpendQuery({ variables: { addresses: [address] } }), { wrapper })
+    const { result } = renderHook(() => useUTxOSummaryQuery({ variables: { addresses: [address] } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
 

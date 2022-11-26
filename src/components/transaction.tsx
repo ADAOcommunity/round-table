@@ -5,7 +5,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePool
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Transaction, TransactionBody, TransactionHash, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Transaction, TransactionBody, TransactionHash, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -16,8 +16,7 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
 import { Loading, ProgressBar } from './status'
-import { NativeScriptViewer, suggestExpirySlot, suggestStartSlot } from './native-script'
-import type { Policy } from '../db'
+import { NativeScriptViewer } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
@@ -804,14 +803,17 @@ const TransactionMessageInput: FC<{
 const NewTransaction: FC<{
   cardano: Cardano
   protocolParameters: ProtocolParams
-  policy: Policy
   utxos: TransactionOutput[]
+  buildInputResult: (builder: SingleInputBuilder) => InputBuilderResult
+  buildCertResult: (builder: SingleCertificateBuilder) => CertificateBuilderResult
   defaultChangeAddress: string
-}> = ({ cardano, protocolParameters, policy, utxos, defaultChangeAddress }) => {
+  rewardAddress: string
+  isRegistered: boolean
+  currentDelegation?: StakePool
+}> = ({ cardano, protocolParameters, buildInputResult, buildCertResult, rewardAddress, utxos, defaultChangeAddress, isRegistered, currentDelegation }) => {
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
-  const paymentNativeScript = useMemo(() => typeof policy !== 'string' && cardano.getPaymentNativeScriptFromPolicy(policy), [cardano, policy])
   const [changeAddress, setChangeAddress] = useState<string>(defaultChangeAddress)
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
@@ -842,37 +844,37 @@ const NewTransaction: FC<{
     setInputs([])
 
     init().then(() => {
-      if (isMounted) {
-        const inputs: Output[] = utxos.map((txOutput) => {
-          return {
-            data: txOutput,
-            lovelace: BigInt(txOutput.value),
-            assets: txOutput.tokens.map((token) => {
-              const assetId = token.asset.assetId
-              return {
-                policyId: getPolicyId(assetId),
-                assetName: getAssetName(assetId),
-                quantity: BigInt(token.quantity)
-              }
-            })
-          }
-        })
-        const outputs: Output[] = recipients.map((recipient) => {
-          return {
-            lovelace: recipient.value.lovelace,
-            assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
-              return {
-                policyId: getPolicyId(id),
-                assetName: getAssetName(id),
-                quantity: BigInt(quantity)
-              }
-            })
-          }
-        })
-        const result = select(inputs, outputs, { lovelace: minLovelaceForChange, assets: [] })
-        const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
-        txOutputs && setInputs(txOutputs)
-      }
+      if (!isMounted) return
+
+      const inputs: Output[] = utxos.map((txOutput) => {
+        return {
+          data: txOutput,
+          lovelace: BigInt(txOutput.value),
+          assets: txOutput.tokens.map((token) => {
+            const assetId = token.asset.assetId
+            return {
+              policyId: getPolicyId(assetId),
+              assetName: getAssetName(assetId),
+              quantity: BigInt(token.quantity)
+            }
+          })
+        }
+      })
+      const outputs: Output[] = recipients.map((recipient) => {
+        return {
+          lovelace: recipient.value.lovelace,
+          assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
+            return {
+              policyId: getPolicyId(id),
+              assetName: getAssetName(id),
+              quantity: BigInt(quantity)
+            }
+          })
+        }
+      })
+      const result = select(inputs, outputs, { lovelace: minLovelaceForChange, assets: [] })
+      const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
+      txOutputs && setInputs(txOutputs)
     })
 
     return () => {
@@ -897,22 +899,32 @@ const NewTransaction: FC<{
   const txResult = useMemo(() => getResult(() => {
     if (inputs.length === 0) throw new Error('No UTxO is spent.')
 
-    const { AuxiliaryData, ChangeSelectionAlgo, NativeScriptWitnessInfo, MetadataJsonSchema } = cardano.lib
+    const { AuxiliaryData, ChangeSelectionAlgo, MetadataJsonSchema } = cardano.lib
     const txBuilder = cardano.createTxBuilder(protocolParameters)
 
     inputs.forEach((input) => {
       const builder = cardano.createTxInputBuilder(input)
-      if (paymentNativeScript) {
-        txBuilder.add_input(builder.native_script(paymentNativeScript, NativeScriptWitnessInfo.assume_signature_count()))
-      } else {
-        txBuilder.add_input(builder.payment_key())
-      }
+      txBuilder.add_input(buildInputResult(builder))
     })
 
     recipients.forEach((recipient) => {
       const result = cardano.buildTxOutput(recipient, protocolParameters)
       txBuilder.add_output(result)
     })
+
+    if (delegation) {
+      const { SingleCertificateBuilder } = cardano.lib
+      if (!isRegistered) {
+        const cert = cardano.createRegistrationCertificate(rewardAddress)
+        if (!cert) throw new Error('Failed creating registration certificate')
+        const builder = SingleCertificateBuilder.new(cert)
+        txBuilder.add_cert(buildCertResult(builder))
+      }
+      const cert = cardano.createDelegationCertificate(rewardAddress, delegation.id)
+      if (!cert) throw new Error('Failed creating delegation certificate')
+      const builder = SingleCertificateBuilder.new(cert)
+      txBuilder.add_cert(buildCertResult(builder))
+    }
 
     if (message.length > 0) {
       const value = JSON.stringify({
@@ -923,18 +935,8 @@ const NewTransaction: FC<{
       txBuilder.add_auxiliary_data(auxiliaryData)
     }
 
-    const startSlot = paymentNativeScript && suggestStartSlot(paymentNativeScript)
-    if (startSlot) {
-      txBuilder.set_validity_start_interval(startSlot)
-    }
-
-    const expirySlot = paymentNativeScript && suggestExpirySlot(paymentNativeScript)
-    if (expirySlot) {
-      txBuilder.set_ttl(expirySlot)
-    }
-
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, paymentNativeScript])
+  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, delegation, isRegistered, rewardAddress, buildInputResult, buildCertResult])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
@@ -1095,9 +1097,9 @@ const StakePoolPicker: FC<{
           <MagnifyingGlassIcon className='w-4' />
         </span>
       </div>
-      {stakePools && <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
-        {stakePools.map((stakePool) => <StakePoolInfo stakePool={stakePool} delegate={delegate} />)}
-      </div>}
+      {stakePools && <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
+        {stakePools.map((stakePool, index) => <li key={index}><StakePoolInfo stakePool={stakePool} delegate={delegate} /></li>)}
+      </ul>}
       {isIdBlank && data && <nav className='flex items-center justify-between'>
         <button
           className='px-2 py-1 border rounded text-sky-700 disabled:text-gray-100'
@@ -1133,20 +1135,21 @@ const StakePoolInfo: FC<{
   const stakedAmount = parseInt(stakePool.activeStake_aggregate?.aggregate?.sum.amount ?? '0')
   const maxStaked = 64e12
   const isRetired = stakePool.retirements && stakePool.retirements.length > 0
+  const { SMASH } = config
 
   useEffect(() => {
     let isMounted = true
 
     const id: string = stakePool.hash
     const hash: string | undefined = stakePool.metadataHash
-    const url = hash && new URL(['api/v1/metadata', id, hash].join('/'), config.SMASH)
+    const url = hash && new URL(['api/v1/metadata', id, hash].join('/'), SMASH)
 
     url && fetchStakePoolMetaData(url.toString()).then((data) => isMounted && setMetaData(data))
 
     return () => {
       isMounted = false
     }
-  }, [stakePool])
+  }, [stakePool, SMASH])
 
   return (
     <div className='border rounded divide-y shadow'>

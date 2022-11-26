@@ -1,5 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
-import type { Address, BigNum, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import type { Policy } from '../db'
@@ -321,6 +321,21 @@ class Cardano {
         return nofK.n()
       default: throw new Error(`Unsupported Script Type: ${script.kind()}`)
     }
+  }
+
+  public createRegistrationCertificate(rewardAddress: string): Certificate | undefined {
+    const { Address, Certificate, StakeRegistration } = this.lib
+    const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()
+    if (!credential) return
+    return Certificate.new_stake_registration(StakeRegistration.new(credential))
+  }
+
+  public createDelegationCertificate(rewardAddress: string, poolId: string): Certificate | undefined {
+    const { Address, Certificate, StakeDelegation, Ed25519KeyHash } = this.lib
+    const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()
+    const poolKeyHash = Ed25519KeyHash.from_bech32(poolId)
+    if (!credential) return
+    return Certificate.new_stake_delegation(StakeDelegation.new(credential, poolKeyHash))
   }
 }
 

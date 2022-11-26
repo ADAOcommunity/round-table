@@ -45,11 +45,34 @@ const createApolloClient = (config: Config) => new ApolloClient({
 })
 
 type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
-type OptionalQuery<D, V> = (options?: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
-const GetUTxOsToSpendQuery = gql`
-query getUTxOsToSpend($addresses: [String]!) {
-  utxos(where: { address: { _in: $addresses } }) {
+const StakePoolFields = gql`
+fragment StakePoolFields on StakePool {
+  id
+  margin
+  fixedCost
+  pledge
+  hash
+  metadataHash
+  activeStake_aggregate {
+    aggregate {
+      sum {
+        amount
+      }
+    }
+  }
+  blocks_aggregate {
+    aggregate {
+      count
+    }
+  }
+}
+`
+
+const UTxOSummaryQuery = gql`
+${StakePoolFields}
+query UTxOSummary($address: String!, $rewardAddress: StakeAddress!) {
+  utxos(where: { address: { _eq: $address } }) {
     address
     txHash
     index
@@ -78,13 +101,47 @@ query getUTxOsToSpend($addresses: [String]!) {
       }
     }
   }
+  rewards_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      sum {
+        amount
+      }
+    }
+  }
+  withdrawals_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      sum {
+        amount
+      }
+    }
+  }
+  stakeRegistrations_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      count
+    }
+  }
+  stakeDeregistrations_aggregate(where: { address: { _eq: $rewardAddress } }) {
+    aggregate {
+      count
+    }
+  }
+  delegations(
+    limit: 1
+    order_by: { transaction: { block: { slotNo: desc } } }
+    where: { address: { _eq: $rewardAddress } }
+  ) {
+    address
+    stakePool {
+      ...StakePoolFields
+    }
+  }
 }
 `
 
-const useGetUTxOsToSpendQuery: Query<
-  { utxos: TransactionOutput[], cardano: Cardano },
-  { addresses: string[] }
-> = (options) => useQuery(GetUTxOsToSpendQuery, options)
+const useUTxOSummaryQuery: Query<
+  { utxos: TransactionOutput[], cardano: Cardano, rewards_aggregate: Reward_Aggregate, withdrawals_aggregate: Withdrawal_Aggregate, stakeRegistrations_aggregate: StakeRegistration_Aggregate, stakeDeregistrations_aggregate: StakeDeregistration_Aggregate, delegations: Delegation[] },
+  { address: string, rewardAddress: string }
+> = (options) => useQuery(UTxOSummaryQuery, options)
 
 const PaymentAddressesQuery = gql`
 query PaymentAddressByAddresses($addresses: [String]!) {
@@ -129,29 +186,6 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
 
   return balance
 }
-
-const StakePoolFields = gql`
-fragment StakePoolFields on StakePool {
-  id
-  margin
-  fixedCost
-  pledge
-  hash
-  metadataHash
-  activeStake_aggregate {
-    aggregate {
-      sum {
-        amount
-      }
-    }
-  }
-  blocks_aggregate {
-    aggregate {
-      count
-    }
-  }
-}
-`
 
 const SummaryQuery = gql`
 ${StakePoolFields}
@@ -209,10 +243,14 @@ const useSummaryQuery: Query<
   { address: string, rewardAddress: string }
 > = (options) => useQuery(SummaryQuery, options)
 
+function isRegisteredOnChain(stakeRegistrationsAggregate: StakeRegistration_Aggregate, stakeDeregistrationsAggregate: StakeDeregistration_Aggregate): boolean {
+  const registrationCount = BigInt(stakeRegistrationsAggregate.aggregate?.count ?? '0')
+  const deregistrationCount = BigInt(stakeDeregistrationsAggregate.aggregate?.count ?? '0')
+  return registrationCount > deregistrationCount
+}
+
 function getCurrentDelegation(stakeRegistrationsAggregate: StakeRegistration_Aggregate, stakeDeregistrationsAggregate: StakeDeregistration_Aggregate, delegations: Delegation[]): Delegation | undefined {
-  const registrationCount = parseInt(stakeRegistrationsAggregate.aggregate?.count ?? '0')
-  const deregistrationCount = parseInt(stakeDeregistrationsAggregate.aggregate?.count ?? '0')
-  if (registrationCount > deregistrationCount) return delegations[0]
+  if (isRegisteredOnChain(stakeRegistrationsAggregate, stakeDeregistrationsAggregate)) return delegations[0]
 }
 
 function getAvailableReward(rewardsAggregate: Reward_Aggregate, withdrawalsAggregate: Withdrawal_Aggregate): bigint {
@@ -259,4 +297,4 @@ const useStakePoolsQuery: Query<
 > = (options) => useQuery(StakePoolsQuery, options)
 
 export type { Value }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useGetUTxOsToSpendQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain }

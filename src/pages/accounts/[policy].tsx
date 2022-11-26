@@ -5,12 +5,12 @@ import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
 import type { Account, AccountParams, Policy } from '../../db'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
 import { CopyButton, Hero, Layout, Panel } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurrentDelegation, getPolicyId, useGetUTxOsToSpendQuery, useSummaryQuery } from '../../cardano/query-api'
+import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurrentDelegation, getPolicyId, useUTxOSummaryQuery, useSummaryQuery, isRegisteredOnChain } from '../../cardano/query-api'
 import type { Value } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
@@ -20,7 +20,7 @@ import { Modal } from '../../components/modal'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
-import type { NativeScript } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Delegation } from '@cardano-graphql/client-ts/api'
 
 const Summary: FC<{
@@ -94,11 +94,20 @@ const Summary: FC<{
 
 const Spend: FC<{
   address: string
+  rewardAddress: string
   cardano: Cardano
   policy: Policy
-}> = ({ address, cardano, policy }) => {
-  const { loading, error, data } = useGetUTxOsToSpendQuery({
-    variables: { addresses: [address] },
+}> = ({ address, rewardAddress, cardano, policy }) => {
+  const buildInputResult = useCallback((builder: SingleInputBuilder) => {
+    if (typeof policy === 'string') return builder.payment_key()
+    return builder.native_script(cardano.getPaymentNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
+  }, [cardano, policy])
+  const buildCertResult = useCallback((builder: SingleCertificateBuilder) => {
+    if (typeof policy === 'string') return builder.payment_key()
+    return builder.native_script(cardano.getStakingNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
+  }, [cardano, policy])
+  const { loading, error, data } = useUTxOSummaryQuery({
+    variables: { address, rewardAddress },
     fetchPolicy: 'network-only'
   })
 
@@ -112,11 +121,18 @@ const Spend: FC<{
 
   const protocolParameters = data.cardano.currentEpoch.protocolParams
   if (!protocolParameters) throw new Error('No protocol parameter')
+  const { stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations } = data
+  const isRegistered = isRegisteredOnChain(stakeRegistrations_aggregate, stakeDeregistrations_aggregate)
+  const currentStakePool = isRegistered ? delegations[0]?.stakePool : undefined
 
   return (
     <NewTransaction
+      isRegistered={isRegistered}
+      currentDelegation={currentStakePool}
       cardano={cardano}
-      policy={policy}
+      buildInputResult={buildInputResult}
+      buildCertResult={buildCertResult}
+      rewardAddress={rewardAddress}
       protocolParameters={protocolParameters}
       utxos={data.utxos}
       defaultChangeAddress={address} />
@@ -332,7 +348,7 @@ const GetPolicy: NextPage = () => {
           </div>}
         </Hero>
         {tab === 'summary' && <Summary address={result.address} rewardAddress={result.rewardAddress} />}
-        {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} />}
+        {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'edit' && accountParams && <EditAccount cardano={cardano} params={accountParams} setParams={setAccountParams} />}
         {tab === 'delete' && account && <Delete account={account} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
