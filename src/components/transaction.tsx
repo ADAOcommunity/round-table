@@ -5,7 +5,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePool
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -56,6 +56,63 @@ const TransactionInputList: FC<{
   )
 }
 
+const CertificateListing: FC<{
+  cardano: Cardano
+  certificate: Certificate
+}> = ({ cardano, certificate }) => {
+  const [config, _] = useContext(ConfigContext)
+  const networkId = useMemo(() => {
+    const { NetworkInfo } = cardano.lib
+    if (config.isMainnet) {
+      return NetworkInfo.mainnet().network_id()
+    } else {
+      return NetworkInfo.testnet().network_id()
+    }
+  }, [cardano, config])
+
+  let cert
+
+  cert = certificate.as_stake_registration()
+  if (cert) {
+    const { RewardAddress } = cardano.lib
+    const rewardAddress = RewardAddress.new(networkId, cert.stake_credential()).to_address().to_bech32()
+    return (
+      <>
+        <h2 className='font-semibold'>Stake Registration</h2>
+        <div>{rewardAddress}</div>
+      </>
+    )
+  }
+
+  cert = certificate.as_stake_delegation()
+  if (cert) {
+    const { RewardAddress } = cardano.lib
+    const rewardAddress = RewardAddress.new(networkId, cert.stake_credential()).to_address().to_bech32()
+    return (
+      <>
+        <h2 className='font-semibold'>Stake Delegation</h2>
+        <div>{rewardAddress}</div>
+        <div>{cert.pool_keyhash().to_bech32('pool')}</div>
+      </>
+    )
+  }
+
+  throw new Error('Unsupported Certificate')
+}
+
+const CertificateList: FC<{
+  cardano: Cardano
+  ulClassName?: string
+  liClassName?: string
+  certificates: Certificate[]
+}> = ({ cardano, ulClassName, liClassName, certificates }) => {
+  return (
+    <ul className={ulClassName}>
+      {certificates.map((certificate, index) => <li className={liClassName} key={index}><CertificateListing cardano={cardano} certificate={certificate} /></li>)}
+    </ul>
+  )
+}
+
 const TransactionBodyViewer: FC<{
   txBody: TransactionBody
   cardano: Cardano
@@ -87,6 +144,11 @@ const TransactionBodyViewer: FC<{
       }
     }
   }), [txBody])
+  const certificates = useMemo(() => {
+    const certs = txBody.certs()
+    if (!certs) return
+    return Array.from(toIter(certs))
+  }, [txBody])
 
   return (
     <Panel className='p-4 space-y-2'>
@@ -132,6 +194,14 @@ const TransactionBodyViewer: FC<{
           </ul>
         </div>
       </div>
+      {certificates && <div className='space-y-1'>
+        <div className='font-semibold'>Certificates</div>
+        <CertificateList
+          cardano={cardano}
+          ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2'
+          liClassName='p-2 border rounded break-all'
+          certificates={certificates} />
+      </div>}
     </Panel>
   )
 }
