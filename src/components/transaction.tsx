@@ -149,6 +149,8 @@ const TransactionBodyViewer: FC<{
     if (!certs) return
     return Array.from(toIter(certs))
   }, [txBody])
+  const validAfterSlot = useMemo(() => txBody.validity_start_interval()?.to_str(), [txBody])
+  const validBeforeSlot = useMemo(() => txBody.ttl()?.to_str(), [txBody])
 
   return (
     <Panel className='p-4 space-y-2'>
@@ -160,6 +162,12 @@ const TransactionBodyViewer: FC<{
             <CardanoScanLink className='block text-sky-700 p-2' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
           </span>
         </div>
+        {validAfterSlot && <div>
+          Valid After Slot: {validAfterSlot}
+        </div>}
+        {validBeforeSlot && <div>
+          Valid Before Slot: {validBeforeSlot}
+        </div>}
       </div>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
         <div className='space-y-1'>
