@@ -59,7 +59,7 @@ const Timelock: FC<{
   const currentSlot = estimateSlotByDate(now, config.isMainnet)
   const isValid: boolean = useMemo(() => {
     switch (type) {
-      case 'TimelockStart': return currentSlot > slot
+      case 'TimelockStart': return currentSlot >= slot
       case 'TimelockExpiry': return currentSlot < slot
     }
   }, [slot, currentSlot, type])
