@@ -63,38 +63,30 @@ const TransactionBodyViewer: FC<{
   const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
   const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
   const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
-
-  const recipients: Recipient[] = Array.from({ length: txBody.outputs().len() }, (_, i) => {
-    const id = i.toString()
-    const output = txBody.outputs().get(i)
+  const recipients: Recipient[] = useMemo(() => Array.from(toIter(txBody.outputs()), (output, index) => {
     const address = toAddressString(output.address())
     const amount = output.amount()
     const assets = new Map()
     const multiAsset = amount.multiasset()
     if (multiAsset) {
-      const keys = multiAsset.keys()
-      Array.from({ length: keys.len() }, (_, i) => {
-        const policyId = keys.get(i)
-        const policyIdHex = toHex(policyId)
+      Array.from(toIter(multiAsset.keys()), (policyId) => {
         const _asset = multiAsset.get(policyId)
-        _asset && Array.from({ length: _asset.keys().len() }, (_, i) => {
-          const assetName = _asset.keys().get(i)
-          const assetNameHex = toHex(assetName.name())
+        _asset && Array.from(toIter(_asset.keys()), (assetName) => {
           const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
-          const id = policyIdHex + assetNameHex
-          assets.set(id, (assets.get(id) || BigInt(0)) + quantity)
+          const id = policyId.to_hex() + toHex(assetName.name())
+          assets.set(id, (assets.get(id) ?? BigInt(0)) + quantity)
         })
       })
     }
     return {
-      id,
+      id: index.toString(),
       address,
       value: {
         lovelace: BigInt(amount.coin().to_str()),
         assets
       }
     }
-  })
+  }), [txBody])
 
   return (
     <Panel className='p-4 space-y-2'>
