@@ -1083,7 +1083,7 @@ const NewTransaction: FC<{
             disabled={isChangeSettingDisabled && recipients.length > 0}
             address={changeAddress}
             setAddress={setChangeAddress} />
-          {!willSpendAll && <div className='space-y-1'>
+          {!willSpendAll && recipients.length > 0 && <div className='space-y-1'>
             <label className='flex block border rounded overflow-hidden'>
               <span className='p-2 bg-gray-100 border-r'>Least Change ADA</span>
               <ADAInput
