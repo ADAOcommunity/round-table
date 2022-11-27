@@ -1,7 +1,7 @@
 {
     meta: {
-        createdAt: '2022-10-25T04:34:03.090Z',
-        host: 'https://graphql-api.testnet.dandelion.link',
+        createdAt: '2022-11-27T23:52:45.879Z',
+        host: 'https://graphql.preview.lidonation.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
         resUncompressed: true,
@@ -20,7 +20,7 @@
             operationName: 'PaymentAddressByAddresses',
             variables: {
                 addresses: [
-                    'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
+                    'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
                 ],
             },
             query: 'query PaymentAddressByAddresses($addresses: [String]!) {\n  paymentAddresses(addresses: $addresses) {\n    address\n    summary {\n      assetBalances {\n        asset {\n          assetId\n          __typename\n        }\n        quantity\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
@@ -30,7 +30,7 @@
         status: 200,
         headers: {
             date: [
-                'Tue, 25 Oct 2022 04:34:04 GMT',
+                'Sun, 27 Nov 2022 23:52:47 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -41,51 +41,30 @@
             connection: [
                 'close',
             ],
-            'cf-ray': [
-                '75f83cd78fe09fbf-SIN',
+            vary: [
+                'Accept-Encoding, Origin',
             ],
-            'access-control-allow-origin': [
-                '*',
+            'x-powered-by': [
+                'Express',
             ],
             'cache-control': [
                 'max-age=20, public',
             ],
             etag: [
-                'W/"296-wJFmEIeCYFsJrgFg7UXxOAKoUP8"',
+                'W/"1fc-z36kyCg4MTSmDUbc5C6iToD3zSA"',
             ],
-            'set-cookie': [
-                'network=core; path=/',
-            ],
-            vary: [
-                'Origin, Accept-Encoding',
-            ],
-            'cf-cache-status': [
-                'DYNAMIC',
-            ],
-            'x-powered-by': [
-                'Express',
-            ],
-            'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=r%2FACZOYdOYfF1nIWMLyHO%2BxButWU%2FUGUORzHW7UosSYJ4%2FO%2BGmyYHCKtvfmzBP4snmUWAY%2BF%2BHjYgMDNUuvojfkUiZ9LDffFu7rEyC%2F%2B6sYRWwmksVefj%2B1lsXAof2IKzpEwjqYi7zH5kNwUaMDwPLKvbBlE"}],"group":"cf-nel","max_age":604800}',
-            ],
-            nel: [
-                '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
-            ],
-            server: [
-                'cloudflare',
+            'strict-transport-security': [
+                'max-age=15724800; includeSubDomains',
             ],
             'content-encoding': [
                 'gzip',
-            ],
-            'alt-svc': [
-                'h3=":443"; ma=86400, h3-29=":443"; ma=86400',
             ],
         },
         body: {
             data: {
                 paymentAddresses: [
                     {
-                        address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
+                        address: 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
                         summary: {
                             assetBalances: [
                                 {
@@ -93,23 +72,15 @@
                                         assetId: 'ada',
                                         __typename: 'Asset',
                                     },
-                                    quantity: '2413762',
+                                    quantity: '10000000',
                                     __typename: 'AssetBalance',
                                 },
                                 {
                                     asset: {
-                                        assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f744d494e',
+                                        assetId: '9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659',
                                         __typename: 'Asset',
                                     },
-                                    quantity: '4',
-                                    __typename: 'AssetBalance',
-                                },
-                                {
-                                    asset: {
-                                        assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
-                                        __typename: 'Asset',
-                                    },
-                                    quantity: '3',
+                                    quantity: '1',
                                     __typename: 'AssetBalance',
                                 },
                             ],

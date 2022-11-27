@@ -1,7 +1,7 @@
 {
     meta: {
-        createdAt: '2022-10-25T04:34:01.402Z',
-        host: 'https://graphql-api.testnet.dandelion.link',
+        createdAt: '2022-11-27T23:52:43.021Z',
+        host: 'https://graphql.preview.lidonation.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
         resUncompressed: true,
@@ -17,20 +17,19 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'getUTxOsToSpend',
+            operationName: 'UTxOSummary',
             variables: {
-                addresses: [
-                    'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                ],
+                address: 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
+                rewardAddress: 'stake_test17qkr3wxaq34y8ceyv3ndjx8h20v6qcr6vyymjn54cqvmcmsjjtmn6',
             },
-            query: 'query getUTxOsToSpend($addresses: [String]!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        priceMem\n        priceStep\n        collateralPercent\n        maxCollateralInputs\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  activeStake_aggregate {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  blocks_aggregate {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery UTxOSummary($address: String!, $rewardAddress: StakeAddress!) {\n  utxos(where: {address: {_eq: $address}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        priceMem\n        priceStep\n        collateralPercent\n        maxCollateralInputs\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  rewards_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  withdrawals_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  stakeRegistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  stakeDeregistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    address\n    stakePool {\n      ...StakePoolFields\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Tue, 25 Oct 2022 04:34:03 GMT',
+                'Sun, 27 Nov 2022 23:52:45 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -41,80 +40,43 @@
             connection: [
                 'close',
             ],
-            'cf-ray': [
-                '75f83ccdcebd897c-SIN',
+            vary: [
+                'Accept-Encoding, Origin',
             ],
-            'access-control-allow-origin': [
-                '*',
+            'x-powered-by': [
+                'Express',
             ],
             'cache-control': [
                 'max-age=20, public',
             ],
             etag: [
-                'W/"4b9-dWNrHZpUmXv1o5UtEg+rOMZALUk"',
+                'W/"5b1-+sTxkvEqL9HtpLNHi9IZifP/oWg"',
             ],
-            'set-cookie': [
-                'network=core; path=/',
-            ],
-            vary: [
-                'Origin, Accept-Encoding',
-            ],
-            'cf-cache-status': [
-                'DYNAMIC',
-            ],
-            'x-powered-by': [
-                'Express',
-            ],
-            'report-to': [
-                '{"endpoints":[{"url":"https:\\/\\/a.nel.cloudflare.com\\/report\\/v3?s=zSpkt64uPa28Zzl%2FgE0IZiVrSgtOohaMw%2BBYWE0cjUYbEMZhbP0GI9ojmIjc7uXsXC8O3cHOW5MEVwfwwklM80BeWGydVQT6Vi0K6rpJ5fjylBNzPpRfYJR8zWDOONnkrR5ReEFVSoWcpJOUxtOjZ38AEgsQ"}],"group":"cf-nel","max_age":604800}',
-            ],
-            nel: [
-                '{"success_fraction":0,"report_to":"cf-nel","max_age":604800}',
-            ],
-            server: [
-                'cloudflare',
+            'strict-transport-security': [
+                'max-age=15724800; includeSubDomains',
             ],
             'content-encoding': [
                 'gzip',
-            ],
-            'alt-svc': [
-                'h3=":443"; ma=86400, h3-29=":443"; ma=86400',
             ],
         },
         body: {
             data: {
                 utxos: [
                     {
-                        address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                        txHash: 'b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd',
+                        address: 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
+                        txHash: '92670d0a30104f5f61b2b52274f8661b88832207e2a722228325fa101ef20178',
                         index: 0,
-                        value: '1413762',
+                        value: '10000000',
                         tokens: [
                             {
                                 asset: {
-                                    assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f744d494e',
+                                    assetId: '9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659',
                                     __typename: 'Asset',
                                 },
-                                quantity: '4',
-                                __typename: 'Token',
-                            },
-                            {
-                                asset: {
-                                    assetId: '126b8676446c84a5cd6e3259223b16a2314c5676b88ae1c1f8579a8f7453554e444145',
-                                    __typename: 'Asset',
-                                },
-                                quantity: '3',
+                                quantity: '1',
                                 __typename: 'Token',
                             },
                         ],
-                        __typename: 'TransactionOutput',
-                    },
-                    {
-                        address: 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4',
-                        txHash: '8800af315253480dbd61c2eed1c4a6014d0cfddfbbb2686dae34af8b3bdc15bd',
-                        index: 0,
-                        value: '1000000',
-                        tokens: [],
                         __typename: 'TransactionOutput',
                     },
                 ],
@@ -138,6 +100,41 @@
                     },
                     __typename: 'Cardano',
                 },
+                rewards_aggregate: {
+                    aggregate: {
+                        sum: {
+                            amount: null,
+                            __typename: 'Reward_sum_fields',
+                        },
+                        __typename: 'Reward_aggregate_fields',
+                    },
+                    __typename: 'Reward_aggregate',
+                },
+                withdrawals_aggregate: {
+                    aggregate: {
+                        sum: {
+                            amount: null,
+                            __typename: 'Withdrawal_sum_fields',
+                        },
+                        __typename: 'Withdrawal_aggregate_fields',
+                    },
+                    __typename: 'Withdrawal_aggregate',
+                },
+                stakeRegistrations_aggregate: {
+                    aggregate: {
+                        count: '0',
+                        __typename: 'StakeRegistration_aggregate_fields',
+                    },
+                    __typename: 'StakeRegistration_aggregate',
+                },
+                stakeDeregistrations_aggregate: {
+                    aggregate: {
+                        count: '0',
+                        __typename: 'StakeDeregistration_aggregate_fields',
+                    },
+                    __typename: 'StakeDeregistration_aggregate',
+                },
+                delegations: [],
             },
         },
     },

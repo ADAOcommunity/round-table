@@ -28,7 +28,7 @@ describe('GraphQL API', () => {
   const wrapper: FC<{ children: ReactNode }> = ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>;
 
   const talkbackServer = talkback({
-    host: 'https://graphql-api.testnet.dandelion.link',
+    host: 'https://graphql.preview.lidonation.com/graphql',
     port: 8080,
     tapeNameGenerator: (tapeNumber) => ['graphql', `query-${tapeNumber}`].join('/')
   })
@@ -37,8 +37,9 @@ describe('GraphQL API', () => {
   afterAll(() => talkbackServer.close())
 
   test('useGetUTxOsToSpendQuery', async () => {
-    const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result } = renderHook(() => useUTxOSummaryQuery({ variables: { addresses: [address] } }), { wrapper })
+    const address = 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c'
+    const rewardAddress = 'stake_test17qkr3wxaq34y8ceyv3ndjx8h20v6qcr6vyymjn54cqvmcmsjjtmn6'
+    const { result } = renderHook(() => useUTxOSummaryQuery({ variables: { address, rewardAddress } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
 
@@ -48,21 +49,14 @@ describe('GraphQL API', () => {
 
     if (result.current.data) {
       const utxos = result.current.data.utxos
-      expect(utxos.length).toBe(2)
+      expect(utxos.length).toBe(1)
 
       const utxo1 = utxos[0]
       expect(utxo1.address).toBe(address)
-      expect(utxo1.txHash).toBe('b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd')
-      expect(utxo1.value).toBe('1413762')
-      expect(utxo1.tokens.length).toBe(2)
+      expect(utxo1.txHash).toBe('92670d0a30104f5f61b2b52274f8661b88832207e2a722228325fa101ef20178')
+      expect(utxo1.value).toBe('10000000')
+      expect(utxo1.tokens.length).toBe(1)
       expect(utxo1.index).toBe(0)
-
-      const utxo2 = utxos[1]
-      expect(utxo2.address).toBe(address)
-      expect(utxo2.txHash).toBe('8800af315253480dbd61c2eed1c4a6014d0cfddfbbb2686dae34af8b3bdc15bd')
-      expect(utxo2.value).toBe('1000000')
-      expect(utxo2.tokens.length).toBe(0)
-      expect(utxo2.index).toBe(0)
 
       const params = result.current.data.cardano.currentEpoch.protocolParams
       if (params) {
@@ -82,7 +76,7 @@ describe('GraphQL API', () => {
   })
 
   test('usePaymentAddressesQuery', async () => {
-    const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
+    const address = 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c'
     const { result } = renderHook(() => usePaymentAddressesQuery({ variables: { addresses: [address] } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
@@ -94,9 +88,11 @@ describe('GraphQL API', () => {
       expect(paymentAddresses.length).toBe(1)
       const summary = paymentAddresses[0].summary
       if (summary) {
-        expect(summary.assetBalances.length).toBe(3)
+        expect(summary.assetBalances.length).toBe(2)
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
-        expect(summary.assetBalances[0]?.quantity).toBe('2413762')
+        expect(summary.assetBalances[0]?.quantity).toBe('10000000')
+        expect(summary.assetBalances[1]?.asset.assetId).toBe('9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659')
+        expect(summary.assetBalances[1]?.quantity).toBe('1')
       }
     }
   })
