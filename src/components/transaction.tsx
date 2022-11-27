@@ -904,6 +904,18 @@ const NewTransaction: FC<{
     if (!isRegistered && delegation) return BigInt(protocolParameters.keyDeposit)
     return BigInt(0)
   }, [isRegistered, delegation, protocolParameters])
+  const budget: Value = useMemo(() => recipients
+    .map(({ value }) => value)
+    .concat({ lovelace: deposit, assets: new Map() })
+    .reduce((result, value) => {
+      const lovelace = result.lovelace - value.lovelace
+      const assets = new Map(result.assets)
+      Array.from(value.assets).forEach(([id, quantity]) => {
+        const _quantity = assets.get(id)
+        _quantity && assets.set(id, _quantity - quantity)
+      })
+      return { lovelace, assets }
+    }, getBalanceByUTxOs(utxos)), [deposit, recipients, utxos])
 
   const delegate = (stakePool: StakePool) => {
     setDelegation(stakePool)
@@ -967,18 +979,6 @@ const NewTransaction: FC<{
   }, [utxos, recipients, willSpendAll, minLovelaceForChange])
 
   const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
-
-  const budget: Value = useMemo(() => recipients
-    .map(({ value }) => value)
-    .reduce((result, value) => {
-      const lovelace = result.lovelace - value.lovelace
-      const assets = new Map(result.assets)
-      Array.from(value.assets).forEach(([id, quantity]) => {
-        const _quantity = assets.get(id)
-        _quantity && assets.set(id, _quantity - quantity)
-      })
-      return { lovelace, assets }
-    }, getBalanceByUTxOs(utxos)), [recipients, utxos])
 
   const txResult = useMemo(() => getResult(() => {
     if (inputs.length === 0) throw new Error('No UTxO is spent.')
