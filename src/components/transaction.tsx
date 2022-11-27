@@ -1091,11 +1091,18 @@ const NewTransaction: FC<{
             </button>
           </nav>
         </header>
-        <div className='p-4 space-y-1'>
-          {deposit > BigInt(0) && <p className='text-sm'>This address was not registered for staking. Will deposit <ADAAmount className='font-semibold' lovelace={deposit} /> to register.</p>}
+        <div className='p-4 space-y-2'>
           <div className='grid grid-cols-1 lg:grid-cols-4 gap-2'>
-            <StakePoolInfo stakePool={delegation} />
+            {currentDelegation && <div className='space-y-1'>
+              <strong className='font-semibold'>From</strong>
+              <StakePoolInfo stakePool={currentDelegation} />
+            </div>}
+            <div className='space-y-1'>
+              {currentDelegation && <strong className='font-semibold'>To</strong>}
+              <StakePoolInfo stakePool={delegation} />
+            </div>
           </div>
+          {deposit > BigInt(0) && <p className='text-sm'>This address was not registered for staking. Will deposit <ADAAmount className='font-semibold' lovelace={deposit} /> to register.</p>}
         </div>
       </div>}
       <div>
