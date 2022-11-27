@@ -16,11 +16,14 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
 import { Loading, ProgressBar } from './status'
-import { NativeScriptViewer } from './native-script'
+import { NativeScriptViewer, Timelock } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
 import { Modal } from './modal'
+import { estimateSlotByDate } from '../cardano/utils'
+import { SlotInput } from './account'
+import { DateContext } from './time'
 
 const TransactionReviewButton: FC<{
   className?: string
@@ -149,24 +152,32 @@ const TransactionBodyViewer: FC<{
     if (!certs) return
     return Array.from(toIter(certs))
   }, [txBody])
-  const validAfterSlot = useMemo(() => txBody.validity_start_interval()?.to_str(), [txBody])
-  const validBeforeSlot = useMemo(() => txBody.ttl()?.to_str(), [txBody])
+  const startSlot = useMemo(() => {
+    const slot = txBody.validity_start_interval()?.to_str()
+    if (slot) return parseInt(slot)
+  }, [txBody])
+  const expirySlot = useMemo(() => {
+    const slot = txBody.ttl()?.to_str()
+    if (slot) return parseInt(slot)
+  }, [txBody])
 
   return (
     <Panel className='p-4 space-y-2'>
       <div className='space-y-1'>
-        <div className='font-semibold'>Transaction Hash</div>
+        <h1 className='font-semibold'>Transaction</h1>
         <div className='flex items-center space-x-1'>
-          <span>{toHex(txHash)}</span>
+          <span>{txHash.to_hex()}</span>
           <span>
-            <CardanoScanLink className='block text-sky-700 p-2' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
+            <CardanoScanLink className='text-sky-700' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
           </span>
         </div>
-        {validAfterSlot && <div>
-          Valid After Slot: {validAfterSlot}
+        {startSlot && <div className='flex items-center space-x-1'>
+          <span>Start slot:</span>
+          <Timelock slot={startSlot} type='TimelockStart' />
         </div>}
-        {validBeforeSlot && <div>
-          Valid Before Slot: {validBeforeSlot}
+        {expirySlot && <div className='flex items-center space-x-1'>
+          <span>Expiry slot:</span>
+          <Timelock slot={expirySlot} type='TimelockExpiry' />
         </div>}
       </div>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
@@ -891,6 +902,11 @@ const NewTransaction: FC<{
   isRegistered: boolean
   currentDelegation?: StakePool
 }> = ({ cardano, protocolParameters, buildInputResult, buildCertResult, rewardAddress, utxos, defaultChangeAddress, isRegistered, currentDelegation }) => {
+  const [config, _c] = useContext(ConfigContext)
+  const [now, _t] = useContext(DateContext)
+  const currentSlot = estimateSlotByDate(now, config.network)
+  const [startSlot, setStartSlot] = useState<number | undefined>(currentSlot)
+  const [expirySlot, setExpirySlot] = useState<number | undefined>(currentSlot + 24 * 60 * 60)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
   const [message, setMessage] = useState<string[]>([])
   const [inputs, setInputs] = useState<TransactionOutput[]>([])
@@ -898,7 +914,7 @@ const NewTransaction: FC<{
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
   const [minLovelaceForChange, setMinLovelaceForChange] = useState(BigInt(5e6))
-  const [modal, setModal] = useState<'delegation' | undefined>()
+  const [modal, setModal] = useState<'delegation' | 'start' | 'expiry' | undefined>()
   const [delegation, setDelegation] = useState<StakePool | undefined>()
   const deposit: bigint = useMemo(() => {
     if (!isRegistered && delegation) return BigInt(protocolParameters.keyDeposit)
@@ -917,9 +933,18 @@ const NewTransaction: FC<{
       return { lovelace, assets }
     }, getBalanceByUTxOs(utxos)), [deposit, recipients, utxos])
 
+  const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
     setDelegation(stakePool)
-    setModal(undefined)
+    closeModal()
+  }
+  const confirmStartSlot = (slot: number) => {
+    setStartSlot(slot)
+    closeModal()
+  }
+  const confirmExpirySlot = (slot: number) => {
+    setExpirySlot(slot)
+    closeModal()
   }
 
   useEffect(() => {
@@ -983,7 +1008,7 @@ const NewTransaction: FC<{
   const txResult = useMemo(() => getResult(() => {
     if (inputs.length === 0) throw new Error('No UTxO is spent.')
 
-    const { AuxiliaryData, ChangeSelectionAlgo, MetadataJsonSchema } = cardano.lib
+    const { AuxiliaryData, BigNum, ChangeSelectionAlgo, MetadataJsonSchema } = cardano.lib
     const txBuilder = cardano.createTxBuilder(protocolParameters)
 
     inputs.forEach((input) => {
@@ -1019,8 +1044,11 @@ const NewTransaction: FC<{
       txBuilder.add_auxiliary_data(auxiliaryData)
     }
 
+    if (startSlot) txBuilder.set_validity_start_interval(BigNum.from_str(startSlot.toString()))
+    if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
+
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, delegation, isRegistered, rewardAddress, buildInputResult, buildCertResult])
+  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, delegation, isRegistered, rewardAddress, buildInputResult, buildCertResult, startSlot, expirySlot])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
@@ -1070,6 +1098,37 @@ const NewTransaction: FC<{
           </div>
         </div>
       </div>}
+      <div>
+        <header className='flex justify-between px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Lifetime</h2>
+        </header>
+        <div className='p-4 space-y-2'>
+          <div className='flex items-center space-x-2'>
+            <span>Start slot:</span>
+            {startSlot ? <Timelock slot={startSlot} type='TimelockStart' /> : <span>N/A</span>}
+            <nav className='divide-x items-center border rounded text-xs text-sky-700'>
+              <button onClick={() => setModal('start')} className='px-2 py-1'>Change</button>
+              <button onClick={() => setStartSlot(undefined)} className='px-2 py-1'>Remove</button>
+            </nav>
+            {modal === 'start' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3 space-y-1' onBackgroundClick={closeModal}>
+              <h2 className='font-semibold'>Start Slot</h2>
+              <SlotInput className='space-y-2' confirm={confirmStartSlot} cancel={closeModal} initialSlot={startSlot} isLocked={() => false} />
+            </Modal>}
+          </div>
+          <div className='flex items-center space-x-2'>
+            <span>Expire slot:</span>
+            {expirySlot ? <Timelock slot={expirySlot} type='TimelockExpiry' /> : <span>N/A</span>}
+            <nav className='divide-x items-center border rounded text-xs text-sky-700'>
+              <button onClick={() => setModal('expiry')} className='px-2 py-1'>Change</button>
+              <button onClick={() => setExpirySlot(undefined)} className='px-2 py-1'>Remove</button>
+            </nav>
+            {modal === 'expiry' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3 space-y-1' onBackgroundClick={closeModal}>
+              <h2 className='font-semibold'>Expiry Slot</h2>
+              <SlotInput className='space-y-2' confirm={confirmExpirySlot} cancel={closeModal} initialSlot={startSlot} isLocked={() => false} />
+            </Modal>}
+          </div>
+        </div>
+      </div>
       <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>{recipients.length > 0 ? 'Change' : 'Send All'}</h2>
@@ -1144,7 +1203,7 @@ const NewTransaction: FC<{
             onClick={() => setModal('delegation')}>
             Delegate
           </button>
-          {modal === 'delegation' && <Modal className='bg-white p-4 rounded w-full lg:w-1/2' onBackgroundClick={() => setModal(undefined)}>
+          {modal === 'delegation' && <Modal className='bg-white p-4 rounded w-full lg:w-1/2' onBackgroundClick={closeModal}>
             <StakePoolPicker className='space-y-2' delegate={delegate} />
           </Modal>}
           {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react'
-import type { FC, ReactNode, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
+import type { FC, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
@@ -13,7 +13,7 @@ import { NotificationContext } from '../components/notification'
 import { db } from '../db'
 import type { Account, AccountParams, Policy } from '../db'
 import { getAccountPath } from '../route'
-import { SignatureBadge, Timelock } from './native-script'
+import { ExpiryBadge, SignatureBadge, StartBadge, Timelock } from './native-script'
 
 const NumberInput: FC<{
   step?: number
@@ -92,20 +92,33 @@ const RequiredNumberInput: FC<{
   )
 }
 
-const TimelockInput: FC<{
+const SlotInput: FC<{
   className?: string
-  children: ReactNode
-  value: number
-  setValue: (_: number) => void
-  isLocked: (_: Date) => boolean
-}> = ({ className, children, value, setValue, isLocked }) => {
+  initialSlot?: number
+  cancel: () => void
+  confirm: (slot: number) => void
+  isLocked: (date: Date, selectedDate: Date) => boolean
+}> = ({ className, cancel, confirm, initialSlot, isLocked }) => {
   const [config, _] = useContext(ConfigContext)
-  const date = estimateDateBySlot(value, config.network)
+  const [slot, setSlot] = useState<number>(initialSlot ?? estimateSlotByDate(new Date(), config.network))
+  const date = estimateDateBySlot(slot, config.network)
+
   return (
     <div className={className}>
-      {children}
-      <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={value} onCommit={setValue} />
-      <Calendar isRed={isLocked} selectedDate={date} onChange={(date) => setValue(estimateSlotByDate(date, config.network))} />
+      <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={slot} onCommit={setSlot} />
+      <Calendar isRed={isLocked} selectedDate={date} onChange={(date) => setSlot(estimateSlotByDate(date, config.network))} />
+      <nav className='flex justify-end space-x-2'>
+        <button
+          onClick={cancel}
+          className='border rounded p-2 text-sky-700'>
+          Cancel
+        </button>
+        <button
+          onClick={() => confirm(slot)}
+          className='flex py-2 px-4 items-center space-x-1 rounded text-white bg-sky-700'>
+          <span>Confirm</span>
+        </button>
+      </nav>
     </div>
   )
 }
@@ -116,11 +129,6 @@ const AddTimelock: FC<{
   cancel: () => void
 }> = ({ className, add, cancel }) => {
   const [type, setType] = useState<'TimelockStart' | 'TimelockExpiry'>('TimelockStart')
-  const [config, _] = useContext(ConfigContext)
-  const currentDate = new Date()
-  currentDate.setHours(0, 0, 0, 0)
-  const currentSlot = estimateSlotByDate(currentDate, config.network)
-  const [slot, setSlot] = useState(currentSlot)
   const [now, _t] = useContext(DateContext)
 
   return (
@@ -141,39 +149,25 @@ const AddTimelock: FC<{
           </button>
         </nav>
       </div>
-      <TimelockInput
-        isLocked={type === 'TimelockStart' ? () => false : (date) => date <= now}
+      {type === 'TimelockStart' && <div className='p-2 rounded bg-red-700 text-white'>
+        <h6 className='flex font-semibold space-x-1 items-center'>
+          <ExclamationCircleIcon className='w-4' />
+          <span>WARNING</span>
+        </h6>
+        <p>Be careful with this option. It returns false before the slot/time is reached. You might not want to wait too long to unlock it.</p>
+      </div>}
+      {type === 'TimelockExpiry' && <div className='p-2 rounded bg-red-700 text-white'>
+        <h6 className='flex font-semibold space-x-1 items-center'>
+          <ExclamationCircleIcon className='w-4' />
+          <span>WARNING</span>
+        </h6>
+        <p>Be careful with this option. It returns false after the slot/time is passed which could lead to coins locked/burned forever when it is combined with All policy and At Least policy or used alone.</p>
+      </div>}
+      <SlotInput
         className='space-y-1'
-        value={slot}
-        setValue={setSlot}>
-        {type === 'TimelockStart' && <div className='p-2 rounded bg-red-700 text-white'>
-          <h6 className='flex font-semibold space-x-1 items-center'>
-            <ExclamationCircleIcon className='w-4' />
-            <span>WARNING</span>
-          </h6>
-          <p>Be careful with this option. It returns false before the slot/time is reached. You might not want to wait too long to unlock it.</p>
-        </div>}
-        {type === 'TimelockExpiry' && <div className='p-2 rounded bg-red-700 text-white'>
-          <h6 className='flex font-semibold space-x-1 items-center'>
-            <ExclamationCircleIcon className='w-4' />
-            <span>WARNING</span>
-          </h6>
-          <p>Be careful with this option. It returns false after the slot/time is passed which could lead to coins locked/burned forever when it is combined with All policy and At Least policy or used alone.</p>
-        </div>}
-      </TimelockInput>
-      <nav className='flex justify-end space-x-2'>
-        <button
-          onClick={cancel}
-          className='border rounded p-2 text-sky-700'>
-          Cancel
-        </button>
-        <button
-          onClick={() => add({ type, slot })}
-          className='flex py-2 px-4 items-center space-x-1 rounded text-white bg-sky-700'>
-          <PlusIcon className='w-4' />
-          <span>Add Timelock</span>
-        </button>
-      </nav>
+        cancel={cancel}
+        confirm={(slot) => add({ type, slot })}
+        isLocked={type === 'TimelockStart' ? () => false : (date) => date <= now} />
     </div>
   )
 }
@@ -263,11 +257,17 @@ const EditPolicy: FC<{
   )
 
   if (policy.type === 'TimelockStart') return (
-    <Timelock type={policy.type} slot={policy.slot} />
+    <div className='flex items-center space-x-1'>
+      <StartBadge />
+      <Timelock type={policy.type} slot={policy.slot} />
+    </div>
   )
 
   if (policy.type === 'TimelockExpiry') return (
-    <Timelock type={policy.type} slot={policy.slot} />
+    <div className='flex items-center space-x-1'>
+      <ExpiryBadge />
+      <Timelock type={policy.type} slot={policy.slot} />
+    </div>
   )
 
   const addPolicy = (newPolicy: Policy) => {
@@ -429,4 +429,4 @@ const EditAccount: FC<{
 
 const CurrentAccountContext = createContext<[Account | undefined, (account: Account) => void]>([undefined, (_: Account) => {}])
 
-export { CurrentAccountContext, EditAccount }
+export { CurrentAccountContext, EditAccount, SlotInput }

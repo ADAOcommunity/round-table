@@ -65,8 +65,6 @@ const Timelock: FC<{
   }, [slot, currentSlot, type])
   return (
     <div className={['flex', 'space-x-1', 'items-center', isValid ? 'text-green-500' : 'text-red-500'].join(' ')}>
-      {type === 'TimelockStart' && <StartBadge />}
-      {type === 'TimelockExpiry' && <ExpiryBadge />}
       <span>{slot}</span>
       <span>(est. {estimateDateBySlot(slot, config.network).toLocaleString()})</span>
       {!isValid && <NoSymbolIcon className='w-4' />}
@@ -105,7 +103,10 @@ const NativeScriptViewer: FC<{
   if (script) {
     const slot = parseInt(script.slot().to_str())
     return (
-      <Timelock type='TimelockExpiry' slot={slot} />
+      <div className='flex items-center space-x-1'>
+        <ExpiryBadge />
+        <Timelock type='TimelockExpiry' slot={slot} />
+      </div>
     )
   }
 
@@ -113,7 +114,10 @@ const NativeScriptViewer: FC<{
   if (script) {
     const slot = parseInt(script.slot().to_str())
     return (
-      <Timelock type='TimelockStart' slot={slot} />
+      <div className='flex items-center space-x-1'>
+        <StartBadge />
+        <Timelock type='TimelockStart' slot={slot} />
+      </div>
     )
   }
 
