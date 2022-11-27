@@ -898,7 +898,7 @@ const NewTransaction: FC<{
   const [isChangeSettingDisabled, setIsChangeSettingDisabled] = useState(true)
   const [willSpendAll, setWillSpendAll] = useState(false)
   const [minLovelaceForChange, setMinLovelaceForChange] = useState(BigInt(5e6))
-  const [isDelegationModalOn, setIsDelegationModalOn] = useState(false)
+  const [modal, setModal] = useState<'delegation' | undefined>()
   const [delegation, setDelegation] = useState<StakePool | undefined>()
   const deposit: bigint = useMemo(() => {
     if (!isRegistered && delegation) return BigInt(protocolParameters.keyDeposit)
@@ -919,7 +919,7 @@ const NewTransaction: FC<{
 
   const delegate = (stakePool: StakePool) => {
     setDelegation(stakePool)
-    setIsDelegationModalOn(false)
+    setModal(undefined)
   }
 
   useEffect(() => {
@@ -1141,10 +1141,10 @@ const NewTransaction: FC<{
           </button>
           <button
             className='p-2 rounded text-sky-700 border'
-            onClick={() => setIsDelegationModalOn(true)}>
+            onClick={() => setModal('delegation')}>
             Delegate
           </button>
-          {isDelegationModalOn && <Modal className='bg-white p-4 rounded w-full lg:w-1/2' onBackgroundClick={() => setIsDelegationModalOn(false)}>
+          {modal === 'delegation' && <Modal className='bg-white p-4 rounded w-full lg:w-1/2' onBackgroundClick={() => setModal(undefined)}>
             <StakePoolPicker className='space-y-2' delegate={delegate} />
           </Modal>}
           {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
