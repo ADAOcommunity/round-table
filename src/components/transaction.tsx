@@ -900,6 +900,10 @@ const NewTransaction: FC<{
   const [minLovelaceForChange, setMinLovelaceForChange] = useState(BigInt(5e6))
   const [isDelegationModalOn, setIsDelegationModalOn] = useState(false)
   const [delegation, setDelegation] = useState<StakePool | undefined>()
+  const deposit: bigint = useMemo(() => {
+    if (!isRegistered && delegation) return BigInt(protocolParameters.keyDeposit)
+    return BigInt(0)
+  }, [isRegistered, delegation, protocolParameters])
 
   const delegate = (stakePool: StakePool) => {
     setDelegation(stakePool)
@@ -1050,14 +1054,17 @@ const NewTransaction: FC<{
       </ul>
       {delegation && <div>
         <header className='flex justify-between px-4 py-2 bg-gray-100'>
-          <h2 className='font-semibold'>Delegation</h2>
+          <div>
+            <h2 className='font-semibold'>Delegation</h2>
+          </div>
           <nav className='flex items-center'>
             <button onClick={() => setDelegation(undefined)}>
               <XMarkIcon className='w-4' />
             </button>
           </nav>
         </header>
-        <div className='p-4'>
+        <div className='p-4 space-y-1'>
+          {deposit > BigInt(0) && <p className='text-sm'>This address was not registered for staking. Will deposit <ADAAmount className='font-semibold' lovelace={deposit} /> to register.</p>}
           <div className='grid grid-cols-1 lg:grid-cols-4 gap-2'>
             <StakePoolInfo stakePool={delegation} />
           </div>
