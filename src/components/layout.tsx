@@ -102,21 +102,13 @@ const NavLink: FC<{
   href: string
   onPageClassName: string
 }> = ({ children, className, href, onPageClassName }) => {
-  const [isOnPage, setIsOnPage] = useState(false)
-  const parentPaths = href.split('/')
-
-  useEffect(() => {
-    let isMounted = true
-
-    const currentPaths = document.location.pathname.split('/')
-    const isOnPage = parentPaths.every((name, index) => name === currentPaths[index])
-
-    if (isMounted) setIsOnPage(isOnPage)
-
-    return () => {
-      isMounted = false
-    }
-  }, [parentPaths])
+  const router = useRouter()
+  const isOnPage = useMemo(() => {
+    const route = router.route
+    const parentPaths = href.split('/')
+    const currentPaths = route.split('/')
+    return href === route || parentPaths.every((name, index) => name === currentPaths[index])
+  }, [href, router.route])
 
   return (
     <Link href={href}>
@@ -130,11 +122,12 @@ const NavLink: FC<{
 const PrimaryBar: FC = () => {
   return (
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
-      <Link href='/'>
-        <a className='p-4 hover:bg-sky-700'>
-          <HomeIcon className='w-12' />
-        </a>
-      </Link>
+      <NavLink
+        href='/'
+        onPageClassName='bg-sky-700'
+        className='p-4 hover:bg-sky-700'>
+        <HomeIcon className='w-12' />
+      </NavLink>
       <NavLink
         href='/open'
         onPageClassName='bg-sky-700'
