@@ -171,14 +171,14 @@ const AccountListing: FC<{
   )
 }
 
-const AccountList: FC<{
-  accounts: Account[]
-}> = ({ accounts }) => {
-  const addresses = accounts.map((account) => account.id)
+const AccountList: FC = () => {
+  const accounts = useLiveQuery(async () => db.accounts.toArray())
+  const addresses = (accounts ?? []).map((account) => account.id)
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
-    pollInterval: 10000
+    pollInterval: 10000,
+    skip: addresses.length === 0
   })
   const balances = useMemo(() => {
     const balanceMap = new Map<string, Value>()
@@ -187,7 +187,7 @@ const AccountList: FC<{
       const balance = getBalanceByPaymentAddresses([paymentAddress])
       balanceMap.set(address, balance)
     })
-    return (addresses ?? []).map((address) => balanceMap.get(address))
+    return (addresses).map((address) => balanceMap.get(address))
   }, [addresses, data])
   const router = useRouter()
   const [config, _] = useContext(ConfigContext)
@@ -203,16 +203,6 @@ const AccountList: FC<{
   }, [cardano, config.isMainnet, router.query.policy])
 
   return (
-    <nav className='block w-full'>
-      {accounts.map((account, index) => <AccountListing key={index} account={account} balance={balances[index]} isOnPage={isOnPage(account)} />)}
-    </nav>
-  )
-}
-
-const SecondaryBar: FC = () => {
-  const accounts = useLiveQuery(async () => db.accounts.toArray())
-
-  return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
       <nav className='w-full bg-sky-900 font-semibold'>
         <NavLink
@@ -223,7 +213,9 @@ const SecondaryBar: FC = () => {
           <span>New Account</span>
         </NavLink>
       </nav>
-      {accounts && <AccountList accounts={accounts} />}
+      <nav className='block w-full'>
+        {accounts?.map((account, index) => <AccountListing key={index} account={account} balance={balances[index]} isOnPage={isOnPage(account)} />)}
+      </nav>
     </aside>
   )
 }
@@ -255,7 +247,7 @@ const Layout: FC<{
   return (
     <div className='flex h-screen'>
       <PrimaryBar />
-      <SecondaryBar />
+      <AccountList />
       <div className='w-full bg-sky-100 overflow-y-auto'>
         {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
         <div className='p-2 h-screen space-y-2'>
