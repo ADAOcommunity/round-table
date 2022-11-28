@@ -938,6 +938,17 @@ const NewTransaction: FC<{
   const stakeDelegation = useMemo(() => {
     if (delegation) return cardano.createDelegationCertificate(rewardAddress, delegation.id)
   }, [cardano, delegation, rewardAddress])
+  const auxiliaryData = useMemo(() => {
+    if (message.length > 0) {
+      const { AuxiliaryData, MetadataJsonSchema } = cardano.lib
+      const value = JSON.stringify({
+        msg: message
+      })
+      let data = AuxiliaryData.new()
+      data.add_json_metadatum_with_schema(cardano.getMessageLabel(), value, MetadataJsonSchema.NoConversions)
+      return data
+    }
+  }, [cardano, message])
 
   const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
@@ -1014,7 +1025,7 @@ const NewTransaction: FC<{
   const txResult = useMemo(() => getResult(() => {
     if (inputs.length === 0) throw new Error('No UTxO is spent.')
 
-    const { AuxiliaryData, BigNum, ChangeSelectionAlgo, MetadataJsonSchema } = cardano.lib
+    const { BigNum, ChangeSelectionAlgo } = cardano.lib
     const txBuilder = cardano.createTxBuilder(protocolParameters)
 
     inputs.forEach((input) => {
@@ -1030,20 +1041,13 @@ const NewTransaction: FC<{
     if (stakeRegistration) txBuilder.add_cert(buildCertResult(stakeRegistration))
     if (stakeDelegation) txBuilder.add_cert(buildCertResult(stakeDelegation))
 
-    if (message.length > 0) {
-      const value = JSON.stringify({
-        msg: message
-      })
-      let auxiliaryData = AuxiliaryData.new()
-      auxiliaryData.add_json_metadatum_with_schema(cardano.getMessageLabel(), value, MetadataJsonSchema.NoConversions)
-      txBuilder.add_auxiliary_data(auxiliaryData)
-    }
+    if (auxiliaryData) txBuilder.add_auxiliary_data(auxiliaryData)
 
     if (startSlot) txBuilder.set_validity_start_interval(BigNum.from_str(startSlot.toString()))
     if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, startSlot, expirySlot])
+  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, startSlot, expirySlot])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
