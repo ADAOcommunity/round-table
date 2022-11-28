@@ -20,7 +20,7 @@ import { Modal } from '../../components/modal'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
-import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, SingleInputBuilder, Certificate } from '@dcspark/cardano-multiplatform-lib-browser'
 import type { Delegation } from '@cardano-graphql/client-ts/api'
 
 const Summary: FC<{
@@ -102,7 +102,8 @@ const Spend: FC<{
     if (typeof policy === 'string') return builder.payment_key()
     return builder.native_script(cardano.getPaymentNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
   }, [cardano, policy])
-  const buildCertResult = useCallback((builder: SingleCertificateBuilder) => {
+  const buildCertResult = useCallback((certificate: Certificate) => {
+    const builder = cardano.lib.SingleCertificateBuilder.new(certificate)
     if (typeof policy === 'string') return builder.payment_key()
     return builder.native_script(cardano.getStakingNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
   }, [cardano, policy])

@@ -5,7 +5,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePool
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -896,7 +896,7 @@ const NewTransaction: FC<{
   protocolParameters: ProtocolParams
   utxos: TransactionOutput[]
   buildInputResult: (builder: SingleInputBuilder) => InputBuilderResult
-  buildCertResult: (builder: SingleCertificateBuilder) => CertificateBuilderResult
+  buildCertResult: (certificate: Certificate) => CertificateBuilderResult
   defaultChangeAddress: string
   rewardAddress: string
   isRegistered: boolean
@@ -932,6 +932,12 @@ const NewTransaction: FC<{
       })
       return { lovelace, assets }
     }, getBalanceByUTxOs(utxos)), [deposit, recipients, utxos])
+  const stakeRegistration = useMemo(() => {
+    if (!isRegistered && delegation) return cardano.createRegistrationCertificate(rewardAddress)
+  }, [cardano, delegation, rewardAddress, isRegistered])
+  const stakeDelegation = useMemo(() => {
+    if (delegation) return cardano.createDelegationCertificate(rewardAddress, delegation.id)
+  }, [cardano, delegation, rewardAddress])
 
   const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
@@ -1021,19 +1027,8 @@ const NewTransaction: FC<{
       txBuilder.add_output(result)
     })
 
-    if (delegation) {
-      const { SingleCertificateBuilder } = cardano.lib
-      if (!isRegistered) {
-        const cert = cardano.createRegistrationCertificate(rewardAddress)
-        if (!cert) throw new Error('Failed creating registration certificate')
-        const builder = SingleCertificateBuilder.new(cert)
-        txBuilder.add_cert(buildCertResult(builder))
-      }
-      const cert = cardano.createDelegationCertificate(rewardAddress, delegation.id)
-      if (!cert) throw new Error('Failed creating delegation certificate')
-      const builder = SingleCertificateBuilder.new(cert)
-      txBuilder.add_cert(buildCertResult(builder))
-    }
+    if (stakeRegistration) txBuilder.add_cert(buildCertResult(stakeRegistration))
+    if (stakeDelegation) txBuilder.add_cert(buildCertResult(stakeDelegation))
 
     if (message.length > 0) {
       const value = JSON.stringify({
@@ -1048,7 +1043,7 @@ const NewTransaction: FC<{
     if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, delegation, isRegistered, rewardAddress, buildInputResult, buildCertResult, startSlot, expirySlot])
+  }), [recipients, cardano, changeAddress, message, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, startSlot, expirySlot])
 
   const handleRecipientChange = (recipient: Recipient) => {
     setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
