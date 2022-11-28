@@ -1,4 +1,4 @@
-import { useMemo, useContext, useEffect, useState } from 'react'
+import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
 import type { ChangeEventHandler, FC, ReactNode } from 'react'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon } from '@heroicons/react/24/solid'
@@ -6,7 +6,7 @@ import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { Account } from '../db'
+import type { Account, Policy } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
@@ -15,7 +15,7 @@ import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
 import { getAccountPath } from '../route'
 import { SpinnerIcon } from './status'
-import { CurrentAccountContext } from './account'
+import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 
 const Toggle: FC<{
   isOn: boolean
@@ -164,10 +164,9 @@ const PrimaryBar: FC = () => {
 const AccountListing: FC<{
   account: Account
   balance?: Value
-}> = ({ account, balance }) => {
-  const [currentAccount, _] = useContext(CurrentAccountContext)
+  isOnPage: boolean
+}> = ({ account, balance, isOnPage }) => {
   const lovelace = balance?.lovelace
-  const isOnPage = currentAccount?.id === account.id
 
   return (
     <Link href={getAccountPath(account.policy)}>
@@ -197,10 +196,22 @@ const AccountList: FC<{
     })
     return (addresses ?? []).map((address) => balanceMap.get(address))
   }, [addresses, data])
+  const router = useRouter()
+  const [config, _] = useContext(ConfigContext)
+  const cardano = useCardanoMultiplatformLib()
+  const isOnPage = useCallback((account: Account): boolean => {
+    const policyContent = router.query.policy
+    if (typeof policyContent === 'string') {
+      const policy: Policy = JSON.parse(policyContent)
+      const id = cardano?.getPolicyAddress(policy, config.isMainnet).to_bech32()
+      if (id) return id === account.id
+    }
+    return false
+  }, [cardano, config.isMainnet, router.query.policy])
 
   return (
     <nav className='block w-full'>
-      {accounts.map((account, index) => <AccountListing key={index} account={account} balance={balances[index]} />)}
+      {accounts.map((account, index) => <AccountListing key={index} account={account} balance={balances[index]} isOnPage={isOnPage(account)} />)}
     </nav>
   )
 }

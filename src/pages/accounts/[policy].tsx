@@ -14,7 +14,7 @@ import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurr
 import type { Value } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
-import { CurrentAccountContext, EditAccount } from '../../components/account'
+import { EditAccount } from '../../components/account'
 import { NewTransaction, StakePoolInfo } from '../../components/transaction'
 import { Modal } from '../../components/modal'
 import { NotificationContext } from '../../components/notification'
@@ -250,8 +250,7 @@ const ShowNativeScript: FC<{
 }
 
 const GetPolicy: NextPage = () => {
-  const [config, _c] = useContext(ConfigContext)
-  const [_a, setCurrentAccount] = useContext(CurrentAccountContext)
+  const [config, _] = useContext(ConfigContext)
   const cardano = useCardanoMultiplatformLib()
   const router = useRouter()
   const policyContent = router.query.policy
@@ -275,17 +274,8 @@ const GetPolicy: NextPage = () => {
   const [accountParams, setAccountParams] = useState<AccountParams | undefined>()
 
   useEffect(() => {
-    let isMounted = true
-
-    if (isMounted && account) {
-      setAccountParams(account)
-      setCurrentAccount(account)
-    }
-
-    return () => {
-      isMounted = false
-    }
-  }, [account, setCurrentAccount])
+    setAccountParams(account)
+  }, [account])
 
   return (
     <Layout>
