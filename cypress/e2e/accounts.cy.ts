@@ -150,7 +150,7 @@ describe('Create a new account', () => {
     cy.contains('Delete')
       .click()
 
-    cy.get('input[placeholder="Type account name"]')
+    cy.get('input[placeholder="Type the account name to confirm"]')
       .type(editedName)
       .should("have.value", editedName)
 
