@@ -1,9 +1,8 @@
 import type { NextPage } from 'next'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
-import { Hero, Layout } from '../../components/layout'
+import { Hero, Layout, Modal } from '../../components/layout'
 import { Loading } from '../../components/status'
 import { EditAccount } from '../../components/account'
-import { Modal } from '../../components/modal'
 import { useState } from 'react'
 import type { AccountParams } from '../../db'
 

@@ -1,5 +1,6 @@
 import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
-import type { ChangeEventHandler, FC, ReactNode } from 'react'
+import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
+import ReactDOM from 'react-dom'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon } from '@heroicons/react/24/solid'
 import { ConfigContext } from '../cardano/config'
@@ -239,6 +240,21 @@ const Hero: FC<{
   return <div className={['rounded p-4 bg-sky-700 text-white shadow space-y-4', className].join(' ')}>{children}</div>;
 }
 
+const Portal: FC<{
+  id: string
+  children: ReactNode
+}> = ({ id, children }) => {
+  const [root, setRoot] = useState<HTMLElement | null>()
+
+  useEffect(() => {
+    setRoot(document.getElementById(id))
+  }, [id])
+
+  if (!root) return null
+
+  return ReactDOM.createPortal(children, root)
+}
+
 const Layout: FC<{
   children: ReactNode
 }> = ({ children }) => {
@@ -263,4 +279,20 @@ const Layout: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton }
+const Modal: FC<{
+  className?: string
+  children: ReactNode
+  onBackgroundClick?: MouseEventHandler<HTMLDivElement>
+}> = ({ className, children, onBackgroundClick }) => {
+  return (
+    <Portal id='modal-root'>
+      <div onClick={onBackgroundClick} className='absolute bg-black bg-opacity-50 inset-0 flex justify-center items-center'>
+        <div onClick={(e) => e.stopPropagation()} className={className}>
+          {children}
+        </div>
+      </div>
+    </Portal>
+  )
+}
+
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal }
