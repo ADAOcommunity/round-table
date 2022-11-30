@@ -15,6 +15,7 @@
     "@cardano-graphql/client-ts": "^7.0.2",
     "@dcspark/cardano-multiplatform-lib-browser": "^3.1.0",
     "@heroicons/react": "^2.0.12",
+    "bip39": "^3.0.4",
     "buffer": "^6.0.3",
     "cardano-utxo-wasm": "^0.2.0",
     "dexie": "^3.2.1",
