@@ -10,8 +10,8 @@ import { Calendar, DateContext } from '../components/time'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
-import type { AccountParams, Policy } from '../db'
-import { getAccountPath } from '../route'
+import type { MultisigWalletParams, Policy } from '../db'
+import { getMultisigWalletPath } from '../route'
 import { ExpiryBadge, SignatureBadge, StartBadge, Timelock } from './native-script'
 
 const NumberInput: FC<{
@@ -360,10 +360,10 @@ const EditPolicy: FC<{
   )
 }
 
-const EditAccount: FC<{
+const EditMultisigWallet: FC<{
   cardano: Cardano
-  params: AccountParams
-  setParams: (params: AccountParams) => void
+  params: MultisigWalletParams
+  setParams: (params: MultisigWalletParams) => void
 }> = ({ cardano, params, setParams }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
@@ -376,9 +376,9 @@ const EditAccount: FC<{
 
   const save = () => {
     const id = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
-    db.accounts
+    db.multisigWallets
       .put({ name, description, policy, id, updatedAt: new Date() }, id)
-      .then(() => router.push(getAccountPath(params.policy)))
+      .then(() => router.push(getMultisigWalletPath(params.policy)))
       .catch(() => notify('error', 'Failed to save'))
   }
 
@@ -397,7 +397,7 @@ const EditAccount: FC<{
           <div>Description</div>
           <textarea
             className='p-2 block border w-full rounded'
-            placeholder='Describe the account'
+            placeholder='Describe the wallet'
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}>
@@ -426,4 +426,4 @@ const EditAccount: FC<{
   )
 }
 
-export { EditAccount, SlotInput }
+export { EditMultisigWallet, SlotInput }

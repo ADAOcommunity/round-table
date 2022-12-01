@@ -4,12 +4,12 @@ import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState 
 import { ConfigContext } from '../cardano/config'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import { db } from '../db'
-import type { Account } from '../db'
+import type { MultisigWallet } from '../db'
 
 type UserData = {
   isMainnet: boolean
   version: string
-  accounts: Account[]
+  multisigWallets: MultisigWallet[]
 }
 
 const DownloadButton: FC<{
@@ -48,15 +48,15 @@ const DownloadButton: FC<{
 
 const ExportUserDataButton: FC = () => {
   const [config, _] = useContext(ConfigContext)
-  const accounts = useLiveQuery(async () =>
-    db.accounts.toArray()
+  const multisigWallets = useLiveQuery(async () =>
+    db.multisigWallets.toArray()
   )
-  if (!accounts) return null
+  if (!multisigWallets) return null
 
   const userData: UserData = {
     isMainnet: config.isMainnet,
     version: '2',
-    accounts
+    multisigWallets
   }
   const filename = `roundtable-backup.${config.isMainnet ? 'mainnet' : 'testnet'}.json`
 
@@ -106,8 +106,8 @@ const ImportUserData: FC = () => {
     const version = userData.version
 
     if (version === '2') {
-      const accounts: Account[] = userData.accounts
-      db.accounts.bulkAdd(accounts)
+      const multisigWallets: MultisigWallet[] = userData.multisigWallets
+      db.multisigWallets.bulkAdd(multisigWallets)
     }
   }
 

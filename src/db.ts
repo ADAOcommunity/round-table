@@ -8,7 +8,7 @@ type Policy =
   | { type: 'TimelockExpiry', slot: number }
   | string
 
-type AccountParams = {
+type MultisigWalletParams = {
   name: string
   description: string
   policy: Policy
@@ -18,21 +18,21 @@ interface Timestamp {
   updatedAt: Date
 }
 
-type Account = { id: string } & AccountParams & Timestamp
+type MultisigWallet = { id: string } & MultisigWalletParams & Timestamp
 
 class LocalDatabase extends Dexie {
-  accounts!: Table<Account>
+  multisigWallets!: Table<MultisigWallet>
 
   constructor() {
     super('round-table')
 
     this.version(1).stores({
-      accounts: '&id'
+      multisigWallets: '&id'
     })
   }
 }
 
 const db = new LocalDatabase()
 
-export type { Account, AccountParams, Policy }
+export type { MultisigWallet, MultisigWalletParams, Policy }
 export { db }

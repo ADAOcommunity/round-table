@@ -21,7 +21,7 @@ import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-grap
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
 import { estimateSlotByDate } from '../cardano/utils'
-import { SlotInput } from './account'
+import { SlotInput } from './wallet'
 import { DateContext } from './time'
 
 const TransactionReviewButton: FC<{

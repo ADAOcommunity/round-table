@@ -4,7 +4,7 @@ import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { Account, AccountParams, Policy } from '../../db'
+import type { MultisigWallet, MultisigWalletParams, Policy } from '../../db'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
@@ -14,7 +14,7 @@ import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurr
 import type { Value } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
-import { EditAccount } from '../../components/account'
+import { EditMultisigWallet } from '../../components/wallet'
 import { NewTransaction, StakePoolInfo } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
@@ -140,7 +140,7 @@ const Spend: FC<{
 }
 
 const Delete: FC<{
-  account: Account
+  account: MultisigWallet
 }> = ({ account }) => {
   const [name, setName] = useState('')
   const router = useRouter()
@@ -158,7 +158,7 @@ const Delete: FC<{
 
   const deleteHandler = () => {
     db
-      .accounts
+      .multisigWallets
       .delete(account.id)
       .then(() => router.push('/'))
       .catch((error) => {
@@ -270,19 +270,19 @@ const GetPolicy: NextPage = () => {
     return { policy, address, rewardAddress }
   }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'delete' | 'native script'>('summary')
-  const account = useLiveQuery(async () => result && db.accounts.get(result.address), [result])
-  const [accountParams, setAccountParams] = useState<AccountParams | undefined>()
+  const multisigWallet = useLiveQuery(async () => result && db.multisigWallets.get(result.address), [result])
+  const [multisigWalletParams, setMultisigWalletParams] = useState<MultisigWalletParams | undefined>()
 
   useEffect(() => {
-    setAccountParams(account)
-  }, [account])
+    setMultisigWalletParams(multisigWallet)
+  }, [multisigWallet])
 
   return (
     <Layout>
       {(!cardano || !result) && <Modal><Loading /></Modal>}
       {cardano && result && <div className='space-y-2'>
         <Hero>
-          <h1 className='text-lg font-semibold'>{account?.name ?? 'Unknown Account'}</h1>
+          <h1 className='text-lg font-semibold'>{multisigWallet?.name ?? 'Unknown Account'}</h1>
           <div>
             <div className='flex items-center'>
               <span>{result.address}</span>
@@ -296,7 +296,7 @@ const GetPolicy: NextPage = () => {
                 <DocumentDuplicateIcon className='w-4' />
               </CopyButton>
             </div>
-            {account && account.description.length > 0 && <div>{account.description}</div>}
+            {multisigWallet && multisigWallet.description.length > 0 && <div>{multisigWallet.description}</div>}
           </div>
           <div className='flex'>
             <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
@@ -324,7 +324,7 @@ const GetPolicy: NextPage = () => {
                 className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
                 Native Script
               </button>
-              {account && <button
+              {multisigWallet && <button
                 onClick={() => setTab('delete')}
                 disabled={tab === 'delete'}
                 className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
@@ -339,8 +339,8 @@ const GetPolicy: NextPage = () => {
         </Hero>
         {tab === 'summary' && <Summary address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} rewardAddress={result.rewardAddress} />}
-        {tab === 'edit' && accountParams && <EditAccount cardano={cardano} params={accountParams} setParams={setAccountParams} />}
-        {tab === 'delete' && account && <Delete account={account} />}
+        {tab === 'edit' && multisigWalletParams && <EditMultisigWallet cardano={cardano} params={multisigWalletParams} setParams={setMultisigWalletParams} />}
+        {tab === 'delete' && multisigWallet && <Delete account={multisigWallet} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}
     </Layout>

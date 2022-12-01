@@ -7,14 +7,14 @@ import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { Account, Policy } from '../db'
+import type { MultisigWallet, Policy } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
-import { getAccountPath } from '../route'
+import { getMultisigWalletPath } from '../route'
 import { SpinnerIcon } from './status'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 
@@ -161,26 +161,26 @@ const PrimaryBar: FC = () => {
   )
 }
 
-const AccountListing: FC<{
-  account: Account
+const WalletListing: FC<{
+  wallet: MultisigWallet
   balance?: Value
   isOnPage: boolean
-}> = ({ account, balance, isOnPage }) => {
+}> = ({ wallet, balance, isOnPage }) => {
   const lovelace = balance?.lovelace
 
   return (
-    <Link href={getAccountPath(account.policy)}>
+    <Link href={getMultisigWalletPath(wallet.policy)}>
       <a className={['block p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
-        <div className='truncate'>{account.name}</div>
+        <div className='truncate'>{wallet.name}</div>
         <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}</div>
       </a>
     </Link>
   )
 }
 
-const AccountList: FC = () => {
-  const accounts = useLiveQuery(async () => db.accounts.toArray())
-  const addresses = (accounts ?? []).map((account) => account.id)
+const WalletList: FC = () => {
+  const multisigWallet = useLiveQuery(async () => db.multisigWallets.toArray())
+  const addresses = (multisigWallet ?? []).map((wallet) => wallet.id)
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
@@ -199,12 +199,12 @@ const AccountList: FC = () => {
   const router = useRouter()
   const [config, _] = useContext(ConfigContext)
   const cardano = useCardanoMultiplatformLib()
-  const isOnPage = useCallback((account: Account): boolean => {
+  const isOnPage = useCallback((wallet: MultisigWallet): boolean => {
     const policyContent = router.query.policy
     if (typeof policyContent === 'string') {
       const policy: Policy = JSON.parse(policyContent)
       const id = cardano?.getPolicyAddress(policy, config.isMainnet).to_bech32()
-      if (id) return id === account.id
+      if (id) return id === wallet.id
     }
     return false
   }, [cardano, config.isMainnet, router.query.policy])
@@ -213,15 +213,15 @@ const AccountList: FC = () => {
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
       <nav className='w-full bg-sky-900 font-semibold'>
         <NavLink
-          href='/accounts/new'
+          href='/new'
           onPageClassName='bg-sky-700'
           className='flex w-full p-4 items-center space-x-1 justify-center hover:bg-sky-700'>
           <PlusIcon className='w-4' />
-          <span>New Account</span>
+          <span>New Wallet</span>
         </NavLink>
       </nav>
       <nav className='block w-full'>
-        {accounts?.map((account, index) => <AccountListing key={index} account={account} balance={balances[index]} isOnPage={isOnPage(account)} />)}
+        {multisigWallet?.map((wallet, index) => <WalletListing key={index} wallet={wallet} balance={balances[index]} isOnPage={isOnPage(wallet)} />)}
       </nav>
     </aside>
   )
@@ -269,7 +269,7 @@ const Layout: FC<{
   return (
     <div className='flex h-screen'>
       <PrimaryBar />
-      <AccountList />
+      <WalletList />
       <div className='w-full bg-sky-100 overflow-y-auto'>
         {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
         <div className='p-2 h-screen space-y-2'>
