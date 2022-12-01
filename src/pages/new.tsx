@@ -4,10 +4,14 @@ import type { Result } from '../cardano/multiplatform-lib'
 import { Hero, Layout, Modal, Panel } from '../components/layout'
 import { Loading } from '../components/status'
 import { EditMultisigWallet } from '../components/wallet'
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
+import { db } from '../db'
 import type { MultisigWalletParams } from '../db'
 import { mnemonicToEntropy, generateMnemonic, wordlists } from 'bip39'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { NotificationContext } from '../components/notification'
+import { encryptWithPassword } from '../cardano/utils'
 
 const NewMultisigWallet: FC = () => {
   const cardano = useCardanoMultiplatformLib()
@@ -84,7 +88,7 @@ const RecoverHDWallet: FC<{
   const closeModal = () => setModal(undefined)
   useEffect(() => {
     if (rootKeyResult.isOk) setRootKey(rootKeyResult.data)
-  }, [rootKeyResult])
+  }, [rootKeyResult, setRootKey])
 
   return (
     <div className={className}>
@@ -130,9 +134,24 @@ const RecoverHDWallet: FC<{
 }
 
 const NewPersonalWallet: FC = () => {
+  const { notify } = useContext(NotificationContext)
+  const id = useLiveQuery(async () => db.personalWallets.count())
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [rootKey, setRootKey] = useState<Uint8Array | undefined>()
+  const [password, setPassword] = useState('')
+  const [repeatPassword, setRepeatPassword] = useState('')
+  const isValid = password === repeatPassword && password.length > 0 && name.length > 0 && rootKey !== undefined && id !== undefined
+  const save = () => {
+    if (isValid) encryptWithPassword(rootKey, password, id)
+      .then((key) => {
+        db.personalWallets.add({ id, name, description, key: new Uint8Array(key), updatedAt: new Date()}, id)
+      })
+      .catch((error) => {
+        notify('error', 'Failed to encrypt the key')
+        console.error(error)
+      })
+  }
 
   return (
     <Panel>
@@ -157,12 +176,33 @@ const NewPersonalWallet: FC = () => {
           </textarea>
         </label>
         <div className='space-y-1'>
+          <div className="after:content-['*'] after:text-red-500">Signing Password</div>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
+            <input
+              type='password'
+              className='block border rounded p-1 outline-none'
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder='Password used when signing transaction' />
+            <input
+              type='password'
+              className={['block border rounded p-1 outline-none', password === repeatPassword ? '' : 'text-red-500'].join(' ')}
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              placeholder='Repeat password' />
+          </div>
+        </div>
+        <div className='space-y-1'>
           <div className="after:content-['*'] after:text-red-500">Recovery Phrase</div>
-          <RecoverHDWallet className='space-y-2 w-1/2' setRootKey={setRootKey} />
+          <div className='grid grid-cols-2 gap-2'>
+            <RecoverHDWallet className='space-y-2' setRootKey={setRootKey} />
+          </div>
         </div>
       </div>
       <footer className='flex justify-end p-4 bg-gray-100'>
         <button
+          disabled={!isValid}
+          onClick={save}
           className='px-4 py-2 bg-sky-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'>
           Save
         </button>
