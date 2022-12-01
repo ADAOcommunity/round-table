@@ -29,7 +29,7 @@ const estimateSlotByDate = (date: Date, network: Network): number => Math.floor(
 const slotSinceShelley = (slot: number, network: Network): number => slot - shelleyStart(network)
 
 const epochBeforeShelly = (network: Network): number => {
-  switch(network) {
+  switch (network) {
     case 'mainnet': return 208 + 1
     case 'testnet': return 80 + 1
     case 'preview': return 0
@@ -39,4 +39,49 @@ const epochBeforeShelly = (network: Network): number => {
 const getEpochBySlot = (slot: number, network: Network) => Math.floor(slotSinceShelley(slot, network) / slotLength(network)) + epochBeforeShelly(network)
 const getSlotInEpochBySlot = (slot: number, network: Network) => slotSinceShelley(slot, network) % slotLength(network)
 
-export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength }
+const SALT = Buffer.from('')
+const deriveKeyFromPassword = async (password: string): Promise<CryptoKey> =>
+  crypto.subtle.importKey(
+    'raw',
+    Buffer.from(password, 'utf-8'),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey']
+  ).then((material) =>
+    crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: SALT,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      material,
+      { 'name': 'AES-GCM', 'length': 256 },
+      true,
+      ['encrypt', 'decrypt']
+    )
+  )
+
+
+const MAX_IV_NUM = 2 ** 32 - 1
+
+const getIvFromNumber = (num: number): ArrayBuffer => {
+  if (num > MAX_IV_NUM) throw new Error(`IV number overflow: ${num}`)
+  const array = new Uint32Array(4)
+  array[3] = num
+  return array
+}
+
+const encryptWithPassword = async (plaintext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => deriveKeyFromPassword(password)
+  .then((key) => {
+    return crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: getIvFromNumber(id) },
+      key,
+      plaintext,
+    )
+  })
+
+const decryptWithPassword = async (ciphertext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => deriveKeyFromPassword(password)
+  .then((key) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: getIvFromNumber(id) }, key, ciphertext))
+
+export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength, encryptWithPassword, decryptWithPassword }
