@@ -2,7 +2,7 @@ import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, KeyIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon } from '@heroicons/react/24/solid'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -134,12 +134,6 @@ const PrimaryBar: FC = () => {
         onPageClassName='bg-sky-700'
         className='p-4 hover:bg-sky-700'>
         <FolderOpenIcon className='w-12' />
-      </NavLink>
-      <NavLink
-        href='/keys'
-        onPageClassName='bg-sky-700'
-        className='p-4 hover:bg-sky-700'>
-        <KeyIcon className='w-12' />
       </NavLink>
       <NavLink
         href='/config'
