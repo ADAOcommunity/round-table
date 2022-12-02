@@ -10,9 +10,13 @@ function getMultisigWalletPath(policy: Policy, subPath?: string): string {
   return getMultisigWalletsPath([encodeURIComponent(JSON.stringify(policy)), subPath].join('/'))
 }
 
+function getPersonalWalletPath(id: number): string {
+  return `/personal/${id}`
+}
+
 function getTransactionPath(transcation: Transaction): string {
   const base64CBOR = encodeCardanoData(transcation, 'base64')
   return ['/base64', encodeURIComponent(base64CBOR)].join('/')
 }
 
-export { getMultisigWalletsPath, getMultisigWalletPath, getTransactionPath }
+export { getMultisigWalletsPath, getMultisigWalletPath, getTransactionPath, getPersonalWalletPath }

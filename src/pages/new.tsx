@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useCardanoMultiplatformLib, getResult } from '../cardano/multiplatform-lib'
+import { useCardanoMultiplatformLib, getResult, initPersonalAccount, initMultisigAccount } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import { Hero, Layout, Modal, Panel } from '../components/layout'
 import { Loading } from '../components/status'
@@ -7,11 +7,14 @@ import { EditMultisigWallet } from '../components/wallet'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { db } from '../db'
-import type { MultisigWalletParams } from '../db'
+import type { MultisigWalletParams, PersonalWallet } from '../db'
 import { mnemonicToEntropy, generateMnemonic, wordlists } from 'bip39'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { NotificationContext } from '../components/notification'
-import { encryptWithPassword } from '../cardano/utils'
+import { encryptWithPassword, SHA256Digest } from '../cardano/utils'
+import type { Bip32PrivateKey } from '@dcspark/cardano-multiplatform-lib-browser'
+import { useRouter } from 'next/router'
+import { getPersonalWalletPath } from '../route'
 
 const NewMultisigWallet: FC = () => {
   const cardano = useCardanoMultiplatformLib()
@@ -66,7 +69,7 @@ const NewRecoveryPhrase: FC<{
 
 const RecoverHDWallet: FC<{
   className?: string
-  setRootKey: (key: Uint8Array | undefined) => void
+  setRootKey: (key: Bip32PrivateKey | undefined) => void
 }> = ({ className, setRootKey }) => {
   const language = 'english'
   const wordset: Set<string> = useMemo(() => new Set(wordlists[language]), [language])
@@ -77,12 +80,12 @@ const RecoverHDWallet: FC<{
   const [BIP32Passphrase, setBIP32Passphrase] = useState<string>('')
   const [repeatBIP32Passphrase, setRepeatBIP32Passphrase] = useState<string>('')
   const isBIP32PassphraseValid = BIP32Passphrase === repeatBIP32Passphrase
-  const rootKeyResult: Result<Uint8Array | undefined> = useMemo(() => getResult(() => {
+  const rootKeyResult: Result<Bip32PrivateKey | undefined> = useMemo(() => getResult(() => {
     const isValid = words.length === length && words.every((word) => wordset.has(word)) && isBIP32PassphraseValid
     if (!isValid) return
     const phrase = words.join(' ')
     const entropy = Buffer.from(mnemonicToEntropy(phrase), 'hex')
-    return cardano?.lib.Bip32PrivateKey.from_bip39_entropy(entropy, Buffer.from(BIP32Passphrase, 'utf8')).as_bytes()
+    return cardano?.lib.Bip32PrivateKey.from_bip39_entropy(entropy, Buffer.from(BIP32Passphrase, 'utf8'))
   }), [BIP32Passphrase, cardano?.lib.Bip32PrivateKey, isBIP32PassphraseValid, words, wordset])
   const [modal, setModal] = useState<'new' | undefined>()
   const closeModal = () => setModal(undefined)
@@ -135,20 +138,37 @@ const RecoverHDWallet: FC<{
 
 const NewPersonalWallet: FC = () => {
   const { notify } = useContext(NotificationContext)
+  const router = useRouter()
   const id = useLiveQuery(async () => db.personalWallets.count())
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [rootKey, setRootKey] = useState<Uint8Array | undefined>()
+  const [rootKey, setRootKey] = useState<Bip32PrivateKey | undefined>()
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const isValid = password === repeatPassword && password.length > 0 && name.length > 0 && rootKey !== undefined && id !== undefined
-  const save = () => {
-    if (isValid) encryptWithPassword(rootKey, password, id)
-      .then((key) => {
-        db.personalWallets.add({ id, name, description, key: new Uint8Array(key), updatedAt: new Date()}, id)
+  const add = async () => {
+    if (!isValid) return
+
+    const rootKeyBytes = rootKey.as_bytes()
+    const hash = new Uint8Array(await SHA256Digest(rootKeyBytes))
+    const personalAccount = initPersonalAccount(rootKey, 0, 10)
+    const multisigAccount = initMultisigAccount(rootKey, 0, 10)
+
+    encryptWithPassword(rootKeyBytes, password, id)
+      .then((ciphertext) => {
+        const wallet: PersonalWallet = {
+          id, name, description, hash,
+          rootKey: new Uint8Array(ciphertext),
+          personalAccounts: [personalAccount],
+          multisigAccount,
+          updatedAt: new Date()
+        }
+        db.personalWallets.add(wallet, id).then(() => {
+          router.push(getPersonalWalletPath(id))
+        })
       })
       .catch((error) => {
-        notify('error', 'Failed to encrypt the key')
+        notify('error', 'Failed to save the key')
         console.error(error)
       })
   }
@@ -202,9 +222,9 @@ const NewPersonalWallet: FC = () => {
       <footer className='flex justify-end p-4 bg-gray-100'>
         <button
           disabled={!isValid}
-          onClick={save}
+          onClick={add}
           className='px-4 py-2 bg-sky-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'>
-          Save
+          Create
         </button>
       </footer>
     </Panel>

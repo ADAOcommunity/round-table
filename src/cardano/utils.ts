@@ -84,4 +84,6 @@ const encryptWithPassword = async (plaintext: ArrayBuffer, password: string, id:
 const decryptWithPassword = async (ciphertext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => deriveKeyFromPassword(password)
   .then((key) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: getIvFromNumber(id) }, key, ciphertext))
 
-export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength, encryptWithPassword, decryptWithPassword }
+const SHA256Digest = async (data: ArrayBuffer): Promise<ArrayBuffer> => crypto.subtle.digest('SHA-256', data)
+
+export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength, encryptWithPassword, decryptWithPassword, SHA256Digest }

@@ -7,14 +7,14 @@ import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
-import type { MultisigWallet, Policy } from '../db'
+import type { MultisigWallet, PersonalWallet, Policy } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
 import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
-import { getMultisigWalletPath } from '../route'
+import { getMultisigWalletPath, getPersonalWalletPath } from '../route'
 import { SpinnerIcon } from './status'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 
@@ -155,25 +155,60 @@ const PrimaryBar: FC = () => {
   )
 }
 
-const WalletListing: FC<{
-  wallet: MultisigWallet
-  balance?: Value
+const WalletLink: FC<{
+  name: string
+  href: string
+  lovelace?: bigint
   isOnPage: boolean
-}> = ({ wallet, balance, isOnPage }) => {
-  const lovelace = balance?.lovelace
-
+}> = ({ name, href, lovelace, isOnPage }) => {
   return (
-    <Link href={getMultisigWalletPath(wallet.policy)}>
+    <Link href={href}>
       <a className={['block p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
-        <div className='truncate'>{wallet.name}</div>
-        <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}</div>
+        <div className='truncate'>{name}</div>
+        <div className='text-sm font-normal'>
+          {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
+        </div>
       </a>
     </Link>
   )
 }
 
+const PersonalWalletListing: FC<{
+  wallet: PersonalWallet
+}> = ({ wallet }) => {
+  const router = useRouter()
+  const isOnPage: boolean = useMemo(() => router.query.personalWalletId === wallet.id.toString(), [router.query.personalWalletId, wallet.id])
+  return (
+    <WalletLink href={getPersonalWalletPath(wallet.id)} name={wallet.name} isOnPage={isOnPage} />
+  )
+}
+
+const MultisigWalletListing: FC<{
+  wallet: MultisigWallet
+  balance?: Value
+}> = ({ wallet, balance }) => {
+  const [config, _] = useContext(ConfigContext)
+  const cardano = useCardanoMultiplatformLib()
+  const router = useRouter()
+  const lovelace = balance?.lovelace
+  const isOnPage: boolean = useMemo(() => {
+    const policyContent = router.query.policy
+    if (typeof policyContent === 'string') {
+      const policy: Policy = JSON.parse(policyContent)
+      const id = cardano?.getPolicyAddress(policy, config.isMainnet).to_bech32()
+      if (id) return id === wallet.id
+    }
+    return false
+  }, [cardano, config.isMainnet, router.query.policy, wallet.id])
+
+  return (
+    <WalletLink href={getMultisigWalletPath(wallet.policy)} name={wallet.name} isOnPage={isOnPage} lovelace={lovelace} />
+  )
+}
+
 const WalletList: FC = () => {
   const multisigWallet = useLiveQuery(async () => db.multisigWallets.toArray())
+  const personalWallet = useLiveQuery(async () => db.personalWallets.toArray())
   const addresses = (multisigWallet ?? []).map((wallet) => wallet.id)
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
@@ -190,22 +225,10 @@ const WalletList: FC = () => {
     })
     return (addresses).map((address) => balanceMap.get(address))
   }, [addresses, data])
-  const router = useRouter()
-  const [config, _] = useContext(ConfigContext)
-  const cardano = useCardanoMultiplatformLib()
-  const isOnPage = useCallback((wallet: MultisigWallet): boolean => {
-    const policyContent = router.query.policy
-    if (typeof policyContent === 'string') {
-      const policy: Policy = JSON.parse(policyContent)
-      const id = cardano?.getPolicyAddress(policy, config.isMainnet).to_bech32()
-      if (id) return id === wallet.id
-    }
-    return false
-  }, [cardano, config.isMainnet, router.query.policy])
 
   return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
-      <nav className='w-full bg-sky-900 font-semibold'>
+      <nav className='w-full font-semibold'>
         <NavLink
           href='/new'
           onPageClassName='bg-sky-700'
@@ -215,7 +238,8 @@ const WalletList: FC = () => {
         </NavLink>
       </nav>
       <nav className='block w-full'>
-        {multisigWallet?.map((wallet, index) => <WalletListing key={index} wallet={wallet} balance={balances[index]} isOnPage={isOnPage(wallet)} />)}
+        {personalWallet?.map((wallet) => <PersonalWalletListing key={wallet.id} wallet={wallet} />)}
+        {multisigWallet?.map((wallet, index) => <MultisigWalletListing key={wallet.id} wallet={wallet} balance={balances[index]} />)}
       </nav>
     </aside>
   )

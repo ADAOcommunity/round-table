@@ -17,17 +17,22 @@ type MultisigWalletParams = BasicInfoParams & {
   policy: Policy
 }
 
-type PersonalWalletParams = BasicInfoParams & {
-  id: number
-  key: Uint8Array
-}
-
 interface Timestamp {
   updatedAt: Date
 }
 
 type MultisigWallet = { id: string } & MultisigWalletParams & Timestamp
-type PersonalWallet = PersonalWalletParams & Timestamp
+
+type PersonalAccount = { payment: Uint8Array[], staking: Uint8Array }
+type MultisigAccount = { payment: Uint8Array, staking: Uint8Array }[]
+
+type PersonalWallet = BasicInfoParams & Timestamp & {
+  id: number
+  hash: Uint8Array
+  rootKey: Uint8Array
+  personalAccounts: PersonalAccount[]
+  multisigAccount: MultisigAccount
+}
 
 class LocalDatabase extends Dexie {
   multisigWallets!: Table<MultisigWallet>
@@ -38,12 +43,12 @@ class LocalDatabase extends Dexie {
 
     this.version(1).stores({
       multisigWallets: '&id',
-      personalWallets: '&id'
+      personalWallets: '&id, &hash'
     })
   }
 }
 
 const db = new LocalDatabase()
 
-export type { MultisigWallet, MultisigWalletParams, PersonalWallet, PersonalWalletParams, Policy }
+export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, PersonalAccount, MultisigAccount }
 export { db }
