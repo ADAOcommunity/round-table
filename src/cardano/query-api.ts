@@ -16,6 +16,16 @@ type Value = {
   assets: Assets
 }
 
+const sumValues = (values: Value[]): Value => values.reduce((acc, value) => {
+  const assets = new Map(acc.assets)
+  value.assets.forEach((quantity, id) => assets.set(id, (assets.get(id) ?? BigInt(0)) + quantity))
+
+  return {
+    lovelace: acc.lovelace + value.lovelace,
+    assets
+  }
+}, { lovelace: BigInt(0), assets: new Map() })
+
 const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
   const assets: Assets = new Map()
 
@@ -297,4 +307,4 @@ const useStakePoolsQuery: Query<
 > = (options) => useQuery(StakePoolsQuery, options)
 
 export type { Value }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues }

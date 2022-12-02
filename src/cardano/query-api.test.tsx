@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { getAssetName, getPolicyId, useUTxOSummaryQuery, usePaymentAddressesQuery } from './query-api'
+import { getAssetName, getPolicyId, useUTxOSummaryQuery, usePaymentAddressesQuery, sumValues } from './query-api'
+import type { Value } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import type { FC, ReactNode } from 'react'
@@ -13,6 +14,17 @@ const assetId = policyId + assetName
 const createApolloClient = (uri: string) => new ApolloClient({
   link: new HttpLink({ uri, fetch }),
   cache: new InMemoryCache()
+})
+
+test('sumValues', () => {
+  const valueA: Value = { lovelace: BigInt(100), assets: new Map() }
+  const valueB: Value = { lovelace: BigInt(1000), assets: new Map([['token1', BigInt(10)]]) }
+  const valueC: Value = { lovelace: BigInt(50), assets: new Map([['token1', BigInt(1)], ['token2', BigInt(100)]]) }
+  const total = sumValues([valueA, valueB, valueC])
+  expect(total.lovelace).toBe(BigInt(1150))
+  expect(total.assets.size).toBe(2)
+  expect(total.assets.get('token1')).toBe(BigInt(11))
+  expect(total.assets.get('token2')).toBe(BigInt(100))
 })
 
 test('getAssetName', () => {
