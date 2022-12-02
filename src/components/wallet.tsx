@@ -426,4 +426,41 @@ const EditMultisigWallet: FC<{
   )
 }
 
-export { EditMultisigWallet, SlotInput }
+const RemoveWallet: FC<{
+  remove: () => void
+  walletName: string
+}> = ({ walletName, remove }) => {
+  const [name, setName] = useState('')
+
+  useEffect(() => {
+    setName('')
+  }, [walletName])
+
+  return (
+    <Panel>
+      <div className='p-4 space-y-2'>
+        <h2 className='font-semibold'>Remove Wallet</h2>
+        <div>
+          <p>Do you really want to remove <strong className='font-semibold'>{walletName}</strong>?</p>
+          <p>By removing the wallet you will just remove the record in your browser. The assets in it remain untouched. Type the wallet name below to confirm.</p>
+        </div>
+        <input
+          className='p-2 border rounded w-full'
+          type='text'
+          placeholder='Type the account name to confirm'
+          value={name}
+          onChange={(e) => setName(e.target.value)} />
+      </div>
+      <footer className='flex justify-end p-4 bg-gray-100'>
+        <button
+          className='px-4 py-2 bg-red-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
+          disabled={walletName !== name}
+          onClick={remove}>
+          REMOVE
+        </button>
+      </footer>
+    </Panel>
+  )
+}
+
+export { EditMultisigWallet, SlotInput, RemoveWallet }

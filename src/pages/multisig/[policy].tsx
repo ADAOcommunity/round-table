@@ -4,7 +4,7 @@ import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { MultisigWallet, MultisigWalletParams, Policy } from '../../db'
+import type { MultisigWalletParams, Policy } from '../../db'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
@@ -14,7 +14,7 @@ import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurr
 import type { Value } from '../../cardano/query-api'
 import { ADAAmount, AssetAmount } from '../../components/currency'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
-import { EditMultisigWallet } from '../../components/wallet'
+import { EditMultisigWallet, RemoveWallet } from '../../components/wallet'
 import { NewTransaction, StakePoolInfo } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
@@ -139,61 +139,6 @@ const Spend: FC<{
   )
 }
 
-const Delete: FC<{
-  account: MultisigWallet
-}> = ({ account }) => {
-  const [name, setName] = useState('')
-  const router = useRouter()
-  const { notify } = useContext(NotificationContext)
-
-  useEffect(() => {
-    let isMounted = true
-
-    isMounted && setName('')
-
-    return () => {
-      isMounted = false
-    }
-  }, [account])
-
-  const deleteHandler = () => {
-    db
-      .multisigWallets
-      .delete(account.id)
-      .then(() => router.push('/'))
-      .catch((error) => {
-        notify('error', 'Failed to delete')
-        console.error(error)
-      })
-  }
-
-  return (
-    <Panel>
-      <div className='p-4 space-y-2'>
-        <h2 className='font-semibold'>Delete Account</h2>
-        <div>
-          <p>Do you really want to delete <strong className='font-semibold'>{account.name}</strong>?</p>
-          <p>By deleting the account you will just remove the record in your browser. Others might still have it and the assets in it remain untouched. Type the account name below to confirm.</p>
-        </div>
-        <input
-          className='p-2 border rounded w-full'
-          type='text'
-          placeholder='Type the account name to confirm'
-          value={name}
-          onChange={(e) => setName(e.target.value)} />
-      </div>
-      <footer className='flex justify-end p-4 bg-gray-100'>
-        <button
-          className='px-4 py-2 bg-red-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'
-          disabled={account.name !== name}
-          onClick={deleteHandler}>
-          DELETE
-        </button>
-      </footer>
-    </Panel>
-  )
-}
-
 const NativeScriptPanel: FC<{
   cardano: Cardano
   nativeScript: NativeScript
@@ -269,13 +214,25 @@ const GetPolicy: NextPage = () => {
     const rewardAddress = cardano.getPolicyRewardAddress(policy, isMainnet).to_address().to_bech32()
     return { policy, address, rewardAddress }
   }, [cardano, config, policyContent])
-  const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'delete' | 'native script'>('summary')
+  const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'remove' | 'native script'>('summary')
   const multisigWallet = useLiveQuery(async () => result && db.multisigWallets.get(result.address), [result])
   const [multisigWalletParams, setMultisigWalletParams] = useState<MultisigWalletParams | undefined>()
+  const { notify } = useContext(NotificationContext)
 
   useEffect(() => {
     setMultisigWalletParams(multisigWallet)
   }, [multisigWallet])
+
+  const removeWallet = (id: string) => {
+    db
+      .multisigWallets
+      .delete(id)
+      .then(() => router.push('/'))
+      .catch((error) => {
+        notify('error', 'Failed to delete')
+        console.error(error)
+      })
+  }
 
   return (
     <Layout>
@@ -325,10 +282,10 @@ const GetPolicy: NextPage = () => {
                 Native Script
               </button>
               {multisigWallet && <button
-                onClick={() => setTab('delete')}
-                disabled={tab === 'delete'}
+                onClick={() => setTab('remove')}
+                disabled={tab === 'remove'}
                 className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-                Delete
+                Remove
               </button>}
             </nav>
           </div>
@@ -340,7 +297,7 @@ const GetPolicy: NextPage = () => {
         {tab === 'summary' && <Summary address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'edit' && multisigWalletParams && <EditMultisigWallet cardano={cardano} params={multisigWalletParams} setParams={setMultisigWalletParams} />}
-        {tab === 'delete' && multisigWallet && <Delete account={multisigWallet} />}
+        {tab === 'remove' && multisigWallet && <RemoveWallet walletName={multisigWallet.name} remove={() => removeWallet(multisigWallet.id)} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}
     </Layout>
