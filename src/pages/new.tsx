@@ -18,18 +18,20 @@ import { getPersonalWalletPath } from '../route'
 
 const NewMultisigWallet: FC = () => {
   const cardano = useCardanoMultiplatformLib()
-  const [params, setParams] = useState<MultisigWalletParams>({
-    name: '',
-    description: '',
-    policy: { type: 'All', policies: [] }
-  })
+  const params: MultisigWalletParams = useMemo(() => {
+    return {
+      name: '',
+      description: '',
+      policy: { type: 'All', policies: [] }
+    }
+  }, [])
 
   if (!cardano) return (
     <Modal><Loading /></Modal>
   )
 
   return (
-    <EditMultisigWallet cardano={cardano} params={params} setParams={setParams} />
+    <EditMultisigWallet cardano={cardano} params={params} />
   )
 }
 

@@ -4,8 +4,8 @@ import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { MultisigWalletParams, Policy } from '../../db'
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { Policy } from '../../db'
+import { useCallback, useContext, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
 import { CopyButton, Hero, Layout, Panel, Modal } from '../../components/layout'
@@ -216,12 +216,7 @@ const GetPolicy: NextPage = () => {
   }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'remove' | 'native script'>('summary')
   const multisigWallet = useLiveQuery(async () => result && db.multisigWallets.get(result.address), [result])
-  const [multisigWalletParams, setMultisigWalletParams] = useState<MultisigWalletParams | undefined>()
   const { notify } = useContext(NotificationContext)
-
-  useEffect(() => {
-    setMultisigWalletParams(multisigWallet)
-  }, [multisigWallet])
 
   const removeWallet = (id: string) => {
     db
@@ -296,7 +291,7 @@ const GetPolicy: NextPage = () => {
         </Hero>
         {tab === 'summary' && <Summary address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} rewardAddress={result.rewardAddress} />}
-        {tab === 'edit' && multisigWalletParams && <EditMultisigWallet cardano={cardano} params={multisigWalletParams} setParams={setMultisigWalletParams} />}
+        {tab === 'edit' && multisigWallet && <EditMultisigWallet cardano={cardano} params={multisigWallet} />}
         {tab === 'remove' && multisigWallet && <RemoveWallet walletName={multisigWallet.name} remove={() => removeWallet(multisigWallet.id)} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}

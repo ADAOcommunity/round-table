@@ -363,22 +363,26 @@ const EditPolicy: FC<{
 const EditMultisigWallet: FC<{
   cardano: Cardano
   params: MultisigWalletParams
-  setParams: (params: MultisigWalletParams) => void
-}> = ({ cardano, params, setParams }) => {
+}> = ({ cardano, params }) => {
   const router = useRouter()
   const { notify } = useContext(NotificationContext)
   const [config, _] = useContext(ConfigContext)
-  const { name, description, policy } = params
-  const setName = (name: string) => setParams({ ...params, name })
-  const setDescription = (description: string) => setParams({ ...params, description })
-  const setPolicy = (policy: Policy) => setParams({ ...params, policy })
+  const [name, setName] = useState(params.name)
+  const [description, setDescription] = useState(params.description)
+  const [policy, setPolicy] = useState(params.policy)
   const canSave = name.length > 0
+
+  useEffect(() => {
+    setName(params.name)
+    setDescription(params.description)
+    setPolicy(params.policy)
+  }, [params])
 
   const save = () => {
     const id = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
     db.multisigWallets
       .put({ name, description, policy, id, updatedAt: new Date() }, id)
-      .then(() => router.push(getMultisigWalletPath(params.policy)))
+      .then(() => router.push(getMultisigWalletPath(policy)))
       .catch(() => notify('error', 'Failed to save'))
   }
 

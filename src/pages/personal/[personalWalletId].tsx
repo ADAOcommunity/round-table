@@ -94,7 +94,7 @@ const Edit: FC<{
   useEffect(() => {
     setName(wallet.name)
     setDescription(wallet.description)
-  }, [])
+  }, [wallet])
 
   const canSave = name.length > 0
 
