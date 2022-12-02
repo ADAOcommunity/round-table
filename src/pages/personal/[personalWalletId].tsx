@@ -101,7 +101,7 @@ const Edit: FC<{
   const save = () => {
     db
       .personalWallets
-      .update(wallet.id, { name, description })
+      .update(wallet.id, { name, description, updatedAt: new Date() })
       .catch(() => notify('error', 'Failed to save'))
   }
 
