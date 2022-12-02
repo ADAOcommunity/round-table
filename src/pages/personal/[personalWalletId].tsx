@@ -16,12 +16,13 @@ import { RemoveWallet } from '../../components/wallet'
 
 const AddressTable: FC<{
   addresses: AddressWithPaths[]
-}> = ({ addresses }) => {
+  addressName: string
+}> = ({ addresses, addressName }) => {
   return (
     <table className='table-auto w-full text-left'>
       <thead className='bg-gray-100'>
         <tr>
-          <th className='p-4'>Address</th>
+          <th className='p-4'>{addressName}</th>
           <th className='p-4'>Payment Derivation Path</th>
           <th className='p-4'>Staking Derivation Path</th>
         </tr>
@@ -51,7 +52,7 @@ const Multisig: FC<{
 
   return (
     <Panel>
-      {addresses && <AddressTable addresses={addresses} />}
+      {addresses && <AddressTable addresses={addresses} addressName='Address for multisig' />}
     </Panel>
   )
 }
@@ -69,7 +70,7 @@ const Receive: FC<{
 
   return (
     <Panel>
-      {addresses && <AddressTable addresses={addresses} />}
+      {addresses && <AddressTable addresses={addresses} addressName='Receiving address' />}
     </Panel>
   )
 }
