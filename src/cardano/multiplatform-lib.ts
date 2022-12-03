@@ -378,6 +378,14 @@ class Cardano {
       }
     })
   }
+
+  public readRewardAddress(bytes: Uint8Array, isMainnet: boolean): RewardAddress {
+    const { Ed25519KeyHash, RewardAddress, StakeCredential } = this.lib
+    const networkId = this.getNetworkId(isMainnet)
+    const keyHash = Ed25519KeyHash.from_bytes(bytes)
+    const credential = StakeCredential.from_keyhash(keyHash)
+    return RewardAddress.new(networkId, credential)
+  }
 }
 
 function harden(num: number): number {

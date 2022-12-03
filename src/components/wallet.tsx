@@ -514,6 +514,7 @@ const Summary: FC<{
         </div>
         <div className='space-y-1'>
           <h2 className='font-semibold'>Delegation</h2>
+          <div>{rewardAddress}</div>
           {delegation && <StakePoolInfo stakePool={delegation.stakePool} />}
           {!delegation && <div>N/A</div>}
         </div>

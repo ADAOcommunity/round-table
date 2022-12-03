@@ -12,7 +12,7 @@ import type { AddressWithPaths } from '../../cardano/multiplatform-lib'
 import { ConfigContext } from '../../cardano/config'
 import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
-import { RemoveWallet } from '../../components/wallet'
+import { RemoveWallet, Summary } from '../../components/wallet'
 
 const AddressTable: FC<{
   addresses: AddressWithPaths[]
@@ -75,13 +75,27 @@ const Receive: FC<{
   )
 }
 
-const Summary: FC = () => {
+const AccountsSummary: FC<{
+  wallet: PersonalWallet
+}> = ({ wallet }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const [config, _] = useContext(ConfigContext)
+  const accounts = useMemo(() => {
+    if (!cardano) return
+    return wallet.personalAccounts.map((account, index) => {
+      return {
+        rewardAddress: cardano.readRewardAddress(account.staking, config.isMainnet).to_address().to_bech32(),
+        addresses: cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).map(({ address }) => address)
+      }
+    })
+  }, [cardano, wallet, config.isMainnet])
+
+  if (!accounts) return (
+    <Modal><Loading /></Modal>
+  )
+
   return (
-    <Panel>
-      <div className='p-4'>
-        WIP
-      </div>
-    </Panel>
+    <>{accounts.map(({ addresses, rewardAddress }, index) => <Summary key={index} addresses={addresses} rewardAddress={rewardAddress} />)}</>
   )
 }
 
@@ -206,7 +220,7 @@ const ShowPersonalWallet: NextPage = () => {
         </div>
         {tab === 'multisig' && <div>These addresses are only for multisig. DO NOT USE THEM TO RECEIVE FUNDS.</div>}
       </Hero>
-      {tab === 'summary' && <Summary />}
+      {tab === 'summary' && <AccountsSummary wallet={personalWallet} />}
       {tab === 'receive' && <Receive wallet={personalWallet} />}
       {tab === 'multisig' && <Multisig wallet={personalWallet} />}
       {tab === 'edit' && <Edit wallet={personalWallet} />}
