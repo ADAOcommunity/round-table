@@ -457,7 +457,7 @@ const RemoveWallet: FC<{
         <input
           className='p-2 border rounded w-full'
           type='text'
-          placeholder='Type the account name to confirm'
+          placeholder='Type the wallet name to confirm'
           value={name}
           onChange={(e) => setName(e.target.value)} />
       </div>

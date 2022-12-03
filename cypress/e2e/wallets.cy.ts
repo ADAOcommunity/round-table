@@ -1,33 +1,33 @@
-describe('Create a new account', () => {
-  const accountName = "Test account"
-  const accountDesc = "This is a description of the account"
+describe('Create a new wallet', () => {
+  const walletName = "Test wallet"
+  const walletDesc = "This is a description of the wallet"
   const addresses = [
     "addr_test1qrmtl76z2yvzw2zas03xze674r2yc6wefw0pm9v5x4ma6zs45zncsuzyfftj8x2ecg69z5f7x2f3uyz6c38uaeftsrdqms6z7t",
     "addr_test1qrsaj9wppjzqq9aa8yyg4qjs0vn32zjr36ysw7zzy9y3xztl9fadz30naflhmq653up3tkz275gh5npdejwjj23l0rdquxfsdj"
   ]
   const addedName = 'added'
   const addedDesc = 'xxx'
-  const editedName = accountName + addedName
-  const editedDesc = accountDesc + addedDesc
+  const editedName = walletName + addedName
+  const editedDesc = walletDesc + addedDesc
 
-  it('Should show new account form', () => {
+  it('Should show new wallet form', () => {
     cy.visit('http://localhost:3000/')
 
-    cy.contains('New Account')
+    cy.contains('New Wallet')
       .click()
 
     cy.url()
-      .should('eq', 'http://localhost:3000/accounts/new')
+      .should('eq', 'http://localhost:3000/new')
   })
 
   it('Should fill title and description', () => {
     cy.get('input[placeholder="Write Name"]')
-      .type(accountName)
-      .should("have.value", accountName);
+      .type(walletName)
+      .should("have.value", walletName);
 
-    cy.get('textarea[placeholder="Describe the account"]')
-      .type(accountDesc)
-      .should("have.value", accountDesc)
+    cy.get('textarea[placeholder="Describe the wallet"]')
+      .type(walletDesc)
+      .should("have.value", walletDesc)
   })
 
   it('Should add signers', () => {
@@ -68,7 +68,7 @@ describe('Create a new account', () => {
     cy.contains('Cancel').click()
   })
 
-  it('Should limit required signers to amount of signers added to account', () => {
+  it('Should limit required signers to amount of signers added to wallet', () => {
     cy.contains('Policy')
       .parent().find('select')
       .select('At least')
@@ -93,7 +93,7 @@ describe('Create a new account', () => {
       .should('have.value', addresses.length.toString())
   })
 
-  it('Should save account', () => {
+  it('Should save wallet', () => {
     cy.contains('Policy')
       .parent().find('input')
       .type('{selectall}{backspace}')
@@ -111,12 +111,12 @@ describe('Create a new account', () => {
 
     cy.wait(1500)
 
-    cy.contains(accountName).click()
+    cy.contains(walletName).click()
 
-    cy.url().should('eq', 'http://localhost:3000/accounts/%7B%22type%22%3A%22NofK%22%2C%22policies%22%3A%5B%22addr_test1qrmtl76z2yvzw2zas03xze674r2yc6wefw0pm9v5x4ma6zs45zncsuzyfftj8x2ecg69z5f7x2f3uyz6c38uaeftsrdqms6z7t%22%2C%22addr_test1qrsaj9wppjzqq9aa8yyg4qjs0vn32zjr36ysw7zzy9y3xztl9fadz30naflhmq653up3tkz275gh5npdejwjj23l0rdquxfsdj%22%5D%2C%22number%22%3A2%7D')
+    cy.url().should('eq', 'http://localhost:3000/multisig/%7B%22type%22%3A%22NofK%22%2C%22policies%22%3A%5B%22addr_test1qrmtl76z2yvzw2zas03xze674r2yc6wefw0pm9v5x4ma6zs45zncsuzyfftj8x2ecg69z5f7x2f3uyz6c38uaeftsrdqms6z7t%22%2C%22addr_test1qrsaj9wppjzqq9aa8yyg4qjs0vn32zjr36ysw7zzy9y3xztl9fadz30naflhmq653up3tkz275gh5npdejwjj23l0rdquxfsdj%22%5D%2C%22number%22%3A2%7D')
   })
 
-  it('Should edit account info', () => {
+  it('Should edit wallet info', () => {
     cy.contains('Edit')
       .click()
 
@@ -124,7 +124,7 @@ describe('Create a new account', () => {
       .type(addedName)
       .should("have.value", editedName);
 
-    cy.get('textarea[placeholder="Describe the account"]')
+    cy.get('textarea[placeholder="Describe the wallet"]')
       .type(addedDesc)
       .should("have.value", editedDesc)
 
@@ -141,20 +141,20 @@ describe('Create a new account', () => {
       .click()
   })
 
-  it('Should delete account info', () => {
+  it('Should remove wallet info', () => {
     cy.visit('http://localhost:3000')
 
     cy.contains(editedName)
       .click()
 
-    cy.contains('Delete')
+    cy.contains('Remove')
       .click()
 
-    cy.get('input[placeholder="Type the account name to confirm"]')
+    cy.get('input[placeholder="Type the wallet name to confirm"]')
       .type(editedName)
       .should("have.value", editedName)
 
-    cy.contains('DELETE')
+    cy.contains('REMOVE')
       .click()
 
     cy.contains(editedName)
@@ -177,9 +177,9 @@ describe('Create a new account', () => {
 
     cy.wait(1500)
 
-    cy.contains(accountName + 'added')
+    cy.contains(walletName + 'added')
       .click()
 
-    cy.url().should('eq', 'http://localhost:3000/accounts/%7B%22type%22%3A%22NofK%22%2C%22policies%22%3A%5B%22addr_test1qrmtl76z2yvzw2zas03xze674r2yc6wefw0pm9v5x4ma6zs45zncsuzyfftj8x2ecg69z5f7x2f3uyz6c38uaeftsrdqms6z7t%22%2C%22addr_test1qrsaj9wppjzqq9aa8yyg4qjs0vn32zjr36ysw7zzy9y3xztl9fadz30naflhmq653up3tkz275gh5npdejwjj23l0rdquxfsdj%22%5D%2C%22number%22%3A2%7D')
+    cy.url().should('eq', 'http://localhost:3000/multisig/%7B%22type%22%3A%22NofK%22%2C%22policies%22%3A%5B%22addr_test1qrmtl76z2yvzw2zas03xze674r2yc6wefw0pm9v5x4ma6zs45zncsuzyfftj8x2ecg69z5f7x2f3uyz6c38uaeftsrdqms6z7t%22%2C%22addr_test1qrsaj9wppjzqq9aa8yyg4qjs0vn32zjr36ysw7zzy9y3xztl9fadz30naflhmq653up3tkz275gh5npdejwjj23l0rdquxfsdj%22%5D%2C%22number%22%3A2%7D')
   })
 })
