@@ -51,7 +51,7 @@ describe('GraphQL API', () => {
   test('useGetUTxOsToSpendQuery', async () => {
     const address = 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c'
     const rewardAddress = 'stake_test17qkr3wxaq34y8ceyv3ndjx8h20v6qcr6vyymjn54cqvmcmsjjtmn6'
-    const { result } = renderHook(() => useUTxOSummaryQuery({ variables: { address, rewardAddress } }), { wrapper })
+    const { result } = renderHook(() => useUTxOSummaryQuery({ variables: { addresses: [address], rewardAddress } }), { wrapper })
 
     expect(result.current.loading).toBe(true)
 

@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-11-27T23:52:43.021Z',
+        createdAt: '2022-12-03T03:59:21.155Z',
         host: 'https://graphql.preview.lidonation.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -19,17 +19,19 @@
         body: {
             operationName: 'UTxOSummary',
             variables: {
-                address: 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
+                addresses: [
+                    'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
+                ],
                 rewardAddress: 'stake_test17qkr3wxaq34y8ceyv3ndjx8h20v6qcr6vyymjn54cqvmcmsjjtmn6',
             },
-            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  activeStake_aggregate {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  blocks_aggregate {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery UTxOSummary($address: String!, $rewardAddress: StakeAddress!) {\n  utxos(where: {address: {_eq: $address}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        priceMem\n        priceStep\n        collateralPercent\n        maxCollateralInputs\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  rewards_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  withdrawals_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  stakeRegistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  stakeDeregistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    address\n    stakePool {\n      ...StakePoolFields\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  activeStake_aggregate {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  blocks_aggregate {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery UTxOSummary($addresses: [String]!, $rewardAddress: StakeAddress!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        priceMem\n        priceStep\n        collateralPercent\n        maxCollateralInputs\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  rewards_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  withdrawals_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  stakeRegistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  stakeDeregistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    address\n    stakePool {\n      ...StakePoolFields\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Sun, 27 Nov 2022 23:52:45 GMT',
+                'Sat, 03 Dec 2022 03:59:22 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
