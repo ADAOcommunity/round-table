@@ -1,4 +1,4 @@
-import type { Network } from "./config"
+import type { Network } from './config'
 
 const slotLength = (network: Network): number => {
   switch (network) {
@@ -39,8 +39,7 @@ const epochBeforeShelly = (network: Network): number => {
 const getEpochBySlot = (slot: number, network: Network) => Math.floor(slotSinceShelley(slot, network) / slotLength(network)) + epochBeforeShelly(network)
 const getSlotInEpochBySlot = (slot: number, network: Network) => slotSinceShelley(slot, network) % slotLength(network)
 
-const SALT = Buffer.from('')
-const deriveKeyFromPassword = async (password: string): Promise<CryptoKey> =>
+const deriveKeyFromPassword = async (password: string, salt: ArrayBuffer): Promise<CryptoKey> =>
   crypto.subtle.importKey(
     'raw',
     Buffer.from(password, 'utf-8'),
@@ -51,7 +50,7 @@ const deriveKeyFromPassword = async (password: string): Promise<CryptoKey> =>
     crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: SALT,
+        salt,
         iterations: 100000,
         hash: 'SHA-256',
       },
@@ -72,17 +71,25 @@ const getIvFromNumber = (num: number): ArrayBuffer => {
   return array
 }
 
-const encryptWithPassword = async (plaintext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => deriveKeyFromPassword(password)
-  .then((key) => {
-    return crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: getIvFromNumber(id) },
-      key,
-      plaintext,
-    )
-  })
+const encryptWithPassword = async (plaintext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => {
+  const iv = getIvFromNumber(id)
+  const salt = await SHA256Digest(iv)
+  return deriveKeyFromPassword(password, salt)
+    .then((key) => {
+      return crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        plaintext,
+      )
+    })
+}
 
-const decryptWithPassword = async (ciphertext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => deriveKeyFromPassword(password)
-  .then((key) => crypto.subtle.decrypt({ name: 'AES-GCM', iv: getIvFromNumber(id) }, key, ciphertext))
+const decryptWithPassword = async (ciphertext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => {
+  const iv = getIvFromNumber(id)
+  const salt = await SHA256Digest(iv)
+  return deriveKeyFromPassword(password, salt)
+    .then((key) => crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext))
+}
 
 const SHA256Digest = async (data: ArrayBuffer): Promise<ArrayBuffer> => crypto.subtle.digest('SHA-256', data)
 
