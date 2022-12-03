@@ -577,6 +577,13 @@ const SignWithPersonalWalletButton: FC<{
   const { notify } = useContext(NotificationContext)
 
   useEffect(() => {
+    if (!modal) {
+      setSigningWallet(undefined)
+      setPassword('')
+    }
+  }, [modal])
+
+  useEffect(() => {
     if (!signingWallet && wallets) setSigningWallet(wallets[0])
   }, [wallets, signingWallet])
 

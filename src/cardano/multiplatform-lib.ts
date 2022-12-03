@@ -388,56 +388,42 @@ class Cardano {
     return RewardAddress.new(networkId, credential)
   }
 
-  public sign(signingKey: PrivateKey, txBody: Uint8Array): Vkeywitness {
+  public sign(signingKey: PrivateKey, txHash: Uint8Array): Vkeywitness {
     const { Vkey, Vkeywitness } = this.lib
-    const signature = signingKey.sign(txBody)
+    const signature = signingKey.sign(txHash)
     const verifyingKey = Vkey.new(signingKey.to_public())
     return Vkeywitness.new(verifyingKey, signature)
   }
 
   public async signTransactionWithPersonalWallet(transaction: Transaction, wallet: PersonalWallet, password: string): Promise<TransactionWitnessSet> {
-    const { TransactionWitnessSet, Bip32PrivateKey, Vkeywitnesses } = this.lib
+    const { hash_transaction, TransactionWitnessSet, Bip32PrivateKey, Vkeywitnesses } = this.lib
     const rootKey = await decryptWithPassword(wallet.rootKey, password, wallet.id)
       .then((plaintext) => Bip32PrivateKey.from_bytes(new Uint8Array(plaintext)))
     const witnessSet = TransactionWitnessSet.new()
     const vkeywitnesses = Vkeywitnesses.new()
 
-    const txBody = transaction.body().to_bytes()
+    const txHash = hash_transaction(transaction.body()).to_bytes()
     const txWitnessSet = transaction.witness_set()
-    const txVkeys = txWitnessSet.vkeys()
+    const txNativeScripts = txWitnessSet.native_scripts()
 
-    txVkeys && Array.from(toIter(txVkeys), (vkeywitness) => {
-      const requiredKeyHash = vkeywitness.vkey().public_key().hash()
-      wallet.personalAccounts.forEach((account, accountIndex) => {
-        const accountKey = personalAccount(rootKey, accountIndex)
+    txNativeScripts && Array.from(toIter(txNativeScripts), (nativeScript) => {
+      Array.from(toIter(nativeScript.get_required_signers()), (requiredKeyHash) => {
+        const requiredKeyHashHex = toHex(requiredKeyHash)
 
-        account.payment.forEach((keyHash, index) => {
-          if (toHex(requiredKeyHash) !== toHex(keyHash)) return
-          const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
-          vkeywitnesses.add(this.sign(signingKey, txBody))
-        })
+        wallet.multisigAccounts.forEach((account, accountIndex) => {
+          const accountKey = multisigAccount(rootKey, accountIndex)
 
-        if (toHex(requiredKeyHash) !== toHex(account.staking)) return
+          account.forEach(({ payment, staking }, index) => {
+            if (requiredKeyHashHex === toHex(payment)) {
+              const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
+              vkeywitnesses.add(this.sign(signingKey, txHash))
+            }
 
-        const index = 0
-        const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
-        vkeywitnesses.add(this.sign(signingKey, txBody))
-        vkeywitnesses.add(vkeywitness)
-      })
-
-      wallet.multisigAccounts.forEach((account, accountIndex) => {
-        const accountKey = multisigAccount(rootKey, accountIndex)
-
-        account.forEach(({ payment, staking }, index) => {
-          if (toHex(requiredKeyHash) === toHex(payment)) {
-            const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
-            vkeywitnesses.add(this.sign(signingKey, txBody))
-          }
-
-          if (toHex(requiredKeyHash) === toHex(staking)) {
-            const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
-            vkeywitnesses.add(this.sign(signingKey, txBody))
-          }
+            if (requiredKeyHashHex === toHex(staking)) {
+              const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
+              vkeywitnesses.add(this.sign(signingKey, txHash))
+            }
+          })
         })
       })
     })
