@@ -13,6 +13,12 @@ import { db } from '../db'
 import type { MultisigWalletParams, Policy } from '../db'
 import { getMultisigWalletPath } from '../route'
 import { ExpiryBadge, SignatureBadge, StartBadge, Timelock } from './native-script'
+import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurrentDelegation, getPolicyId, useSummaryQuery } from '../cardano/query-api'
+import type { Value } from '../cardano/query-api'
+import { ADAAmount, AssetAmount } from './currency'
+import { StakePoolInfo } from './transaction'
+import type { Delegation } from '@cardano-graphql/client-ts/api'
+import { Loading } from './status'
 
 const NumberInput: FC<{
   step?: number
@@ -467,4 +473,73 @@ const RemoveWallet: FC<{
   )
 }
 
-export { EditMultisigWallet, SlotInput, RemoveWallet }
+const Summary: FC<{
+  addresses: string[]
+  rewardAddress: string
+}> = ({ addresses, rewardAddress }) => {
+  const { data } = useSummaryQuery({
+    variables: { addresses, rewardAddress },
+    fetchPolicy: 'cache-first',
+    pollInterval: 10000
+  })
+
+  const result: { balance: Value, reward: bigint, delegation?: Delegation } | undefined = useMemo(() => {
+    if (!data) return
+    const { paymentAddresses, rewards_aggregate, withdrawals_aggregate, stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations } = data
+    return {
+      balance: getBalanceByPaymentAddresses(paymentAddresses),
+      reward: getAvailableReward(rewards_aggregate, withdrawals_aggregate),
+      delegation: getCurrentDelegation(stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations)
+    }
+  }, [data])
+
+  if (!result) return (
+    <Modal>
+      <Loading />
+    </Modal>
+  )
+
+  const { balance, reward, delegation } = result
+
+  return (
+    <Panel className='p-4 space-y-2'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+        <div className='space-y-1'>
+          <h2 className='font-semibold'>Balance</h2>
+          <div>
+            <ADAAmount lovelace={balance.lovelace} />
+            <span> + </span>
+            (<ADAAmount lovelace={reward} /> reward)
+          </div>
+        </div>
+        <div className='space-y-1'>
+          <h2 className='font-semibold'>Delegation</h2>
+          {delegation && <StakePoolInfo stakePool={delegation.stakePool} />}
+          {!delegation && <div>N/A</div>}
+        </div>
+      </div>
+      {balance.assets.size > 0 && <div className='space-y-1'>
+        <h2 className='font-semibold'>Assets</h2>
+        <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
+          {Array.from(balance.assets).map(([id, quantity]) => {
+            const symbol = Buffer.from(getAssetName(id), 'hex').toString('ascii')
+            return (
+              <li key={id} className='p-2 border rounded'>
+                <AssetAmount
+                  quantity={quantity}
+                  decimals={0}
+                  symbol={symbol} />
+                <div className='space-x-1 text-sm truncate'>
+                  <span>{getPolicyId(id)}</span>
+                </div>
+              </li>
+            )
+          }
+          )}
+        </ul>
+      </div>}
+    </Panel>
+  )
+}
+
+export { EditMultisigWallet, SlotInput, RemoveWallet, Summary }

@@ -199,8 +199,8 @@ function getBalanceByPaymentAddresses(paymentAddresses: PaymentAddress[]): Value
 
 const SummaryQuery = gql`
 ${StakePoolFields}
-query Summary($address: String!, $rewardAddress: StakeAddress!) {
-  paymentAddresses(addresses: [$address]) {
+query Summary($addresses: [String]!, $rewardAddress: StakeAddress!) {
+  paymentAddresses(addresses: $addresses) {
     address
     summary {
       assetBalances {
@@ -250,7 +250,7 @@ query Summary($address: String!, $rewardAddress: StakeAddress!) {
 
 const useSummaryQuery: Query<
   { paymentAddresses: PaymentAddress[], rewards_aggregate: Reward_Aggregate, withdrawals_aggregate: Withdrawal_Aggregate, stakeRegistrations_aggregate: StakeRegistration_Aggregate, stakeDeregistrations_aggregate: StakeDeregistration_Aggregate, delegations: Delegation[] },
-  { address: string, rewardAddress: string }
+  { addresses: string[], rewardAddress: string }
 > = (options) => useQuery(SummaryQuery, options)
 
 function isRegisteredOnChain(stakeRegistrationsAggregate: StakeRegistration_Aggregate, stakeDeregistrationsAggregate: StakeDeregistration_Aggregate): boolean {
