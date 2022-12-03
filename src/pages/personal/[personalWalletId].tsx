@@ -10,7 +10,7 @@ import type { PersonalWallet, PersonalAccount, MultisigAccount } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { AddressWithPaths, Cardano } from '../../cardano/multiplatform-lib'
 import { ConfigContext } from '../../cardano/config'
-import { DocumentDuplicateIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
 import { RemoveWallet, Summary } from '../../components/wallet'
 import { isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
@@ -265,10 +265,16 @@ const ShowPersonalWallet: NextPage = () => {
           </nav>
         </div>
         {tab === 'personal' && <div className='flex' id='personal-subtab'></div>}
-        {tab === 'multisig' && <div>These addresses are only for multisig. DO NOT USE THEM TO RECEIVE FUNDS.</div>}
       </Hero>
       {tab === 'personal' && <Personal accounts={personalWallet.personalAccounts} className='space-y-2' />}
-      {tab === 'multisig' && <Multisig accounts={personalWallet.multisigAccounts} />}
+      {tab === 'multisig' && <>
+        <div className='p-4 text-yellow-700 bg-yellow-100 rounded shadow flex items-center space-x-1'>
+          <ExclamationTriangleIcon className='w-4' />
+          <div>These addresses are only for multisig.</div>
+          <strong className='font-semibold'>DO NOT USE THEM TO RECEIVE FUNDS.</strong>
+        </div>
+        <Multisig accounts={personalWallet.multisigAccounts} />
+      </>}
       {tab === 'edit' && <Edit wallet={personalWallet} />}
       {tab === 'remove' && <RemoveWallet walletName={personalWallet.name} remove={removeWallet} />}
     </Layout>
