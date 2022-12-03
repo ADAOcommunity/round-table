@@ -179,7 +179,7 @@ const WalletLink: FC<{
 
 const PersonalWalletListing: FC<{
   wallet: PersonalWallet
-  balances: Map<string, Value>
+  balances?: Map<string, Value>
 }> = ({ wallet, balances }) => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
@@ -192,7 +192,7 @@ const PersonalWalletListing: FC<{
       .flatMap((account, index) => cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).map((item) => item.address))
   }, [cardano, wallet.personalAccounts, config.isMainnet])
   const balance: Value | undefined = useMemo(() => {
-    if (!addresses) return
+    if (!addresses || !balances) return
     const values: Value[] = []
     addresses.forEach((address) => {
       const value = balances.get(address)
@@ -254,13 +254,16 @@ const WalletList: FC = () => {
     pollInterval: 10000,
     skip: addresses.length === 0
   })
-  const balances: Map<string, Value> = useMemo(() => {
+  const balances: Map<string, Value> | undefined = useMemo(() => {
+    if (!data) return
+
     const balanceMap = new Map<string, Value>()
-    data?.paymentAddresses.forEach((paymentAddress) => {
+    data.paymentAddresses.forEach((paymentAddress) => {
       const address = paymentAddress.address
       const balance = getBalanceByPaymentAddresses([paymentAddress])
       balanceMap.set(address, balance)
     })
+
     return balanceMap
   }, [data])
 
@@ -277,7 +280,7 @@ const WalletList: FC = () => {
       </nav>
       <nav className='block w-full'>
         {personalWallets?.map((wallet) => <PersonalWalletListing key={wallet.id} wallet={wallet} balances={balances} />)}
-        {multisigWallets?.map((wallet) => <MultisigWalletListing key={wallet.id} wallet={wallet} balance={balances.get(wallet.id)} />)}
+        {multisigWallets?.map((wallet) => <MultisigWalletListing key={wallet.id} wallet={wallet} balance={balances?.get(wallet.id)} />)}
       </nav>
     </aside>
   )
