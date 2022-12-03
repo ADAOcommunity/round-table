@@ -1,11 +1,12 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
-import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, TransactionWitnessSet, PrivateKey } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
-import type { MultisigAccount, PersonalAccount, Policy } from '../db'
+import type { MultisigAccount, PersonalAccount, PersonalWallet, Policy } from '../db'
 import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
+import { decryptWithPassword } from './utils'
 
 const Fraction = require('fractional').Fraction
 type Fraction = { numerator: number, denominator: number }
@@ -385,6 +386,64 @@ class Cardano {
     const keyHash = Ed25519KeyHash.from_bytes(bytes)
     const credential = StakeCredential.from_keyhash(keyHash)
     return RewardAddress.new(networkId, credential)
+  }
+
+  public sign(signingKey: PrivateKey, txBody: Uint8Array): Vkeywitness {
+    const { Vkey, Vkeywitness } = this.lib
+    const signature = signingKey.sign(txBody)
+    const verifyingKey = Vkey.new(signingKey.to_public())
+    return Vkeywitness.new(verifyingKey, signature)
+  }
+
+  public async signTransactionWithPersonalWallet(transaction: Transaction, wallet: PersonalWallet, password: string): Promise<TransactionWitnessSet> {
+    const { TransactionWitnessSet, Bip32PrivateKey, Vkeywitnesses } = this.lib
+    const rootKey = await decryptWithPassword(wallet.rootKey, password, wallet.id)
+      .then((plaintext) => Bip32PrivateKey.from_bytes(new Uint8Array(plaintext)))
+    const witnessSet = TransactionWitnessSet.new()
+    const vkeywitnesses = Vkeywitnesses.new()
+
+    const txBody = transaction.body().to_bytes()
+    const txWitnessSet = transaction.witness_set()
+    const txVkeys = txWitnessSet.vkeys()
+
+    txVkeys && Array.from(toIter(txVkeys), (vkeywitness) => {
+      const requiredKeyHash = vkeywitness.vkey().public_key().hash()
+      wallet.personalAccounts.forEach((account, accountIndex) => {
+        const accountKey = personalAccount(rootKey, accountIndex)
+
+        account.payment.forEach((keyHash, index) => {
+          if (toHex(requiredKeyHash) !== toHex(keyHash)) return
+          const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
+          vkeywitnesses.add(this.sign(signingKey, txBody))
+        })
+
+        if (toHex(requiredKeyHash) !== toHex(account.staking)) return
+
+        const index = 0
+        const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
+        vkeywitnesses.add(this.sign(signingKey, txBody))
+        vkeywitnesses.add(vkeywitness)
+      })
+
+      wallet.multisigAccounts.forEach((account, accountIndex) => {
+        const accountKey = multisigAccount(rootKey, accountIndex)
+
+        account.forEach(({ payment, staking }, index) => {
+          if (toHex(requiredKeyHash) === toHex(payment)) {
+            const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
+            vkeywitnesses.add(this.sign(signingKey, txBody))
+          }
+
+          if (toHex(requiredKeyHash) === toHex(staking)) {
+            const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
+            vkeywitnesses.add(this.sign(signingKey, txBody))
+          }
+        })
+      })
+    })
+
+    if (vkeywitnesses.len() > 0) witnessSet.set_vkeys(vkeywitnesses)
+    return witnessSet
   }
 }
 
