@@ -17,7 +17,7 @@ import { NewTransaction } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
-import type { NativeScript, SingleInputBuilder, Certificate } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const Spend: FC<{
   address: string
@@ -29,13 +29,12 @@ const Spend: FC<{
     if (typeof policy === 'string') return builder.payment_key()
     return builder.native_script(cardano.getPaymentNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
   }, [cardano, policy])
-  const buildCertResult = useCallback((certificate: Certificate) => {
-    const builder = cardano.lib.SingleCertificateBuilder.new(certificate)
+  const buildCertResult = useCallback((builder: SingleCertificateBuilder) => {
     if (typeof policy === 'string') return builder.payment_key()
     return builder.native_script(cardano.getStakingNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
   }, [cardano, policy])
   const { loading, error, data } = useUTxOSummaryQuery({
-    variables: { address, rewardAddress },
+    variables: { addresses: [address], rewardAddress },
     fetchPolicy: 'network-only'
   })
 

@@ -81,8 +81,8 @@ fragment StakePoolFields on StakePool {
 
 const UTxOSummaryQuery = gql`
 ${StakePoolFields}
-query UTxOSummary($address: String!, $rewardAddress: StakeAddress!) {
-  utxos(where: { address: { _eq: $address } }) {
+query UTxOSummary($addresses: [String]!, $rewardAddress: StakeAddress!) {
+  utxos(where: { address: { _in: $addresses } }) {
     address
     txHash
     index
@@ -150,7 +150,7 @@ query UTxOSummary($address: String!, $rewardAddress: StakeAddress!) {
 
 const useUTxOSummaryQuery: Query<
   { utxos: TransactionOutput[], cardano: Cardano, rewards_aggregate: Reward_Aggregate, withdrawals_aggregate: Withdrawal_Aggregate, stakeRegistrations_aggregate: StakeRegistration_Aggregate, stakeDeregistrations_aggregate: StakeDeregistration_Aggregate, delegations: Delegation[] },
-  { address: string, rewardAddress: string }
+  { addresses: string[], rewardAddress: string }
 > = (options) => useQuery(UTxOSummaryQuery, options)
 
 const PaymentAddressesQuery = gql`

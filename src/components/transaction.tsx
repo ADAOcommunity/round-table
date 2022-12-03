@@ -5,7 +5,7 @@ import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePool
 import type { Value } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -895,7 +895,7 @@ const NewTransaction: FC<{
   protocolParameters: ProtocolParams
   utxos: TransactionOutput[]
   buildInputResult: (builder: SingleInputBuilder) => InputBuilderResult
-  buildCertResult: (certificate: Certificate) => CertificateBuilderResult
+  buildCertResult: (builder: SingleCertificateBuilder) => CertificateBuilderResult
   defaultChangeAddress: string
   rewardAddress: string
   isRegistered: boolean
@@ -1024,7 +1024,7 @@ const NewTransaction: FC<{
   const txResult = useMemo(() => getResult(() => {
     if (inputs.length === 0) throw new Error('No UTxO is spent.')
 
-    const { BigNum, ChangeSelectionAlgo } = cardano.lib
+    const { BigNum, ChangeSelectionAlgo, SingleCertificateBuilder } = cardano.lib
     const txBuilder = cardano.createTxBuilder(protocolParameters)
 
     inputs.forEach((input) => {
@@ -1037,8 +1037,8 @@ const NewTransaction: FC<{
       txBuilder.add_output(result)
     })
 
-    if (stakeRegistration) txBuilder.add_cert(buildCertResult(stakeRegistration))
-    if (stakeDelegation) txBuilder.add_cert(buildCertResult(stakeDelegation))
+    if (stakeRegistration) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeRegistration)))
+    if (stakeDelegation) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeDelegation)))
 
     if (auxiliaryData) txBuilder.add_auxiliary_data(auxiliaryData)
 
