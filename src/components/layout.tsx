@@ -165,7 +165,7 @@ const WalletLink: FC<{
   return (
     <Link href={href}>
       <a className={['flex space-x-1 justify-between items-center p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
-        <div>
+        <div className='w-2/3'>
           <div className='truncate'>{name}</div>
           <div className='text-sm font-normal'>
             {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
