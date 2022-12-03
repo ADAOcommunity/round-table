@@ -23,6 +23,9 @@ import type { Output } from 'cardano-utxo-wasm'
 import { estimateSlotByDate } from '../cardano/utils'
 import { SlotInput } from './wallet'
 import { DateContext } from './time'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../db'
+import type { PersonalWallet } from '../db'
 
 const TransactionReviewButton: FC<{
   className?: string
@@ -560,6 +563,74 @@ const ManualSign: FC<{
   )
 }
 
+const SignWithPersonalWalletButton: FC<{
+  className?: string
+  children: ReactNode
+  transaction: Transaction
+  onSuccess: (signatures: string) => void
+}> = ({ className, children, transaction, onSuccess }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const wallets = useLiveQuery(async () => db.personalWallets.toArray())
+  const [signingWallet, setSigningWallet] = useState<PersonalWallet | undefined>()
+  const [modal, setModal] = useState(false)
+  const [password, setPassword] = useState('')
+  const { notify } = useContext(NotificationContext)
+
+  useEffect(() => {
+    if (!signingWallet && wallets) setSigningWallet(wallets[0])
+  }, [wallets, signingWallet])
+
+  if (!wallets || wallets.length === 0) return null
+  if (!cardano) return (
+    <Modal><Loading /></Modal>
+  )
+
+  const sign = async () => {
+    if (!signingWallet) return
+    cardano
+      .signTransactionWithPersonalWallet(transaction, signingWallet, password)
+      .then((witnessSet) => {
+        onSuccess(toHex(witnessSet))
+        notify('success', 'Signed successfully')
+      })
+      .catch((error) => {
+        notify('error', 'Failed to sign')
+        console.error(error)
+      })
+      .finally(() => setModal(false))
+  }
+
+  return (
+    <>
+      <button onClick={() => setModal(true)} className={className}>{children}</button>
+      {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={() => setModal(false)}>
+        <header>
+          <h2 className='text-center text-lg font-semibold'>Sign Transaction</h2>
+        </header>
+        <div className='flex justify-center'>
+          <nav className='rounded border-sky-700 border text-sm overflow-hidden'>
+            {wallets.map((wallet) => <button
+              key={wallet.id}
+              onClick={() => setSigningWallet(wallet)}
+              disabled={signingWallet && wallet.id === signingWallet.id}
+              className='px-2 py-1 disabled:bg-sky-700 disabled:text-white'>
+              {wallet.name}
+            </button>)}
+          </nav>
+        </div>
+        <input
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+          type='password' className='block w-full border rounded p-2 text-lg outline-none text-center'
+          placeholder='Password' />
+        <nav className='flex justify-center'>
+          <button onClick={sign} className={className} disabled={password.length === 0 || !signingWallet}>{children}</button>
+        </nav>
+      </Modal>}
+    </>
+  )
+}
+
 const TransactionViewer: FC<{
   content: Uint8Array
 }> = ({ content }) => {
@@ -679,6 +750,12 @@ const TransactionViewer: FC<{
         </footer>
       </Panel>}
       <ManualSign signHandle={signHandle}>
+        <SignWithPersonalWalletButton
+          transaction={transaction}
+          onSuccess={signHandle}
+          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+          Sign with personal wallet
+        </SignWithPersonalWalletButton>
         <SignTxButton
           transaction={transaction}
           partialSign={true}
