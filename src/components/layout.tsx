@@ -1,4 +1,4 @@
-import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
+import { useMemo, useContext, useEffect, useState } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
@@ -10,7 +10,7 @@ import { db } from '../db'
 import type { MultisigWallet, PersonalWallet, Policy } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
-import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
+import { getBalanceByPaymentAddresses, sumValues, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
@@ -175,11 +175,30 @@ const WalletLink: FC<{
 
 const PersonalWalletListing: FC<{
   wallet: PersonalWallet
-}> = ({ wallet }) => {
+  balances: Map<string, Value>
+}> = ({ wallet, balances }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const [config, _] = useContext(ConfigContext)
   const router = useRouter()
   const isOnPage: boolean = useMemo(() => router.query.personalWalletId === wallet.id.toString(), [router.query.personalWalletId, wallet.id])
+  const addresses: string[] | undefined = useMemo(() => {
+    if (!cardano) return
+    return wallet
+      .personalAccounts
+      .flatMap((account, index) => cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).map((item) => item.address))
+  }, [cardano, wallet.personalAccounts, config.isMainnet])
+  const balance: Value | undefined = useMemo(() => {
+    if (!addresses) return
+    const values: Value[] = []
+    addresses.forEach((address) => {
+      const value = balances.get(address)
+      if (value) values.push(value)
+    })
+    return sumValues(values)
+  }, [addresses, balances])
+
   return (
-    <WalletLink href={getPersonalWalletPath(wallet.id)} name={wallet.name} isOnPage={isOnPage} />
+    <WalletLink href={getPersonalWalletPath(wallet.id)} name={wallet.name} isOnPage={isOnPage} lovelace={balance?.lovelace} />
   )
 }
 
@@ -207,24 +226,35 @@ const MultisigWalletListing: FC<{
 }
 
 const WalletList: FC = () => {
-  const multisigWallet = useLiveQuery(async () => db.multisigWallets.toArray())
-  const personalWallet = useLiveQuery(async () => db.personalWallets.toArray())
-  const addresses = (multisigWallet ?? []).map((wallet) => wallet.id)
+  const [config, _] = useContext(ConfigContext)
+  const cardano = useCardanoMultiplatformLib()
+  const multisigWallets = useLiveQuery(async () => db.multisigWallets.toArray())
+  const personalWallets = useLiveQuery(async () => db.personalWallets.toArray())
+  const addresses: string[] = useMemo(() => {
+    const result = new Set<string>()
+    if (!cardano) return []
+    multisigWallets?.forEach(({ id }) => result.add(id))
+    personalWallets?.forEach(({ personalAccounts }) => {
+      personalAccounts.forEach((account, index) =>
+        cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).forEach(({ address }) => result.add(address)))
+    })
+    return Array.from(result)
+  }, [multisigWallets, personalWallets, config.isMainnet, cardano])
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
     pollInterval: 10000,
     skip: addresses.length === 0
   })
-  const balances = useMemo(() => {
+  const balances: Map<string, Value> = useMemo(() => {
     const balanceMap = new Map<string, Value>()
     data?.paymentAddresses.forEach((paymentAddress) => {
       const address = paymentAddress.address
       const balance = getBalanceByPaymentAddresses([paymentAddress])
       balanceMap.set(address, balance)
     })
-    return (addresses).map((address) => balanceMap.get(address))
-  }, [addresses, data])
+    return balanceMap
+  }, [data])
 
   return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
@@ -238,8 +268,8 @@ const WalletList: FC = () => {
         </NavLink>
       </nav>
       <nav className='block w-full'>
-        {personalWallet?.map((wallet) => <PersonalWalletListing key={wallet.id} wallet={wallet} />)}
-        {multisigWallet?.map((wallet, index) => <MultisigWalletListing key={wallet.id} wallet={wallet} balance={balances[index]} />)}
+        {personalWallets?.map((wallet) => <PersonalWalletListing key={wallet.id} wallet={wallet} balances={balances} />)}
+        {multisigWallets?.map((wallet) => <MultisigWalletListing key={wallet.id} wallet={wallet} balance={balances.get(wallet.id)} />)}
       </nav>
     </aside>
   )
