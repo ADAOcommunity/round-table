@@ -2,7 +2,7 @@ import { useMemo, useContext, useEffect, useState } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
 import { ConfigContext } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -160,14 +160,18 @@ const WalletLink: FC<{
   href: string
   lovelace?: bigint
   isOnPage: boolean
-}> = ({ name, href, lovelace, isOnPage }) => {
+  children?: ReactNode
+}> = ({ name, href, lovelace, isOnPage, children }) => {
   return (
     <Link href={href}>
-      <a className={['block p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
-        <div className='truncate'>{name}</div>
-        <div className='text-sm font-normal'>
-          {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
+      <a className={['flex space-x-1 justify-between items-center p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
+        <div>
+          <div className='truncate'>{name}</div>
+          <div className='text-sm font-normal'>
+            {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
+          </div>
         </div>
+        <div>{children}</div>
       </a>
     </Link>
   )
@@ -198,7 +202,9 @@ const PersonalWalletListing: FC<{
   }, [addresses, balances])
 
   return (
-    <WalletLink href={getPersonalWalletPath(wallet.id)} name={wallet.name} isOnPage={isOnPage} lovelace={balance?.lovelace} />
+    <WalletLink href={getPersonalWalletPath(wallet.id)} name={wallet.name} isOnPage={isOnPage} lovelace={balance?.lovelace}>
+      <WalletIcon className='w-8' />
+    </WalletLink>
   )
 }
 
@@ -221,7 +227,9 @@ const MultisigWalletListing: FC<{
   }, [cardano, config.isMainnet, router.query.policy, wallet.id])
 
   return (
-    <WalletLink href={getMultisigWalletPath(wallet.policy)} name={wallet.name} isOnPage={isOnPage} lovelace={lovelace} />
+    <WalletLink href={getMultisigWalletPath(wallet.policy)} name={wallet.name} isOnPage={isOnPage} lovelace={lovelace}>
+      <UserGroupIcon className='w-8' />
+    </WalletLink>
   )
 }
 
