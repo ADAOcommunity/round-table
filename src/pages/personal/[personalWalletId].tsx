@@ -3,10 +3,10 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
-import { CopyButton, Hero, Layout, Modal, Panel } from '../../components/layout'
+import { CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { PersonalWallet } from '../../db'
+import type { PersonalWallet, PersonalAccount, MultisigAccount } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { AddressWithPaths } from '../../cardano/multiplatform-lib'
 import { ConfigContext } from '../../cardano/config'
@@ -44,58 +44,18 @@ const AddressTable: FC<{
 }
 
 const Multisig: FC<{
-  wallet: PersonalWallet
-}> = ({ wallet }) => {
+  accounts: MultisigAccount[]
+}> = ({ accounts }) => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
-  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(wallet.multisigAccount, 0, config.isMainnet), [cardano, wallet.multisigAccount, config.isMainnet])
+  const index = 0
+  const account = useMemo(() => accounts[index], [accounts, index])
+  const addresses = useMemo(() => account && cardano?.getAddressesFromMultisigAccount(account, index, config.isMainnet), [cardano, account, index, config.isMainnet])
 
   return (
     <Panel>
       {addresses && <AddressTable addresses={addresses} addressName='Address for multisig' />}
     </Panel>
-  )
-}
-
-const Receive: FC<{
-  wallet: PersonalWallet
-}> = ({ wallet }) => {
-  const cardano = useCardanoMultiplatformLib()
-  const [config, _] = useContext(ConfigContext)
-  const accounts = useMemo(() => {
-    if (!cardano) return
-    return wallet.personalAccounts.map((account, index) => cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet))
-  }, [cardano, wallet.personalAccounts, config.isMainnet])
-  const addresses = accounts && accounts[0]
-
-  return (
-    <Panel>
-      {addresses && <AddressTable addresses={addresses} addressName='Receiving address' />}
-    </Panel>
-  )
-}
-
-const AccountsSummary: FC<{
-  wallet: PersonalWallet
-}> = ({ wallet }) => {
-  const cardano = useCardanoMultiplatformLib()
-  const [config, _] = useContext(ConfigContext)
-  const accounts = useMemo(() => {
-    if (!cardano) return
-    return wallet.personalAccounts.map((account, index) => {
-      return {
-        rewardAddress: cardano.readRewardAddress(account.staking, config.isMainnet).to_address().to_bech32(),
-        addresses: cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).map(({ address }) => address)
-      }
-    })
-  }, [cardano, wallet, config.isMainnet])
-
-  if (!accounts) return (
-    <Modal><Loading /></Modal>
-  )
-
-  return (
-    <>{accounts.map(({ addresses, rewardAddress }, index) => <Summary key={index} addresses={addresses} rewardAddress={rewardAddress} />)}</>
   )
 }
 
@@ -154,6 +114,46 @@ const Edit: FC<{
   )
 }
 
+const Personal: FC<{
+  accounts: PersonalAccount[]
+  className?: string
+}> = ({ accounts, className }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const [config, _] = useContext(ConfigContext)
+  const index = 0
+  const account = useMemo(() => accounts[index], [accounts, index])
+  const addresses = useMemo(() => account && cardano?.getAddressesFromPersonalAccount(account, index, config.isMainnet), [cardano, account, index, config.isMainnet])
+  const rewardAddress = useMemo(() => account && cardano?.readRewardAddress(account.staking, config.isMainnet).to_address().to_bech32(), [cardano, account, config.isMainnet])
+  const [tab, setTab] = useState<'summary' | 'receive' | 'spend'>('summary')
+
+  if (!addresses || !rewardAddress) return (
+    <Modal><Loading /></Modal>
+  )
+
+  return (
+    <div className={className}>
+      <Portal id='personal-subtab'>
+        <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
+          <button
+            onClick={() => setTab('summary')}
+            disabled={tab === 'summary'}
+            className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+            Summary
+          </button>
+          <button
+            onClick={() => setTab('receive')}
+            disabled={tab === 'receive'}
+            className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+            Receive
+          </button>
+        </nav>
+      </Portal>
+      {tab === 'summary' && <Summary addresses={addresses.map(({ address }) => address)} rewardAddress={rewardAddress} />}
+      {tab === 'receive' && <Panel><AddressTable addressName='Receiving Address' addresses={addresses} /></Panel>}
+    </div>
+  )
+}
+
 const ShowPersonalWallet: NextPage = () => {
   const router = useRouter()
   const personalWallet = useLiveQuery(async () => {
@@ -161,7 +161,7 @@ const ShowPersonalWallet: NextPage = () => {
     if (typeof id !== 'string') return
     return db.personalWallets.get(parseInt(id))
   }, [router.query.personalWalletId])
-  const [tab, setTab] = useState<'summary' | 'receive' | 'spend' | 'multisig' | 'edit' | 'remove'>('summary')
+  const [tab, setTab] = useState<'personal' | 'multisig' | 'edit' | 'remove'>('personal')
   const { notify } = useContext(NotificationContext)
 
   if (!personalWallet) return (
@@ -187,16 +187,10 @@ const ShowPersonalWallet: NextPage = () => {
         <div className='flex'>
           <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
             <button
-              onClick={() => setTab('summary')}
-              disabled={tab === 'summary'}
+              onClick={() => setTab('personal')}
+              disabled={tab === 'personal'}
               className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-              Summary
-            </button>
-            <button
-              onClick={() => setTab('receive')}
-              disabled={tab === 'receive'}
-              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-              Receive
+              Personal
             </button>
             <button
               onClick={() => setTab('multisig')}
@@ -218,11 +212,11 @@ const ShowPersonalWallet: NextPage = () => {
             </button>
           </nav>
         </div>
+        {tab === 'personal' && <div className='flex' id='personal-subtab'></div>}
         {tab === 'multisig' && <div>These addresses are only for multisig. DO NOT USE THEM TO RECEIVE FUNDS.</div>}
       </Hero>
-      {tab === 'summary' && <AccountsSummary wallet={personalWallet} />}
-      {tab === 'receive' && <Receive wallet={personalWallet} />}
-      {tab === 'multisig' && <Multisig wallet={personalWallet} />}
+      {tab === 'personal' && <Personal accounts={personalWallet.personalAccounts} className='space-y-2' />}
+      {tab === 'multisig' && <Multisig accounts={personalWallet.multisigAccounts} />}
       {tab === 'edit' && <Edit wallet={personalWallet} />}
       {tab === 'remove' && <RemoveWallet walletName={personalWallet.name} remove={removeWallet} />}
     </Layout>

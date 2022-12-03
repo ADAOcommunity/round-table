@@ -31,7 +31,7 @@ type PersonalWallet = BasicInfoParams & Timestamp & {
   hash: Uint8Array
   rootKey: Uint8Array
   personalAccounts: PersonalAccount[]
-  multisigAccount: MultisigAccount
+  multisigAccounts: MultisigAccount[]
 }
 
 class LocalDatabase extends Dexie {

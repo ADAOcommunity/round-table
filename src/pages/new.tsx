@@ -162,7 +162,7 @@ const NewPersonalWallet: FC = () => {
           id, name, description, hash,
           rootKey: new Uint8Array(ciphertext),
           personalAccounts: [personalAccount],
-          multisigAccount,
+          multisigAccounts: [multisigAccount],
           updatedAt: new Date()
         }
         db.personalWallets.add(wallet, id).then(() => {
