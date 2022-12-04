@@ -1,4 +1,4 @@
-import { decryptWithPassword, encryptWithPassword, estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot } from "./utils"
+import { formatDerivationPath, decryptWithPassword, encryptWithPassword, estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, harden, parseDerivationPath } from "./utils"
 
 test('estimateSlotByDate', () => {
   expect(estimateSlotByDate(new Date('2022-04-21T22:26:39.000Z'), 'mainnet')).toBe(59013708)
@@ -37,4 +37,15 @@ test('crypto', async () => {
   expect(getHex(ciphertext)).not.toEqual(getHex(await encryptWithPassword(plaintext, '1234', 0)))
   expect(getHex(ciphertext)).not.toEqual(getHex(await encryptWithPassword(plaintext, 'abcd', 1)))
   expect(getHex(plaintext)).toEqual(getHex(await decryptWithPassword(ciphertext, 'abcd', 0)))
+})
+
+test('parseDerivationPath', () => {
+  expect(parseDerivationPath("m/1854'/1815'/0'/0/0")).toEqual([harden(1854), harden(1815), harden(0), 0, 0])
+  expect(() => parseDerivationPath("1854'/1815'/0'/0/0")).toThrowError()
+  expect(() => parseDerivationPath("1854'/1815'/a'/0/0")).toThrowError()
+  expect(() => parseDerivationPath("1854'/1815''/0'/0/0")).toThrowError()
+})
+
+test('buildDerivationPath', () => {
+  expect(formatDerivationPath([harden(1854), harden(1815), harden(0), 0, 0])).toEqual("m/1854'/1815'/0'/0/0")
 })

@@ -93,4 +93,23 @@ const decryptWithPassword = async (ciphertext: ArrayBuffer, password: string, id
 
 const SHA256Digest = async (data: ArrayBuffer): Promise<ArrayBuffer> => crypto.subtle.digest('SHA-256', data)
 
-export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength, encryptWithPassword, decryptWithPassword, SHA256Digest }
+const harden = (num: number): number => 0x80000000 + num
+
+const parseDerivationPath = (path: string): number[] => path
+  .split('/')
+  .map((item, index) => {
+    if (index === 0 && item !== 'm') throw new Error('Not "m" founded')
+    return item
+  })
+  .slice(1)
+  .map((index) => {
+    if (index.endsWith("'")) return harden(parseInt(index.substring(0, index.length - 1)))
+    return parseInt(index)
+  })
+
+const formatDerivationPath = (indices: number[]): string => ['m'].concat(indices.map((index) => {
+  if (index >= harden(0)) return `${index - harden(0)}'`
+  return index.toString()
+})).join('/')
+
+export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength, encryptWithPassword, decryptWithPassword, SHA256Digest, harden, parseDerivationPath, formatDerivationPath }

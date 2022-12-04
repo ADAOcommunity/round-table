@@ -6,7 +6,7 @@ import type { MultisigAccount, PersonalAccount, PersonalWallet, Policy } from '.
 import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
-import { decryptWithPassword } from './utils'
+import { decryptWithPassword, harden } from './utils'
 
 const Fraction = require('fractional').Fraction
 type Fraction = { numerator: number, denominator: number }
@@ -438,10 +438,6 @@ class Cardano {
 
     return vkeywitnesses
   }
-}
-
-function harden(num: number): number {
-  return 0x80000000 + num
 }
 
 const COIN_TYPE = 1815
