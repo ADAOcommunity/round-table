@@ -577,6 +577,8 @@ const SignWithPersonalWalletButton: FC<{
   const [password, setPassword] = useState('')
   const { notify } = useContext(NotificationContext)
 
+  const closeModal = () => setModal(false)
+
   useEffect(() => {
     if (!modal) {
       setSigningWallet(undefined)
@@ -608,15 +610,15 @@ const SignWithPersonalWalletButton: FC<{
         notify('error', 'Failed to sign')
         console.error(error)
       })
-      .finally(() => setModal(false))
+      .finally(() => closeModal())
   }
 
   return (
     <>
       <button onClick={() => setModal(true)} className={className}>{children}</button>
-      {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={() => setModal(false)}>
+      {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
         <header>
-          <h2 className='text-center text-lg font-semibold'>Sign Transaction</h2>
+          <h2 className='text-lg text-center font-semibold'>Sign Transaction</h2>
         </header>
         <div className='flex justify-center'>
           <nav className='rounded border-sky-700 border text-sm overflow-hidden'>
@@ -632,9 +634,10 @@ const SignWithPersonalWalletButton: FC<{
         <input
           onChange={(e) => setPassword(e.target.value)}
           value={password}
-          type='password' className='block w-full border rounded p-2 text-lg outline-none text-center'
+          type='password' className='block w-full border rounded p-2 text-lg outline-none'
           placeholder='Password' />
-        <nav className='flex justify-center'>
+        <nav className='flex justify-end space-x-2'>
+          <button className='border rounded p-2 text-sky-700' onClick={closeModal}>Cancel</button>
           <button onClick={sign} className={className} disabled={password.length === 0 || !signingWallet}>{children}</button>
         </nav>
       </Modal>}
