@@ -1,5 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
-import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, TransactionWitnessSet, PrivateKey } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import type { MultisigAccount, PersonalAccount, PersonalWallet, Policy } from '../db'
@@ -395,41 +395,48 @@ class Cardano {
     return Vkeywitness.new(verifyingKey, signature)
   }
 
-  public async signTransactionWithPersonalWallet(transaction: Transaction, wallet: PersonalWallet, password: string): Promise<TransactionWitnessSet> {
-    const { hash_transaction, TransactionWitnessSet, Bip32PrivateKey, Vkeywitnesses } = this.lib
-    const rootKey = await decryptWithPassword(wallet.rootKey, password, wallet.id)
-      .then((plaintext) => Bip32PrivateKey.from_bytes(new Uint8Array(plaintext)))
-    const witnessSet = TransactionWitnessSet.new()
-    const vkeywitnesses = Vkeywitnesses.new()
+  public async getRootKey(wallet: PersonalWallet, password: string): Promise<Bip32PrivateKey> {
+    return decryptWithPassword(wallet.rootKey, password, wallet.id)
+      .then((plaintext) => this.lib.Bip32PrivateKey.from_bytes(new Uint8Array(plaintext)))
+  }
 
-    const txHash = hash_transaction(transaction.body()).to_bytes()
-    const txWitnessSet = transaction.witness_set()
-    const txNativeScripts = txWitnessSet.native_scripts()
+  public async signWithPersonalWallet(requiredKeyHashHexes: string[], txHash: Uint8Array, wallet: PersonalWallet, password: string): Promise<Vkeywitness[]> {
+    const rootKey = await this.getRootKey(wallet, password)
+    const vkeywitnesses: Vkeywitness[] = []
 
-    txNativeScripts && Array.from(toIter(txNativeScripts), (nativeScript) => {
-      Array.from(toIter(nativeScript.get_required_signers()), (requiredKeyHash) => {
-        const requiredKeyHashHex = toHex(requiredKeyHash)
+    requiredKeyHashHexes.forEach((requiredKeyHashHex) => {
+      wallet.personalAccounts.forEach((account, accountIndex) => {
+        const accountKey = personalAccount(rootKey, accountIndex)
 
-        wallet.multisigAccounts.forEach((account, accountIndex) => {
-          const accountKey = multisigAccount(rootKey, accountIndex)
+        account.payment.forEach((keyHash, index) => {
+          if (requiredKeyHashHex === toHex(keyHash)) {
+            const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
+            vkeywitnesses.push(this.sign(signingKey, txHash))
+          }
+        })
 
-          account.forEach(({ payment, staking }, index) => {
-            if (requiredKeyHashHex === toHex(payment)) {
-              const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
-              vkeywitnesses.add(this.sign(signingKey, txHash))
-            }
+        const signingKey = accountKey.derive(STAKING_ROLE).derive(0).to_raw_key()
+        vkeywitnesses.push(this.sign(signingKey, txHash))
+      })
 
-            if (requiredKeyHashHex === toHex(staking)) {
-              const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
-              vkeywitnesses.add(this.sign(signingKey, txHash))
-            }
-          })
+      wallet.multisigAccounts.forEach((account, accountIndex) => {
+        const accountKey = multisigAccount(rootKey, accountIndex)
+
+        account.forEach(({ payment, staking }, index) => {
+          if (requiredKeyHashHex === toHex(payment)) {
+            const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
+            vkeywitnesses.push(this.sign(signingKey, txHash))
+          }
+
+          if (requiredKeyHashHex === toHex(staking)) {
+            const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
+            vkeywitnesses.push(this.sign(signingKey, txHash))
+          }
         })
       })
     })
 
-    if (vkeywitnesses.len() > 0) witnessSet.set_vkeys(vkeywitnesses)
-    return witnessSet
+    return vkeywitnesses
   }
 }
 

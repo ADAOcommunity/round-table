@@ -566,9 +566,10 @@ const ManualSign: FC<{
 const SignWithPersonalWalletButton: FC<{
   className?: string
   children: ReactNode
-  transaction: Transaction
+  txHash: Uint8Array
+  requiredKeyHashHexes: string[]
   onSuccess: (signatures: string) => void
-}> = ({ className, children, transaction, onSuccess }) => {
+}> = ({ className, children, txHash, requiredKeyHashHexes, onSuccess }) => {
   const cardano = useCardanoMultiplatformLib()
   const wallets = useLiveQuery(async () => db.personalWallets.toArray())
   const [signingWallet, setSigningWallet] = useState<PersonalWallet | undefined>()
@@ -595,9 +596,12 @@ const SignWithPersonalWalletButton: FC<{
   const sign = async () => {
     if (!signingWallet) return
     cardano
-      .signTransactionWithPersonalWallet(transaction, signingWallet, password)
-      .then((witnessSet) => {
-        onSuccess(toHex(witnessSet))
+      .signWithPersonalWallet(requiredKeyHashHexes, txHash, signingWallet, password)
+      .then((vkeywitnesses) => {
+        const { TransactionWitnessSetBuilder, Vkeywitnesses } = cardano.lib
+        const builder = TransactionWitnessSetBuilder.new()
+        vkeywitnesses.forEach((vkeywitness) => builder.add_vkey(vkeywitness))
+        onSuccess(toHex(builder.build()))
         notify('success', 'Signed successfully')
       })
       .catch((error) => {
@@ -758,7 +762,8 @@ const TransactionViewer: FC<{
       </Panel>}
       <ManualSign signHandle={signHandle}>
         <SignWithPersonalWalletButton
-          transaction={transaction}
+          txHash={txHash.to_bytes()}
+          requiredKeyHashHexes={Array.from(signerRegistry)}
           onSuccess={signHandle}
           className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
           Sign with personal wallet
