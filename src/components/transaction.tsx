@@ -1,8 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { MouseEventHandler, FC, ReactNode, ChangeEventHandler } from 'react'
 import { AssetAmount, ADAAmount, LabeledCurrencyInput, getADASymbol, ADAInput } from './currency'
-import { decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useStakePoolsQuery } from '../cardano/query-api'
-import type { Value } from '../cardano/query-api'
+import { collectTransactionOutputs, decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useListTransactionsQuery, useStakePoolsQuery } from '../cardano/query-api'
+import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
 import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
@@ -40,10 +40,17 @@ const TransactionReviewButton: FC<{
 
 const TransactionInputListing: FC<{
   className?: string
+  registry?: RecipientRegistry
   input: TransactionInput
-}> = ({ className, input }) => {
+}> = ({ className, input, registry }) => {
   const hash = useMemo(() => input.transaction_id().to_hex(), [input])
-  const index = useMemo(() => input.index().to_str(), [input])
+  const index = useMemo(() => parseInt(input.index().to_str()), [input])
+  const recipient = useMemo(() => registry?.get(hash)?.get(index), [hash, index, registry])
+
+  if (recipient) return (
+    <RecipientViewer className={className} recipient={recipient} />
+  )
+
   return (
     <li className={className}>{hash}#{index}</li>
   )
@@ -54,9 +61,12 @@ const TransactionInputList: FC<{
   liClassName?: string
   inputs: TransactionInput[]
 }> = ({ ulClassName, liClassName, inputs }) => {
+  const hashes = useMemo(() => inputs.map((input) => input.transaction_id().to_hex()), [inputs])
+  const { data } = useListTransactionsQuery({ variables: { hashes } })
+  const registry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
   return (
     <ul className={ulClassName}>
-      {inputs.map((input, index) => <TransactionInputListing className={liClassName} key={index} input={input} />)}
+      {inputs.map((input, index) => <TransactionInputListing className={liClassName} key={index} input={input} registry={registry} />)}
     </ul>
   )
 }
@@ -118,6 +128,32 @@ const CertificateList: FC<{
   )
 }
 
+const RecipientViewer: FC<{
+  className?: string
+  recipient: Recipient
+}> = ({ className, recipient }) => {
+  const { address, value } = recipient
+
+  return (
+    <div className={className}>
+      <p className='flex space-x-1 break-all'>{address}</p>
+      <p>
+        <ADAAmount lovelace={value.lovelace} />
+      </p>
+      <ul>
+        {Array.from(value.assets).map(([id, quantity]) =>
+          <li key={id}>
+            <AssetAmount
+              quantity={quantity}
+              decimals={0}
+              symbol={decodeASCII(getAssetName(id))} />
+          </li>
+        )}
+      </ul>
+    </div>
+  )
+}
+
 const TransactionBodyViewer: FC<{
   txBody: TransactionBody
   cardano: Cardano
@@ -125,7 +161,7 @@ const TransactionBodyViewer: FC<{
   const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
   const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
   const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
-  const recipients: Recipient[] = useMemo(() => Array.from(toIter(txBody.outputs()), (output, index) => {
+  const txOutputs: Recipient[] = useMemo(() => Array.from(toIter(txBody.outputs()), (output, index) => {
     const address = toAddressString(output.address())
     const amount = output.amount()
     const assets = new Map()
@@ -190,23 +226,8 @@ const TransactionBodyViewer: FC<{
         <div className='space-y-1'>
           <div className='font-semibold'>Outputs</div>
           <ul className='space-y-1'>
-            {recipients.map(({ address, value }, index) =>
-              <li key={index} className='p-2 border rounded-md'>
-                <p className='flex space-x-1 break-all'>{address}</p>
-                <p>
-                  <ADAAmount lovelace={value.lovelace} />
-                </p>
-                <ul>
-                  {Array.from(value.assets).map(([id, quantity]) =>
-                    <li key={id}>
-                      <AssetAmount
-                        quantity={quantity}
-                        decimals={0}
-                        symbol={decodeASCII(getAssetName(id))} />
-                    </li>
-                  )}
-                </ul>
-              </li>
+            {txOutputs.map((txOutput, index) =>
+              <li key={index} className='p-2 border rounded-md'><RecipientViewer recipient={txOutput} /></li>
             )}
             <li className='p-2 border rounded-md space-x-1'>
               <span>Fee:</span>

@@ -2,6 +2,7 @@ import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
 import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation, StakePool, Transaction } from '@cardano-graphql/client-ts/api'
 import { Config } from './config'
+import type { Recipient } from './multiplatform-lib'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -38,6 +39,13 @@ const getValueFromTransactionOutput = (output: TransactionOutput): Value => {
   return {
     lovelace: BigInt(output.value),
     assets
+  }
+}
+
+const getRecipientFromTransactionOutput = (output: TransactionOutput): Recipient => {
+  return {
+    address: output.address,
+    value: getValueFromTransactionOutput(output)
   }
 }
 
@@ -335,8 +343,19 @@ query ListTransactions($hashes: [Hash32Hex]!) {
 
 const useListTransactionsQuery: Query<
   { transactions: Transaction[] },
-  { hashes: string }
+  { hashes: string[] }
 > = (options) => useQuery(ListTransactionsQuery, options)
 
-export type { Value }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useListTransactionsQuery }
+type RecipientRegistry = Map<string, Map<number, Recipient>>
+
+const collectTransactionOutputs = (transactions: Transaction[]): RecipientRegistry => transactions.reduce((collection: RecipientRegistry, transaction) => {
+  const { hash, outputs } = transaction
+  const subCollection: Map<number, Recipient> = collection.get(hash) ?? new Map()
+  outputs.forEach((output) => {
+    if (output) subCollection.set(output.index, getRecipientFromTransactionOutput(output))
+  })
+  return collection.set(hash, subCollection)
+}, new Map())
+
+export type { Value, RecipientRegistry }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useListTransactionsQuery, collectTransactionOutputs }
