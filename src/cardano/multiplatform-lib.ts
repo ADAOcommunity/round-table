@@ -1,6 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
 import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey, Bip32PublicKey, StakeCredential } from '@dcspark/cardano-multiplatform-lib-browser'
-import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
 import { db } from '../db'
 import type { PersonalAccount, PersonalWallet, MultisigAccount, Policy } from '../db'
@@ -14,14 +13,12 @@ type Fraction = { numerator: number, denominator: number }
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
 type Recipient = {
-  id: string
   address: string
   value: Value
 }
 
 const newRecipient = (): Recipient => {
   return {
-    id: nanoid(),
     address: '',
     value: {
       lovelace: BigInt(0),

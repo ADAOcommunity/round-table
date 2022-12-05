@@ -190,8 +190,8 @@ const TransactionBodyViewer: FC<{
         <div className='space-y-1'>
           <div className='font-semibold'>Outputs</div>
           <ul className='space-y-1'>
-            {recipients.map(({ id, address, value }) =>
-              <li key={id} className='p-2 border rounded-md'>
+            {recipients.map(({ address, value }, index) =>
+              <li key={index} className='p-2 border rounded-md'>
                 <p className='flex space-x-1 break-all'>{address}</p>
                 <p>
                   <ADAAmount lovelace={value.lovelace} />
@@ -600,7 +600,7 @@ const SignWithPersonalWalletButton: FC<{
     cardano
       .signWithPersonalWallet(requiredKeyHashHexes, txHash, signingWallet, password)
       .then((vkeywitnesses) => {
-        const { TransactionWitnessSetBuilder, Vkeywitnesses } = cardano.lib
+        const { TransactionWitnessSetBuilder } = cardano.lib
         const builder = TransactionWitnessSetBuilder.new()
         vkeywitnesses.forEach((vkeywitness) => builder.add_vkey(vkeywitness))
         onSuccess(toHex(builder.build()))
@@ -1140,23 +1140,23 @@ const NewTransaction: FC<{
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
   }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, startSlot, expirySlot])
 
-  const handleRecipientChange = (recipient: Recipient) => {
-    setRecipients(recipients.map((_recipient) => _recipient.id === recipient.id ? recipient : _recipient))
+  const changeRecipient = (index: number, recipient: Recipient) => {
+    setRecipients(recipients.map((_recipient, _index) => index === _index ? recipient : _recipient))
   }
 
-  const deleteRecipient = (recipient: Recipient) => {
-    setRecipients(recipients.filter(({ id }) => id !== recipient.id))
+  const deleteRecipient = (index: number) => {
+    setRecipients(recipients.filter((_, _index) => index !== _index))
   }
 
   return (
     <Panel>
       <ul>
         {recipients.map((recipient, index) =>
-          <li key={recipient.id}>
+          <li key={index}>
             <header className='flex justify-between px-4 py-2 bg-gray-100'>
               <h2 className='font-semibold'>Recipient #{index + 1}</h2>
               <nav className='flex items-center'>
-                <button onClick={() => deleteRecipient(recipient)}>
+                <button onClick={() => deleteRecipient(index)}>
                   <XMarkIcon className='w-4' />
                 </button>
               </nav>
@@ -1166,7 +1166,7 @@ const NewTransaction: FC<{
               recipient={recipient}
               budget={budget}
               getMinLovelace={getMinLovelace}
-              onChange={handleRecipientChange} />
+              onChange={(rec) => changeRecipient(index, rec)} />
           </li>
         )}
       </ul>
