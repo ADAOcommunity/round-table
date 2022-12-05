@@ -73,6 +73,24 @@ const Timelock: FC<{
   )
 }
 
+const SignatureViewer: FC<{
+  name: string
+  className?: string
+  signature?: string
+  signedClassName?: string
+}> = ({ name, signature, className, signedClassName }) => {
+  const color = signature ? signedClassName : ''
+
+  return (
+    <div className={[className, color].join(' ')}>
+      <SignatureBadge />
+      <span>{name}</span>
+      {signature && <ShieldCheckIcon className='w-4' />}
+      {signature && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={500} getContent={() => signature}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
+    </div>
+  )
+}
+
 const NativeScriptViewer: FC<{
   nativeScript: NativeScript
   cardano?: Cardano
@@ -88,14 +106,9 @@ const NativeScriptViewer: FC<{
   if (script) {
     const keyHashHex = script.addr_keyhash().to_hex()
     const signature = verifyingData?.get(keyHashHex)
-    const color = signature ? 'text-green-500' : ''
+    const signatureHex = signature && cardano?.buildSignatureSetHex([signature])
     return (
-      <div className={['flex space-x-1 items-center', color].join(' ')}>
-        <SignatureBadge />
-        <span>{keyHashHex}</span>
-        {signature && <ShieldCheckIcon className='w-4' />}
-        {signature && cardano && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={500} getContent={() => cardano.buildSignatureSetHex([signature])}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
-      </div>
+      <SignatureViewer name={keyHashHex} signature={signatureHex} className='flex space-x-1 items-center' signedClassName='text-green-500' />
     )
   }
 
@@ -188,4 +201,4 @@ const NativeScriptViewer: FC<{
 }
 
 export type { VerifyingData }
-export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer, Timelock }
+export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer, Timelock, SignatureViewer }
