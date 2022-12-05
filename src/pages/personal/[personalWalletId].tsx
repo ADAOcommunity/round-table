@@ -187,6 +187,11 @@ const Personal: FC<{
     <Modal><Loading /></Modal>
   )
 
+  const add = () => {
+    cardano.generatePersonalAddress(wallet, accountIndex)
+    db.personalWallets.put(wallet, wallet.id)
+  }
+
   return (
     <div className={className}>
       <Portal id='personal-subtab'>
@@ -212,7 +217,14 @@ const Personal: FC<{
         </nav>
       </Portal>
       {tab === 'summary' && <Summary addresses={addresses.map(({ address }) => address)} rewardAddress={rewardAddress} />}
-      {tab === 'receive' && <Panel><AddressTable addressName='Receiving Address' addresses={addresses} /></Panel>}
+      {tab === 'receive' && <Panel>
+        <AddressTable addressName='Receiving Address' addresses={addresses} />
+        <footer className='flex justify-end p-4 bg-gray-100'>
+          <button onClick={add} className='flex space-x-1 px-4 py-2 bg-sky-700 text-white rounded'>
+            Add Address
+          </button>
+        </footer>
+      </Panel>}
       {tab === 'spend' && <Spend addresses={addresses.map(({ address }) => address)} rewardAddress={rewardAddress} cardano={cardano} />}
     </div>
   )
