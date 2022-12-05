@@ -53,9 +53,23 @@ const Multisig: FC<{
   const accountIndex = 0
   const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(wallet, accountIndex, config.isMainnet), [cardano, wallet, accountIndex, config.isMainnet])
 
+  if (!cardano || !addresses) return (
+    <Modal><Loading /></Modal>
+  )
+
+  const add = () => {
+    cardano.generateMultisigAddress(wallet, accountIndex)
+    db.personalWallets.put(wallet, wallet.id)
+  }
+
   return (
     <Panel>
-      {addresses && <AddressTable addresses={addresses} addressName='Address for multisig' />}
+      <AddressTable addresses={addresses} addressName='Address for multisig' />
+      <footer className='flex justify-end p-4 bg-gray-100'>
+        <button onClick={add} className='flex space-x-1 px-4 py-2 bg-sky-700 text-white rounded'>
+          Add Address
+        </button>
+      </footer>
     </Panel>
   )
 }
