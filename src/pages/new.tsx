@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useCardanoMultiplatformLib, getResult, initPersonalAccount, initMultisigAccount } from '../cardano/multiplatform-lib'
+import { useCardanoMultiplatformLib, getResult } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import { Hero, Layout, Modal, Panel } from '../components/layout'
 import { Loading } from '../components/status'
@@ -139,6 +139,7 @@ const RecoverHDWallet: FC<{
 }
 
 const NewPersonalWallet: FC = () => {
+  const cardano = useCardanoMultiplatformLib()
   const { notify } = useContext(NotificationContext)
   const router = useRouter()
   const id = useLiveQuery(async () => db.personalWallets.count())
@@ -147,24 +148,30 @@ const NewPersonalWallet: FC = () => {
   const [rootKey, setRootKey] = useState<Bip32PrivateKey | undefined>()
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
-  const isValid = password === repeatPassword && password.length > 0 && name.length > 0 && rootKey !== undefined && id !== undefined
+  const isValid = password === repeatPassword && password.length > 0 && name.length > 0 && rootKey !== undefined && id !== undefined && cardano
   const add = async () => {
     if (!isValid) return
 
     const rootKeyBytes = rootKey.as_bytes()
     const hash = new Uint8Array(await SHA256Digest(rootKeyBytes))
-    const personalAccount = initPersonalAccount(rootKey, 0, 10)
-    const multisigAccount = initMultisigAccount(rootKey, 0, 10)
 
     encryptWithPassword(rootKeyBytes, password, id)
       .then((ciphertext) => {
-        const wallet: PersonalWallet = {
+        return {
           id, name, description, hash,
           rootKey: new Uint8Array(ciphertext),
-          personalAccounts: [personalAccount],
-          multisigAccounts: [multisigAccount],
+          keyHashMap: new Map(),
+          personalAccounts: [],
+          multisigAccounts: [],
           updatedAt: new Date()
         }
+      })
+      .then(async (wallet: PersonalWallet) => {
+        await cardano.generatePersonalAccount(wallet, password)
+        await cardano.generateMultisigAccount(wallet, password)
+        return wallet
+      })
+      .then((wallet: PersonalWallet) => {
         db.personalWallets.add(wallet, id).then(() => {
           router.push(getPersonalWalletPath(id))
         })

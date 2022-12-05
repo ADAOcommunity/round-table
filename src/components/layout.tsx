@@ -189,7 +189,7 @@ const PersonalWalletListing: FC<{
     if (!cardano) return
     return wallet
       .personalAccounts
-      .flatMap((account, index) => cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).map((item) => item.address))
+      .flatMap((account) => cardano.getAddressesFromPersonalAccount(account, config.isMainnet))
   }, [cardano, wallet.personalAccounts, config.isMainnet])
   const balance: Value | undefined = useMemo(() => {
     if (!addresses || !balances) return
@@ -243,8 +243,8 @@ const WalletList: FC = () => {
     if (!cardano) return []
     multisigWallets?.forEach(({ id }) => result.add(id))
     personalWallets?.forEach(({ personalAccounts }) => {
-      personalAccounts.forEach((account, index) =>
-        cardano.getAddressesFromPersonalAccount(account, index, config.isMainnet).forEach(({ address }) => result.add(address)))
+      personalAccounts.forEach((account) =>
+        cardano.getAddressesFromPersonalAccount(account, config.isMainnet).forEach((address) => result.add(address)))
     })
     return Array.from(result)
   }, [multisigWallets, personalWallets, config.isMainnet, cardano])

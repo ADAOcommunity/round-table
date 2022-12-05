@@ -1,12 +1,12 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
-import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey, Bip32PublicKey, StakeCredential } from '@dcspark/cardano-multiplatform-lib-browser'
 import { nanoid } from 'nanoid'
 import { useEffect, useState } from 'react'
-import type { MultisigAccount, PersonalAccount, PersonalWallet, Policy } from '../db'
+import type { PersonalAccount, PersonalWallet, Policy } from '../db'
 import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
-import { decryptWithPassword, harden } from './utils'
+import { decryptWithPassword, formatDerivationPath, harden } from './utils'
 
 const Fraction = require('fractional').Fraction
 type Fraction = { numerator: number, denominator: number }
@@ -96,7 +96,7 @@ function verifySignature(txHash: TransactionHash, vkeywitness: Vkeywitness): boo
   return publicKey.verify(txHash.to_bytes(), signature)
 }
 
-type AddressWithPaths = { address: string, paymentPath: string, stakingPath: string }
+type AddressWithPaths = { address: string, paymentPath?: string, stakingPath?: string }
 
 class Cardano {
   private _wasm: CardanoWASM
@@ -346,45 +346,11 @@ class Cardano {
     return networkInfo.network_id()
   }
 
-  public getAddressesFromMultisigAccount(account: MultisigAccount, accountIndex: number, isMainnet: boolean): AddressWithPaths[] {
-    const { BaseAddress, Ed25519KeyHash, StakeCredential } = this.lib
+  public readRewardAddressFromPublicKey(bytes: Uint8Array, isMainnet: boolean): RewardAddress {
+    const { RewardAddress, Bip32PublicKey, StakeCredential } = this.lib
     const networkId = this.getNetworkId(isMainnet)
-    return account.map(({ payment, staking }, index) => {
-      const paymentCredential = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(payment))
-      const stakingCredential = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(staking))
-      const address = BaseAddress.new(networkId, paymentCredential, stakingCredential).to_address().to_bech32()
-      if (!address) throw new Error('Failed to construct multisig address')
-      return {
-        address,
-        paymentPath: derivationPath(MULTISIG_PURPOSE, accountIndex, PAYMENT_ROLE, index),
-        stakingPath: derivationPath(MULTISIG_PURPOSE, accountIndex, STAKING_ROLE, index)
-      }
-    })
-  }
-
-  public getAddressesFromPersonalAccount(account: PersonalAccount, accountIndex: number, isMainnet: boolean): AddressWithPaths[] {
-    const { BaseAddress, Ed25519KeyHash, StakeCredential } = this.lib
-    const networkId = this.getNetworkId(isMainnet)
-    const staking = account.staking
-    const stakingPath = derivationPath(PERSONAL_PURPOSE, accountIndex, STAKING_ROLE, 0)
-    return account.payment.map((payment, index) => {
-      const paymentCredential = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(payment))
-      const stakingCredential = StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(staking))
-      const address = BaseAddress.new(networkId, paymentCredential, stakingCredential).to_address().to_bech32()
-      if (!address) throw new Error('Failed to construct personal address')
-      return {
-        address,
-        paymentPath: derivationPath(PERSONAL_PURPOSE, accountIndex, PAYMENT_ROLE, index),
-        stakingPath
-      }
-    })
-  }
-
-  public readRewardAddress(bytes: Uint8Array, isMainnet: boolean): RewardAddress {
-    const { Ed25519KeyHash, RewardAddress, StakeCredential } = this.lib
-    const networkId = this.getNetworkId(isMainnet)
-    const keyHash = Ed25519KeyHash.from_bytes(bytes)
-    const credential = StakeCredential.from_keyhash(keyHash)
+    const publicKey = Bip32PublicKey.from_bytes(bytes)
+    const credential = StakeCredential.from_keyhash(personalStakingKeyHash(publicKey))
     return RewardAddress.new(networkId, credential)
   }
 
@@ -402,43 +368,131 @@ class Cardano {
 
   public async signWithPersonalWallet(requiredKeyHashHexes: string[], txHash: Uint8Array, wallet: PersonalWallet, password: string): Promise<Vkeywitness[]> {
     const rootKey = await this.getRootKey(wallet, password)
-    const vkeywitnesses: Vkeywitness[] = []
+    const collection: Vkeywitness[] = []
 
-    requiredKeyHashHexes.forEach((requiredKeyHashHex) => {
-      wallet.personalAccounts.forEach((account, accountIndex) => {
-        const accountKey = personalAccount(rootKey, accountIndex)
-
-        account.payment.forEach((keyHash, index) => {
-          if (requiredKeyHashHex === toHex(keyHash)) {
-            const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
-            vkeywitnesses.push(this.sign(signingKey, txHash))
-          }
-        })
-
-        const signingKey = accountKey.derive(STAKING_ROLE).derive(0).to_raw_key()
-        vkeywitnesses.push(this.sign(signingKey, txHash))
-      })
-
-      wallet.multisigAccounts.forEach((account, accountIndex) => {
-        const accountKey = multisigAccount(rootKey, accountIndex)
-
-        account.forEach(({ payment, staking }, index) => {
-          if (requiredKeyHashHex === toHex(payment)) {
-            const signingKey = accountKey.derive(PAYMENT_ROLE).derive(index).to_raw_key()
-            vkeywitnesses.push(this.sign(signingKey, txHash))
-          }
-
-          if (requiredKeyHashHex === toHex(staking)) {
-            const signingKey = accountKey.derive(STAKING_ROLE).derive(index).to_raw_key()
-            vkeywitnesses.push(this.sign(signingKey, txHash))
-          }
-        })
-      })
+    requiredKeyHashHexes.forEach((keyHashHex) => {
+      const signingKey = wallet
+        .keyHashMap
+        .get(keyHashHex)?.reduce((key, index) => key.derive(index), rootKey)?.to_raw_key()
+      if (!signingKey) return
+      collection.push(this.sign(signingKey, txHash))
     })
 
-    return vkeywitnesses
+    return collection
+  }
+
+  public async generatePersonalAccount(wallet: PersonalWallet, password: string) {
+    const rootKey = await this.getRootKey(wallet, password)
+    const accountIndex = wallet.personalAccounts.length
+    wallet.personalAccounts.push({ publicKey: personalPublicKey(rootKey, accountIndex).as_bytes(), paymentKeyHashes: [] })
+    Array.from({ length: 10 }, () => {
+      this.generatePersonalAddress(wallet, accountIndex)
+    })
+  }
+
+  public async generateMultisigAccount(wallet: PersonalWallet, password: string) {
+    const rootKey = await this.getRootKey(wallet, password)
+    const accountIndex = wallet.multisigAccounts.length
+    wallet.multisigAccounts.push({ publicKey: multisigPublicKey(rootKey, accountIndex).as_bytes(), addresses: [] })
+    Array.from({ length: 10 }, () => {
+      this.generateMultisigAddress(wallet, accountIndex)
+    })
+  }
+
+  public generatePersonalAddress(wallet: PersonalWallet, accountIndex: number) {
+    const account = wallet.personalAccounts[accountIndex]
+    if (!account) throw new Error('No account found with this index')
+    const { Bip32PublicKey } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const index = account.paymentKeyHashes.length
+    const paymentKeyHash = publicKey.derive(PAYMENT_ROLE).derive(index).to_raw_key().hash()
+    const paymentPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), PAYMENT_ROLE, index]
+    const stakingKeyHash = personalStakingKeyHash(publicKey)
+    const stakingPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, 0]
+    wallet.personalAccounts[accountIndex].paymentKeyHashes.push(paymentKeyHash.to_bytes())
+    wallet.keyHashMap.set(paymentKeyHash.to_hex(), paymentPath)
+    wallet.keyHashMap.set(stakingKeyHash.to_hex(), stakingPath)
+  }
+
+  public generateMultisigAddress(wallet: PersonalWallet, accountIndex: number) {
+    const account = wallet.multisigAccounts[accountIndex]
+    if (!account) throw new Error('No account found with this index')
+    const { Bip32PublicKey } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const index = account.addresses.length
+    const paymentKeyHash = publicKey.derive(PAYMENT_ROLE).derive(index).to_raw_key().hash()
+    const paymentPath = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE), harden(accountIndex), PAYMENT_ROLE, index]
+    const stakingKeyHash = publicKey.derive(STAKING_ROLE).derive(index).to_raw_key().hash()
+    const stakingPath = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, index]
+    wallet.multisigAccounts[accountIndex].addresses.push({
+      paymentKeyHash: paymentKeyHash.to_bytes(),
+      stakingKeyHash: stakingKeyHash.to_bytes()
+    })
+    wallet.keyHashMap.set(paymentKeyHash.to_hex(), paymentPath)
+    wallet.keyHashMap.set(stakingKeyHash.to_hex(), stakingPath)
+  }
+
+  public readStakeCredentialFromKeyHash(bytes: Uint8Array): StakeCredential {
+    const { Ed25519KeyHash, StakeCredential } = this.lib
+    return StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(bytes))
+  }
+
+  public getAddressesFromPersonalAccount(account: PersonalAccount, isMainnet: boolean): string[] {
+    const { BaseAddress, Bip32PublicKey, StakeCredential } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const stakingKeyHash = personalStakingKeyHash(publicKey)
+    const staking = StakeCredential.from_keyhash(stakingKeyHash)
+    return account.paymentKeyHashes.map((paymentKeyHash) => {
+      const payment = this.readStakeCredentialFromKeyHash(paymentKeyHash)
+      const address = BaseAddress.new(this.getNetworkId(isMainnet), payment, staking).to_address().to_bech32()
+      return address
+    })
+  }
+
+  public getAddressesWithPathsFromPersonalAccount(wallet: PersonalWallet, accountIndex: number, isMainnet: boolean): AddressWithPaths[] {
+    const account = wallet.personalAccounts[accountIndex]
+    if (!account) throw new Error('No account found with this index')
+    const { BaseAddress, Bip32PublicKey, StakeCredential } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const stakingKeyHash = personalStakingKeyHash(publicKey)
+    const staking = StakeCredential.from_keyhash(stakingKeyHash)
+    const keyHashMap = wallet.keyHashMap
+    return account.paymentKeyHashes.map((paymentKeyHash) => {
+      const payment = this.readStakeCredentialFromKeyHash(paymentKeyHash)
+      const address = BaseAddress.new(this.getNetworkId(isMainnet), payment, staking).to_address().to_bech32()
+      const paymentPath = keyHashMap.get(toHex(paymentKeyHash))
+      const stakingPath = keyHashMap.get(stakingKeyHash.to_hex())
+
+      return {
+        address,
+        stakingPath: stakingPath && formatDerivationPath(stakingPath),
+        paymentPath: paymentPath && formatDerivationPath(paymentPath)
+      }
+    })
+  }
+
+  public getAddressesFromMultisigAccount(wallet: PersonalWallet, accountIndex: number, isMainnet: boolean): AddressWithPaths[] {
+    const account = wallet.multisigAccounts[accountIndex]
+    if (!account) throw new Error('No account found with this index')
+    const { BaseAddress } = this.lib
+    const keyHashMap = wallet.keyHashMap
+    return account.addresses.map(({ paymentKeyHash, stakingKeyHash }) => {
+      const payment = this.readStakeCredentialFromKeyHash(paymentKeyHash)
+      const staking = this.readStakeCredentialFromKeyHash(stakingKeyHash)
+      const address = BaseAddress.new(this.getNetworkId(isMainnet), payment, staking).to_address().to_bech32()
+      const paymentPath = keyHashMap.get(toHex(paymentKeyHash))
+      const stakingPath = keyHashMap.get(toHex(stakingKeyHash))
+
+      return {
+        address,
+        stakingPath: stakingPath && formatDerivationPath(stakingPath),
+        paymentPath: paymentPath && formatDerivationPath(paymentPath)
+      }
+    })
   }
 }
+
+const personalStakingKeyHash = (publicKey: Bip32PublicKey): Ed25519KeyHash => publicKey.derive(STAKING_ROLE).derive(0).to_raw_key().hash()
 
 const COIN_TYPE = 1815
 const PAYMENT_ROLE = 0
@@ -446,46 +500,20 @@ const STAKING_ROLE = 2
 const PERSONAL_PURPOSE = 1852
 const MULTISIG_PURPOSE = 1854
 
-function derivationPath(purpose: number, account: number, role: number, index: number): string {
-  return ['m', purpose + "'", COIN_TYPE + "'", account + "'", role, index].join('/')
-}
-
-function personalAccount(rootKey: Bip32PrivateKey, index: number): Bip32PrivateKey {
+function personalPublicKey(rootKey: Bip32PrivateKey, index: number): Bip32PublicKey {
   return rootKey
     .derive(harden(PERSONAL_PURPOSE))
     .derive(harden(COIN_TYPE))
     .derive(harden(index))
+    .to_public()
 }
 
-function multisigAccount(rootKey: Bip32PrivateKey, index: number): Bip32PrivateKey {
+function multisigPublicKey(rootKey: Bip32PrivateKey, index: number): Bip32PublicKey {
   return rootKey
     .derive(harden(MULTISIG_PURPOSE))
     .derive(harden(COIN_TYPE))
     .derive(harden(index))
-}
-
-function initPersonalAccount(rootKey: Bip32PrivateKey, index: number, length: number): PersonalAccount {
-  const accountKey = personalAccount(rootKey, index)
-  const paymentKeys = Array.from({ length }, (_, i) => accountKey
-    .derive(PAYMENT_ROLE)
-    .derive(i))
-  const stakingKey = accountKey
-    .derive(STAKING_ROLE)
-    .derive(0)
-  return {
-    payment: paymentKeys.map((paymentKey) => paymentKey.to_raw_key().to_public().hash().to_bytes()),
-    staking: stakingKey.to_raw_key().to_public().hash().to_bytes()
-  }
-}
-
-function initMultisigAccount(rootKey: Bip32PrivateKey, index: number, length: number): MultisigAccount {
-  const accountKey = multisigAccount(rootKey, index)
-  return Array.from({ length }, (_, i) => {
-    return {
-      payment: accountKey.derive(PAYMENT_ROLE).derive(i).to_raw_key().to_public().hash().to_bytes(),
-      staking: accountKey.derive(STAKING_ROLE).derive(i).to_raw_key().to_public().hash().to_bytes()
-    }
-  })
+    .to_public()
 }
 
 class Factory {
@@ -523,4 +551,4 @@ const useCardanoMultiplatformLib = () => {
 }
 
 export type { AddressWithPaths, Cardano, CardanoIterable, Result, Recipient }
-export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect, toAddressString, initMultisigAccount, initPersonalAccount, derivationPath }
+export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect, toAddressString }

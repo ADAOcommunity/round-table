@@ -23,13 +23,24 @@ interface Timestamp {
 
 type MultisigWallet = { id: string } & MultisigWalletParams & Timestamp
 
-type PersonalAccount = { payment: Uint8Array[], staking: Uint8Array }
-type MultisigAccount = { payment: Uint8Array, staking: Uint8Array }[]
+type PersonalAccount = {
+  publicKey: Uint8Array
+  paymentKeyHashes: Uint8Array[]
+}
+
+type MultisigAccount = {
+  publicKey: Uint8Array
+  addresses: {
+    paymentKeyHash: Uint8Array
+    stakingKeyHash: Uint8Array
+  }[]
+}
 
 type PersonalWallet = BasicInfoParams & Timestamp & {
   id: number
   hash: Uint8Array
   rootKey: Uint8Array
+  keyHashMap: Map<string, number[]>
   personalAccounts: PersonalAccount[]
   multisigAccounts: MultisigAccount[]
 }
@@ -50,5 +61,5 @@ class LocalDatabase extends Dexie {
 
 const db = new LocalDatabase()
 
-export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, PersonalAccount, MultisigAccount }
+export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount }
 export { db }

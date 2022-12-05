@@ -6,7 +6,7 @@ import type { FC } from 'react'
 import { CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { PersonalWallet, PersonalAccount, MultisigAccount } from '../../db'
+import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { AddressWithPaths, Cardano } from '../../cardano/multiplatform-lib'
 import { ConfigContext } from '../../cardano/config'
@@ -46,13 +46,12 @@ const AddressTable: FC<{
 }
 
 const Multisig: FC<{
-  accounts: MultisigAccount[]
-}> = ({ accounts }) => {
+  wallet: PersonalWallet
+}> = ({ wallet }) => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
-  const index = 0
-  const account = useMemo(() => accounts[index], [accounts, index])
-  const addresses = useMemo(() => account && cardano?.getAddressesFromMultisigAccount(account, index, config.isMainnet), [cardano, account, index, config.isMainnet])
+  const accountIndex = 0
+  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(wallet, accountIndex, config.isMainnet), [cardano, wallet, accountIndex, config.isMainnet])
 
   return (
     <Panel>
@@ -160,15 +159,14 @@ const Spend: FC<{
 }
 
 const Personal: FC<{
-  accounts: PersonalAccount[]
+  wallet: PersonalWallet
   className?: string
-}> = ({ accounts, className }) => {
+}> = ({ wallet, className }) => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
-  const index = 0
-  const account = useMemo(() => accounts[index], [accounts, index])
-  const addresses = useMemo(() => account && cardano?.getAddressesFromPersonalAccount(account, index, config.isMainnet), [cardano, account, index, config.isMainnet])
-  const rewardAddress = useMemo(() => account && cardano?.readRewardAddress(account.staking, config.isMainnet).to_address().to_bech32(), [cardano, account, config.isMainnet])
+  const accountIndex = 0
+  const addresses = useMemo(() => cardano?.getAddressesWithPathsFromPersonalAccount(wallet, accountIndex, config.isMainnet), [cardano, wallet, accountIndex, config.isMainnet])
+  const rewardAddress = useMemo(() => cardano?.readRewardAddressFromPublicKey(wallet.personalAccounts[accountIndex].publicKey, config.isMainnet).to_address().to_bech32(), [cardano, config.isMainnet, wallet.personalAccounts])
   const [tab, setTab] = useState<'summary' | 'receive' | 'spend'>('summary')
 
   if (!addresses || !rewardAddress || !cardano) return (
@@ -266,14 +264,14 @@ const ShowPersonalWallet: NextPage = () => {
         </div>
         {tab === 'personal' && <div className='flex' id='personal-subtab'></div>}
       </Hero>
-      {tab === 'personal' && <Personal accounts={personalWallet.personalAccounts} className='space-y-2' />}
+      {tab === 'personal' && <Personal wallet={personalWallet} className='space-y-2' />}
       {tab === 'multisig' && <>
         <div className='p-4 text-yellow-700 bg-yellow-100 rounded shadow flex items-center space-x-1'>
           <ExclamationTriangleIcon className='w-4' />
           <div>These addresses are only for multisig.</div>
           <strong className='font-semibold'>DO NOT USE THEM TO RECEIVE FUNDS.</strong>
         </div>
-        <Multisig accounts={personalWallet.multisigAccounts} />
+        <Multisig wallet={personalWallet} />
       </>}
       {tab === 'edit' && <Edit wallet={personalWallet} />}
       {tab === 'remove' && <RemoveWallet walletName={personalWallet.name} remove={removeWallet} />}
