@@ -40,21 +40,28 @@ type PersonalWallet = BasicInfoParams & Timestamp & {
   id: number
   hash: Uint8Array
   rootKey: Uint8Array
-  keyHashMap: Map<string, number[]>
   personalAccounts: PersonalAccount[]
   multisigAccounts: MultisigAccount[]
+}
+
+type KeyHashIndex = {
+  hash: Uint8Array
+  derivationPath: number[]
+  walletId: number
 }
 
 class LocalDatabase extends Dexie {
   multisigWallets!: Table<MultisigWallet>
   personalWallets!: Table<PersonalWallet>
+  keyHashIndices!: Table<KeyHashIndex>
 
   constructor() {
     super('round-table')
 
     this.version(1).stores({
       multisigWallets: '&id',
-      personalWallets: '&id, &hash'
+      personalWallets: '&id, &hash',
+      keyHashIndices: '&hash, walletId'
     })
   }
 }

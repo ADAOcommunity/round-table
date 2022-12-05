@@ -156,23 +156,17 @@ const NewPersonalWallet: FC = () => {
     const hash = new Uint8Array(await SHA256Digest(rootKeyBytes))
 
     encryptWithPassword(rootKeyBytes, password, id)
-      .then((ciphertext) => {
-        return {
+      .then(async (ciphertext) => {
+        const wallet: PersonalWallet = {
           id, name, description, hash,
           rootKey: new Uint8Array(ciphertext),
-          keyHashMap: new Map(),
           personalAccounts: [],
           multisigAccounts: [],
           updatedAt: new Date()
         }
-      })
-      .then(async (wallet: PersonalWallet) => {
         await cardano.generatePersonalAccount(wallet, password)
         await cardano.generateMultisigAccount(wallet, password)
-        return wallet
-      })
-      .then((wallet: PersonalWallet) => {
-        db.personalWallets.add(wallet, id).then(() => {
+        db.personalWallets.add(wallet).then(() => {
           router.push(getPersonalWalletPath(id))
         })
       })

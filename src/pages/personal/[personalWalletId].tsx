@@ -8,18 +8,34 @@ import { Loading } from '../../components/status'
 import { db } from '../../db'
 import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
-import type { AddressWithPaths, Cardano } from '../../cardano/multiplatform-lib'
+import type { Cardano } from '../../cardano/multiplatform-lib'
 import { ConfigContext } from '../../cardano/config'
 import { DocumentDuplicateIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
 import { RemoveWallet, Summary } from '../../components/wallet'
 import { isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
 import { NewTransaction } from '../../components/transaction'
+import { formatDerivationPath } from '../../cardano/utils'
+
+const DerivationPath: FC<{
+  keyHash?: Uint8Array
+}> = ({ keyHash }) => {
+  const keyHashIndex = useLiveQuery(async () => keyHash && db.keyHashIndices.get(keyHash), [keyHash])
+  const derivationPath = useMemo(() => keyHashIndex?.derivationPath, [keyHashIndex])
+
+  if (!derivationPath) return null
+
+  return (
+    <>{formatDerivationPath(derivationPath)}</>
+  )
+}
 
 const AddressTable: FC<{
-  addresses: AddressWithPaths[]
+  addresses: string[]
   addressName: string
 }> = ({ addresses, addressName }) => {
+  const cardano = useCardanoMultiplatformLib()
+
   return (
     <table className='table-auto w-full text-left'>
       <thead className='bg-gray-100'>
@@ -30,15 +46,15 @@ const AddressTable: FC<{
         </tr>
       </thead>
       <tbody className='divide-y'>
-        {addresses.map(({ address, paymentPath, stakingPath }, index) => <tr key={index}>
+        {addresses.map((address, index) => <tr key={index}>
           <td className='px-4 py-2 items-center'>
             <span>{address}</span>
             <CopyButton className='p-2 text-sky-700' getContent={() => address} ms={500}>
               <DocumentDuplicateIcon className='w-4' />
             </CopyButton>
           </td>
-          <td className='px-4 py-2'>{paymentPath}</td>
-          <td className='px-4 py-2'>{stakingPath}</td>
+          <td className='px-4 py-2'><DerivationPath keyHash={cardano?.parseAddress(address).payment_cred()?.to_keyhash()?.to_bytes()} /></td>
+          <td className='px-4 py-2'><DerivationPath keyHash={cardano?.parseAddress(address).staking_cred()?.to_keyhash()?.to_bytes()} /></td>
         </tr>)}
       </tbody>
     </table>
@@ -51,7 +67,8 @@ const Multisig: FC<{
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
   const accountIndex = 0
-  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(wallet, accountIndex, config.isMainnet), [cardano, wallet, accountIndex, config.isMainnet])
+  const account = useMemo(() => wallet.multisigAccounts[accountIndex], [wallet.multisigAccounts, accountIndex])
+  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(account, config.isMainnet), [cardano, account, config.isMainnet])
 
   if (!cardano || !addresses) return (
     <Modal><Loading /></Modal>
@@ -59,7 +76,7 @@ const Multisig: FC<{
 
   const add = () => {
     cardano.generateMultisigAddress(wallet, accountIndex)
-    db.personalWallets.put(wallet, wallet.id)
+    db.personalWallets.put(wallet)
   }
 
   return (
@@ -179,8 +196,9 @@ const Personal: FC<{
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
   const accountIndex = 0
-  const addresses = useMemo(() => cardano?.getAddressesWithPathsFromPersonalAccount(wallet, accountIndex, config.isMainnet), [cardano, wallet, accountIndex, config.isMainnet])
-  const rewardAddress = useMemo(() => cardano?.readRewardAddressFromPublicKey(wallet.personalAccounts[accountIndex].publicKey, config.isMainnet).to_address().to_bech32(), [cardano, config.isMainnet, wallet.personalAccounts])
+  const account = useMemo(() => wallet.personalAccounts[accountIndex], [wallet.personalAccounts, accountIndex])
+  const addresses = useMemo(() => cardano?.getAddressesFromPersonalAccount(account, config.isMainnet), [cardano, account, config.isMainnet])
+  const rewardAddress = useMemo(() => cardano?.readRewardAddressFromPublicKey(account.publicKey, config.isMainnet).to_address().to_bech32(), [cardano, config.isMainnet, account])
   const [tab, setTab] = useState<'summary' | 'receive' | 'spend'>('summary')
 
   if (!addresses || !rewardAddress || !cardano) return (
@@ -189,7 +207,7 @@ const Personal: FC<{
 
   const add = () => {
     cardano.generatePersonalAddress(wallet, accountIndex)
-    db.personalWallets.put(wallet, wallet.id)
+    db.personalWallets.put(wallet)
   }
 
   return (
@@ -216,7 +234,7 @@ const Personal: FC<{
           </button>
         </nav>
       </Portal>
-      {tab === 'summary' && <Summary addresses={addresses.map(({ address }) => address)} rewardAddress={rewardAddress} />}
+      {tab === 'summary' && <Summary addresses={addresses} rewardAddress={rewardAddress} />}
       {tab === 'receive' && <Panel>
         <AddressTable addressName='Receiving Address' addresses={addresses} />
         <footer className='flex justify-end p-4 bg-gray-100'>
@@ -225,7 +243,7 @@ const Personal: FC<{
           </button>
         </footer>
       </Panel>}
-      {tab === 'spend' && <Spend addresses={addresses.map(({ address }) => address)} rewardAddress={rewardAddress} cardano={cardano} />}
+      {tab === 'spend' && <Spend addresses={addresses} rewardAddress={rewardAddress} cardano={cardano} />}
     </div>
   )
 }
