@@ -1,6 +1,6 @@
 import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
-import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation, StakePool } from '@cardano-graphql/client-ts/api'
+import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation, StakePool, Transaction } from '@cardano-graphql/client-ts/api'
 import { Config } from './config'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
@@ -306,5 +306,37 @@ const useStakePoolsQuery: Query<
   { id?: string, limit: number, offset: number }
 > = (options) => useQuery(StakePoolsQuery, options)
 
+const OutputFields = gql`
+fragment OutputFields on TransactionOutput {
+  address
+  txHash
+  index
+  value
+  tokens {
+    asset {
+      assetId
+    }
+    quantity
+  }
+}
+`
+
+const ListTransactionsQuery = gql`
+${OutputFields}
+query ListTransactions($hashes: [Hash32Hex]!) {
+  transactions(where: { hash: { _in: $hashes } }) {
+    hash
+    outputs {
+      ...OutputFields
+    }
+  }
+}
+`
+
+const useListTransactionsQuery: Query<
+  { transactions: Transaction[] },
+  { hashes: string }
+> = (options) => useQuery(ListTransactionsQuery, options)
+
 export type { Value }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useListTransactionsQuery }
