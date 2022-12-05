@@ -26,22 +26,22 @@ const sumValues = (values: Value[]): Value => values.reduce((acc, value) => {
   }
 }, { lovelace: BigInt(0), assets: new Map() })
 
-const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => {
+const getValueFromTransactionOutput = (output: TransactionOutput): Value => {
   const assets: Assets = new Map()
 
-  utxos && utxos.forEach((utxo) => {
-    utxo.tokens.forEach(({ asset, quantity }) => {
-      const { assetId } = asset
-      const value = (assets.get(assetId) ?? BigInt(0)) + BigInt(quantity)
-      assets.set(assetId, value)
-    })
+  output.tokens.forEach(({ asset, quantity }) => {
+    const { assetId } = asset
+    const value = (assets.get(assetId) ?? BigInt(0)) + BigInt(quantity)
+    assets.set(assetId, value)
   })
 
   return {
-    lovelace: utxos.map(({ value }) => BigInt(value)).reduce((acc, v) => acc + v, BigInt(0)),
+    lovelace: BigInt(output.value),
     assets
   }
 }
+
+const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => sumValues(utxos.map(getValueFromTransactionOutput))
 
 const createApolloClient = (config: Config) => new ApolloClient({
   uri: config.queryAPI.URI,
