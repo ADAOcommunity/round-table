@@ -5,7 +5,7 @@ import { collectTransactionOutputs, decodeASCII, getAssetName, getBalanceByUTxOs
 import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -139,118 +139,6 @@ const TransactionInputViewer: FC<{
 
   return (
     <div className={className}>{hash}#{index}</div>
-  )
-}
-
-const TransactionBodyViewer: FC<{
-  txBody: TransactionBody
-  cardano: Cardano
-  setRequiredPaymentKeys: (keys: Set<string>) => void
-}> = ({ cardano, txBody, setRequiredPaymentKeys }) => {
-  const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
-  const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
-  const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
-  const { data } = useListTransactionsQuery({ variables: { hashes: txInputs.map((input) => input.transaction_id().to_hex()) } })
-  const txInputsRegistry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
-  useEffect(() => {
-    const keyHashes = new Set<string>()
-    txInputs.forEach((input) => {
-      const hash = getTxHash(input)
-      const index = getTxIndex(input)
-      const address = txInputsRegistry?.get(hash)?.get(index)?.address
-      const keyHash = address && cardano.parseAddress(address).payment_cred()?.to_keyhash()?.to_hex()
-      keyHash && keyHashes.add(keyHash)
-    })
-    setRequiredPaymentKeys(keyHashes)
-  }, [cardano, txInputs, txInputsRegistry, setRequiredPaymentKeys])
-  const txOutputs: Recipient[] = useMemo(() => Array.from(toIter(txBody.outputs()), (output, index) => {
-    const address = toAddressString(output.address())
-    const amount = output.amount()
-    const assets = new Map()
-    const multiAsset = amount.multiasset()
-    if (multiAsset) {
-      Array.from(toIter(multiAsset.keys()), (policyId) => {
-        const _asset = multiAsset.get(policyId)
-        _asset && Array.from(toIter(_asset.keys()), (assetName) => {
-          const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
-          const id = policyId.to_hex() + toHex(assetName.name())
-          assets.set(id, (assets.get(id) ?? BigInt(0)) + quantity)
-        })
-      })
-    }
-    return {
-      id: index.toString(),
-      address,
-      value: {
-        lovelace: BigInt(amount.coin().to_str()),
-        assets
-      }
-    }
-  }), [txBody])
-  const certificates = useMemo(() => {
-    const certs = txBody.certs()
-    if (!certs) return
-    return Array.from(toIter(certs))
-  }, [txBody])
-  const startSlot = useMemo(() => {
-    const slot = txBody.validity_start_interval()?.to_str()
-    if (slot) return parseInt(slot)
-  }, [txBody])
-  const expirySlot = useMemo(() => {
-    const slot = txBody.ttl()?.to_str()
-    if (slot) return parseInt(slot)
-  }, [txBody])
-
-  return (
-    <div className='p-4 space-y-2'>
-      <div className='space-y-1'>
-        <h1 className='font-semibold'>Transaction</h1>
-        <div className='flex items-center space-x-1'>
-          <span>{txHash.to_hex()}</span>
-          <span>
-            <CardanoScanLink className='text-sky-700' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
-          </span>
-        </div>
-        {startSlot && <div className='flex items-center space-x-1'>
-          <span>Start slot:</span>
-          <Timelock slot={startSlot} type='TimelockStart' />
-        </div>}
-        {expirySlot && <div className='flex items-center space-x-1'>
-          <span>Expiry slot:</span>
-          <Timelock slot={expirySlot} type='TimelockExpiry' />
-        </div>}
-      </div>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-        <div className='space-y-1'>
-          <div className='font-semibold'>Inputs</div>
-          <ul className='space-y-1'>
-            {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
-              <TransactionInputViewer input={input} registry={txInputsRegistry} />
-            </li>)}
-          </ul>
-        </div>
-        <div className='space-y-1'>
-          <div className='font-semibold'>Outputs</div>
-          <ul className='space-y-1'>
-            {txOutputs.map((txOutput, index) =>
-              <li key={index} className='p-2 border rounded'><RecipientViewer recipient={txOutput} /></li>
-            )}
-            <li className='p-2 border rounded space-x-1'>
-              <span>Fee:</span>
-              <ADAAmount lovelace={fee} />
-            </li>
-          </ul>
-        </div>
-      </div>
-      {certificates && <div className='space-y-1'>
-        <div className='font-semibold'>Certificates</div>
-        <CertificateList
-          cardano={cardano}
-          ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2'
-          liClassName='p-2 border rounded break-all'
-          certificates={certificates} />
-      </div>}
-    </div>
   )
 }
 
@@ -767,6 +655,31 @@ const updateSignatureMap = (witnessSet: TransactionWitnessSet, signatureMap: Sig
   return result
 }
 
+const getRecipientsFromCMLTransactionOutputs = (outputs: TransactionOutputs): Recipient[] => Array.from(toIter(outputs), (output, index) => {
+  const address = toAddressString(output.address())
+  const amount = output.amount()
+  const assets = new Map()
+  const multiAsset = amount.multiasset()
+  if (multiAsset) {
+    Array.from(toIter(multiAsset.keys()), (policyId) => {
+      const _asset = multiAsset.get(policyId)
+      _asset && Array.from(toIter(_asset.keys()), (assetName) => {
+        const quantity = BigInt(multiAsset.get_asset(policyId, assetName).to_str())
+        const id = policyId.to_hex() + toHex(assetName.name())
+        assets.set(id, (assets.get(id) ?? BigInt(0)) + quantity)
+      })
+    })
+  }
+  return {
+    id: index.toString(),
+    address,
+    value: {
+      lovelace: BigInt(amount.coin().to_str()),
+      assets
+    }
+  }
+})
+
 const TransactionViewer: FC<{
   cardano: Cardano
   transaction: Transaction
@@ -803,6 +716,35 @@ const TransactionViewer: FC<{
 
     setSignatureMap(updateSignatureMap(result.data, signatureMap, txHash))
   }, [signatureMap, cardano, txHash])
+  const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
+  const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
+  const { data } = useListTransactionsQuery({ variables: { hashes: txInputs.map((input) => input.transaction_id().to_hex()) } })
+  const txInputsRegistry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
+  useEffect(() => {
+    const keyHashes = new Set<string>()
+    txInputs.forEach((input) => {
+      const hash = getTxHash(input)
+      const index = getTxIndex(input)
+      const address = txInputsRegistry?.get(hash)?.get(index)?.address
+      const keyHash = address && cardano.parseAddress(address).payment_cred()?.to_keyhash()?.to_hex()
+      keyHash && keyHashes.add(keyHash)
+    })
+    setRequiredPaymentKeys(keyHashes)
+  }, [cardano, txInputs, txInputsRegistry, setRequiredPaymentKeys])
+  const txOutputs: Recipient[] = useMemo(() => getRecipientsFromCMLTransactionOutputs(txBody.outputs()), [txBody])
+  const certificates = useMemo(() => {
+    const certs = txBody.certs()
+    if (!certs) return
+    return Array.from(toIter(certs))
+  }, [txBody])
+  const startSlot = useMemo(() => {
+    const slot = txBody.validity_start_interval()?.to_str()
+    if (slot) return parseInt(slot)
+  }, [txBody])
+  const expirySlot = useMemo(() => {
+    const slot = txBody.ttl()?.to_str()
+    if (slot) return parseInt(slot)
+  }, [txBody])
 
   return (
     <div className='space-y-2'>
@@ -818,7 +760,55 @@ const TransactionViewer: FC<{
         </nav>
       </Hero>
       <Panel>
-        <TransactionBodyViewer cardano={cardano} txBody={txBody} setRequiredPaymentKeys={setRequiredPaymentKeys} />
+        <div className='p-4 space-y-2'>
+          <div className='space-y-1'>
+            <h1 className='font-semibold'>Transaction</h1>
+            <div className='flex items-center space-x-1'>
+              <span>{txHash.to_hex()}</span>
+              <span>
+                <CardanoScanLink className='text-sky-700' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
+              </span>
+            </div>
+            {startSlot && <div className='flex items-center space-x-1'>
+              <span>Start slot:</span>
+              <Timelock slot={startSlot} type='TimelockStart' />
+            </div>}
+            {expirySlot && <div className='flex items-center space-x-1'>
+              <span>Expiry slot:</span>
+              <Timelock slot={expirySlot} type='TimelockExpiry' />
+            </div>}
+          </div>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+            <div className='space-y-1'>
+              <div className='font-semibold'>Inputs</div>
+              <ul className='space-y-1'>
+                {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
+                  <TransactionInputViewer input={input} registry={txInputsRegistry} />
+                </li>)}
+              </ul>
+            </div>
+            <div className='space-y-1'>
+              <div className='font-semibold'>Outputs</div>
+              <ul className='space-y-1'>
+                {txOutputs.map((txOutput, index) =>
+                  <li key={index} className='p-2 border rounded'><RecipientViewer recipient={txOutput} /></li>
+                )}
+                <li className='p-2 border rounded space-x-1'>
+                  <span>Fee:</span>
+                  <ADAAmount lovelace={fee} />
+                </li>
+              </ul>
+            </div>
+          </div>
+          {certificates && <div className='space-y-1'>
+            <div className='font-semibold'>Certificates</div>
+            <CertificateList
+              cardano={cardano}
+              ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2'
+              liClassName='p-2 border rounded break-all'
+              certificates={certificates} />
+          </div>}
+        </div>
         {txMessage && <div className='space-y-1 p-4'>
           <div className='font-semibold'>Message</div>
           <div className='p-2 border rounded'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
@@ -1532,4 +1522,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { AddressViewer, CIP30SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
+export { AddressViewer, CIP30SignTxButton, SubmitTxButton, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
