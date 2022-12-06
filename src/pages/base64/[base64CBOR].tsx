@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { Layout, Modal } from '../../components/layout'
 import { Loading } from '../../components/status'
-import { TransactionViewer } from '../../components/transaction'
+import { TransactionLoader } from '../../components/transaction'
 
 const GetTransaction: NextPage = () => {
   const router = useRouter()
@@ -13,7 +13,7 @@ const GetTransaction: NextPage = () => {
   return (
     <Layout>
       {!base64CBOR && <Modal><Loading /></Modal>}
-      {base64CBOR && <TransactionViewer content={Buffer.from(base64CBOR, 'base64')} />}
+      {base64CBOR && <TransactionLoader content={Buffer.from(base64CBOR, 'base64')} />}
     </Layout>
   )
 }

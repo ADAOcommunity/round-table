@@ -666,17 +666,33 @@ const SignWithPersonalWalletButton: FC<{
   )
 }
 
-const TransactionViewer: FC<{
+const TransactionLoader: FC<{
   content: Uint8Array
 }> = ({ content }) => {
   const cardano = useCardanoMultiplatformLib()
+  const transaction = useMemo(() => cardano?.lib.Transaction.from_bytes(content), [cardano, content])
+
+  if (!cardano || !transaction) return (
+    <Modal><Loading /></Modal>
+  )
+
+  return (
+    <TransactionViewer cardano={cardano} transaction={transaction} />
+  )
+}
+
+const TransactionViewer: FC<{
+  cardano: Cardano
+  transaction: Transaction
+}> = ({ cardano, transaction }) => {
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const [config, _c] = useContext(ConfigContext)
-  const transaction = useMemo(() => cardano?.lib.Transaction.from_bytes(content), [cardano, content])
   const nativeScripts = useMemo(() => {
-    const scriptSet = transaction?.witness_set().native_scripts()
+    const scriptSet = transaction.witness_set().native_scripts()
     if (scriptSet) return Array.from(toIter(scriptSet))
   }, [transaction])
+  const txBody = useMemo(() => transaction.body(), [transaction])
+  const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
   const signerRegistry = useMemo(() => {
     const signers = new Set<string>()
     nativeScripts?.forEach((script) => {
@@ -684,16 +700,8 @@ const TransactionViewer: FC<{
     })
     return signers
   }, [nativeScripts])
-
-  if (!cardano || !transaction) return (
-    <Modal>
-      <Loading />
-    </Modal>
-  )
-
-  const txHash = cardano.lib.hash_transaction(transaction.body())
-
-  const txMessage = cardano.getTxMessage(transaction)
+  const signedTransaction = useMemo(() => cardano.signTransaction(transaction, signatureMap.values()), [cardano, transaction, signatureMap])
+  const txMessage = useMemo(() => cardano.getTxMessage(transaction), [cardano, transaction])
 
   const signHandle = (signatures: string[] | string) => {
     const newMap = new Map(signatureMap)
@@ -729,8 +737,6 @@ const TransactionViewer: FC<{
     setSignatureMap(newMap)
   }
 
-  const signedTransaction = cardano.signTransaction(transaction, signatureMap.values())
-
   return (
     <div className='space-y-2'>
       <Hero>
@@ -744,7 +750,7 @@ const TransactionViewer: FC<{
           </ShareCurrentURLButton>
         </nav>
       </Hero>
-      <TransactionBodyViewer cardano={cardano} txBody={transaction.body()} />
+      <TransactionBodyViewer cardano={cardano} txBody={txBody} />
       {txMessage && <Panel className='space-y-1 p-4'>
         <div className='font-semibold'>Message</div>
         <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
@@ -1467,4 +1473,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { AddressViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction, StakePoolInfo }
+export { AddressViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
