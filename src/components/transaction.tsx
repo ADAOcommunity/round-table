@@ -16,7 +16,7 @@ import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
 import { Loading, ProgressBar } from './status'
-import { NativeScriptViewer, Timelock } from './native-script'
+import { NativeScriptViewer, SignatureViewer, Timelock } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
@@ -35,39 +35,6 @@ const TransactionReviewButton: FC<{
     <Link href={getTransactionPath(transaction)}>
       <a className={['text-white bg-sky-700', className].join(' ')}>Review Transaction</a>
     </Link>
-  )
-}
-
-const TransactionInputListing: FC<{
-  className?: string
-  registry?: RecipientRegistry
-  input: TransactionInput
-}> = ({ className, input, registry }) => {
-  const hash = useMemo(() => input.transaction_id().to_hex(), [input])
-  const index = useMemo(() => parseInt(input.index().to_str()), [input])
-  const recipient = useMemo(() => registry?.get(hash)?.get(index), [hash, index, registry])
-
-  if (recipient) return (
-    <RecipientViewer className={className} recipient={recipient} />
-  )
-
-  return (
-    <li className={className}>{hash}#{index}</li>
-  )
-}
-
-const TransactionInputList: FC<{
-  ulClassName?: string
-  liClassName?: string
-  inputs: TransactionInput[]
-}> = ({ ulClassName, liClassName, inputs }) => {
-  const hashes = useMemo(() => inputs.map((input) => input.transaction_id().to_hex()), [inputs])
-  const { data } = useListTransactionsQuery({ variables: { hashes } })
-  const registry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
-  return (
-    <ul className={ulClassName}>
-      {inputs.map((input, index) => <TransactionInputListing className={liClassName} key={index} input={input} registry={registry} />)}
-    </ul>
   )
 }
 
@@ -154,13 +121,48 @@ const RecipientViewer: FC<{
   )
 }
 
+const getTxHash = (input: TransactionInput) => input.transaction_id().to_hex()
+const getTxIndex = (input: TransactionInput) => parseInt(input.index().to_str())
+
+const TransactionInputViewer: FC<{
+  className?: string
+  registry?: RecipientRegistry
+  input: TransactionInput
+}> = ({ className, input, registry }) => {
+  const hash = getTxHash(input)
+  const index = getTxIndex(input)
+  const recipient = useMemo(() => registry?.get(hash)?.get(index), [hash, index, registry])
+
+  if (recipient) return (
+    <RecipientViewer className={className} recipient={recipient} />
+  )
+
+  return (
+    <div className={className}>{hash}#{index}</div>
+  )
+}
+
 const TransactionBodyViewer: FC<{
   txBody: TransactionBody
   cardano: Cardano
-}> = ({ cardano, txBody }) => {
+  setRequiredPaymentKeys: (keys: Set<string>) => void
+}> = ({ cardano, txBody, setRequiredPaymentKeys }) => {
   const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
   const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
   const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
+  const { data } = useListTransactionsQuery({ variables: { hashes: txInputs.map((input) => input.transaction_id().to_hex()) } })
+  const txInputsRegistry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
+  useEffect(() => {
+    const keyHashes = new Set<string>()
+    txInputs.forEach((input) => {
+      const hash = getTxHash(input)
+      const index = getTxIndex(input)
+      const address = txInputsRegistry?.get(hash)?.get(index)?.address
+      const keyHash = address && cardano.parseAddress(address).payment_cred()?.to_keyhash()?.to_hex()
+      keyHash && keyHashes.add(keyHash)
+    })
+    setRequiredPaymentKeys(keyHashes)
+  }, [cardano, txInputs, txInputsRegistry, setRequiredPaymentKeys])
   const txOutputs: Recipient[] = useMemo(() => Array.from(toIter(txBody.outputs()), (output, index) => {
     const address = toAddressString(output.address())
     const amount = output.amount()
@@ -221,15 +223,19 @@ const TransactionBodyViewer: FC<{
       <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
         <div className='space-y-1'>
           <div className='font-semibold'>Inputs</div>
-          <TransactionInputList ulClassName='space-y-1' liClassName='p-2 border rounded break-all' inputs={txInputs} />
+          <ul className='space-y-1'>
+            {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
+              <TransactionInputViewer input={input} registry={txInputsRegistry} />
+            </li>)}
+          </ul>
         </div>
         <div className='space-y-1'>
           <div className='font-semibold'>Outputs</div>
           <ul className='space-y-1'>
             {txOutputs.map((txOutput, index) =>
-              <li key={index} className='p-2 border rounded-md'><RecipientViewer recipient={txOutput} /></li>
+              <li key={index} className='p-2 border rounded'><RecipientViewer recipient={txOutput} /></li>
             )}
-            <li className='p-2 border rounded-md space-x-1'>
+            <li className='p-2 border rounded space-x-1'>
               <span>Fee:</span>
               <ADAAmount lovelace={fee} />
             </li>
@@ -538,10 +544,12 @@ const CopyVkeysButton: FC<{
   children: ReactNode
   vkeys: Vkeywitness[]
 }> = ({ cardano, className, children, vkeys }) => {
+  const hex = useMemo(() => cardano.buildSignatureSetHex(vkeys), [cardano, vkeys])
+  if (!hex) return null
   return (
     <CopyButton
-      getContent={() => cardano.buildSignatureSetHex(vkeys)}
-      disabled={vkeys.length <= 0}
+      getContent={() => hex}
+      disabled={vkeys.length === 0}
       ms={500}
       className={className}>
       {children}
@@ -693,13 +701,15 @@ const TransactionViewer: FC<{
   }, [transaction])
   const txBody = useMemo(() => transaction.body(), [transaction])
   const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
+  const [requiredPaymentKeys, setRequiredPaymentKeys] = useState<Set<string> | undefined>()
   const signerRegistry = useMemo(() => {
     const signers = new Set<string>()
     nativeScripts?.forEach((script) => {
       Array.from(toIter(script.get_required_signers()), (signer) => signers.add(toHex(signer)))
     })
+    requiredPaymentKeys?.forEach((keyHash) => signers.add(keyHash))
     return signers
-  }, [nativeScripts])
+  }, [nativeScripts, requiredPaymentKeys])
   const signedTransaction = useMemo(() => cardano.signTransaction(transaction, signatureMap.values()), [cardano, transaction, signatureMap])
   const txMessage = useMemo(() => cardano.getTxMessage(transaction), [cardano, transaction])
 
@@ -750,10 +760,24 @@ const TransactionViewer: FC<{
           </ShareCurrentURLButton>
         </nav>
       </Hero>
-      <TransactionBodyViewer cardano={cardano} txBody={txBody} />
+      <TransactionBodyViewer cardano={cardano} txBody={txBody} setRequiredPaymentKeys={setRequiredPaymentKeys} />
       {txMessage && <Panel className='space-y-1 p-4'>
         <div className='font-semibold'>Message</div>
         <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+      </Panel>}
+      {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <Panel>
+        <div className='p-4 space-y-2'>
+          <h2 className='font-semibold'>Required Payment Signatures</h2>
+          <ul className='space-y-1'>
+            {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
+              <SignatureViewer
+                className='flex space-x-1 items-center'
+                signedClassName='text-green-500'
+                name={keyHashHex}
+                signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
+            </li>)}
+          </ul>
+        </div>
       </Panel>}
       {nativeScripts && nativeScripts.length > 0 && <Panel>
         <div className='p-4 space-y-2'>

@@ -190,13 +190,16 @@ class Cardano {
     return Transaction.new(transaction.body(), witnessSet, transaction.auxiliary_data())
   }
 
-  public buildSignatureSetHex(vkeys: Vkeywitness[]): string {
-    const { TransactionWitnessSet, Vkeywitnesses } = this.lib
-    const witnessSet = TransactionWitnessSet.new()
-    const vkeySet = Vkeywitnesses.new()
-    vkeys.forEach((vkey) => vkeySet.add(vkey))
-    witnessSet.set_vkeys(vkeySet)
-    return toHex(witnessSet)
+  public buildSignatureSetHex(vkeys: Array<Vkeywitness> | Vkeywitness | undefined): string | undefined {
+    if (!vkeys) return
+    const { TransactionWitnessSetBuilder } = this.lib
+    const builder = TransactionWitnessSetBuilder.new()
+    if (Array.isArray(vkeys)) {
+      vkeys.forEach((vkey) => builder.add_vkey(vkey))
+    } else {
+      builder.add_vkey(vkeys)
+    }
+    return toHex(builder.build())
   }
 
   public parseAddress(address: string): Address {

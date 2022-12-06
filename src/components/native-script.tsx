@@ -106,7 +106,7 @@ const NativeScriptViewer: FC<{
   if (script) {
     const keyHashHex = script.addr_keyhash().to_hex()
     const signature = verifyingData?.get(keyHashHex)
-    const signatureHex = signature && cardano?.buildSignatureSetHex([signature])
+    const signatureHex = cardano?.buildSignatureSetHex(signature)
     return (
       <SignatureViewer name={keyHashHex} signature={signatureHex} className='flex space-x-1 items-center' signedClassName='text-green-500' />
     )
