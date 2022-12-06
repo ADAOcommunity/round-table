@@ -596,8 +596,8 @@ const CopyVkeysButton: FC<{
   children: ReactNode
   vkeys: Vkeywitness[]
 }> = ({ cardano, className, children, vkeys }) => {
-  const hex = useMemo(() => cardano.buildSignatureSetHex(vkeys), [cardano, vkeys])
-  if (!hex) return null
+  const hex = useMemo(() => cardano.buildSignatureSetHex(vkeys) ?? '', [cardano, vkeys])
+
   return (
     <CopyButton
       getContent={() => hex}
