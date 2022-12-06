@@ -630,7 +630,7 @@ const ImportSignatureModalButton: FC<{
       {modal && <Modal className='bg-white text-center rounded p-4 space-y-2 w-1/2 md:w-1/3' onBackgroundClick={closeModal}>
         <div>
           <textarea
-            className='block w-full p-2 border outline-none'
+            className='block w-full p-2 border rounded outline-none'
             rows={4}
             value={signature}
             onChange={(e) => setSignature(e.target.value)}
