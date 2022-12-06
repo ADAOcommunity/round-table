@@ -826,7 +826,7 @@ const TransactionViewer: FC<{
           <div className='p-2 border rounded'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </div>}
         {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <div>
-          <div className='p-4 space-y-2'>
+          <div className='p-4 space-y-1'>
             <h2 className='font-semibold'>Required Payment Signatures</h2>
             <ul className='space-y-1 rounded border p-2'>
               {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
@@ -840,7 +840,7 @@ const TransactionViewer: FC<{
           </div>
         </div>}
         {nativeScripts && nativeScripts.length > 0 && <div>
-          <div className='p-4 space-y-2'>
+          <div className='p-4 space-y-1'>
             <h2 className='font-semibold'>Native Scripts</h2>
             <ul className='space-y-1'>
               {nativeScripts.map((script, index) => <li key={index}>
