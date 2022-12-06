@@ -846,25 +846,6 @@ const TransactionViewer: FC<{
             </li>)}
           </ul>
         </div>
-        <footer className='flex p-4 bg-gray-100 space-x-2 justify-between'>
-          <div className='flex space-x-1 items-center'>
-            <SignatureSync
-              cardano={cardano}
-              txHash={txHash}
-              signatures={signatureMap}
-              signHandle={signHandle}
-              signers={signerRegistry}
-              config={config} />
-            <div className='text-sm'>Auto sync the signatures with other signers</div>
-          </div>
-          <CopyVkeysButton
-            cardano={cardano}
-            vkeys={Array.from(signatureMap.values())}
-            className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
-            <ShareIcon className='w-4' />
-            <span>Copy my signatures</span>
-          </CopyVkeysButton>
-        </footer>
       </Panel>}
       <ManualSign signHandle={signHandle}>
         <SignWithPersonalWalletButton
@@ -880,6 +861,13 @@ const TransactionViewer: FC<{
           className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
           Sign with other wallets
         </CIP30ModalButton>
+        <CopyVkeysButton
+          cardano={cardano}
+          vkeys={Array.from(signatureMap.values())}
+          className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+          <ShareIcon className='w-4' />
+          <span>Copy my signatures</span>
+        </CopyVkeysButton>
         <div className='flex grow justify-end items-center space-x-4'>
           <SubmitTxButton
             className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
