@@ -202,7 +202,7 @@ const TransactionBodyViewer: FC<{
   }, [txBody])
 
   return (
-    <Panel className='p-4 space-y-2'>
+    <div className='p-4 space-y-2'>
       <div className='space-y-1'>
         <h1 className='font-semibold'>Transaction</h1>
         <div className='flex items-center space-x-1'>
@@ -250,7 +250,7 @@ const TransactionBodyViewer: FC<{
           liClassName='p-2 border rounded break-all'
           certificates={certificates} />
       </div>}
-    </Panel>
+    </div>
   )
 }
 
@@ -609,38 +609,46 @@ const CopyVkeysButton: FC<{
   )
 }
 
-const ManualSign: FC<{
-  children: ReactNode
-  signHandle: (_: string) => void
-}> = ({ children, signHandle }) => {
+const ImportSignatureModalButton: FC<{
+  className?: string
+  children?: ReactNode
+  sign: (signature: string) => void
+}> = ({ className, children, sign }) => {
+  const [modal, setModal] = useState(false)
   const [signature, setSignature] = useState('')
   const isDisabled = !signature
-
-  const manualSignHandle = () => {
-    signHandle(signature)
+  const closeModal = () => setModal(false)
+  const importSignature = () => {
+    sign(signature)
     setSignature('')
+    closeModal()
   }
 
   return (
-    <Panel>
-      <textarea
-        className='block w-full p-4 outline-none'
-        rows={4}
-        value={signature}
-        onChange={(e) => setSignature(e.target.value)}
-        placeholder="Input signature here and import">
-      </textarea>
-      <footer className='flex p-4 bg-gray-100 space-x-2'>
-        <button
-          onClick={manualSignHandle}
-          disabled={isDisabled}
-          className='flex items-center space-x-1 p-2 disabled:border rounded-md bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-          <ArrowUpTrayIcon className='w-4' />
-          <span>Import</span>
-        </button>
-        {children}
-      </footer>
-    </Panel>
+    <>
+      <button onClick={() => setModal(true)} className={className}>{children}</button>
+      {modal && <Modal className='bg-white text-center rounded p-4 space-y-2 w-1/2 md:w-1/3' onBackgroundClick={closeModal}>
+        <div>
+          <textarea
+            className='block w-full p-2 border outline-none'
+            rows={4}
+            value={signature}
+            onChange={(e) => setSignature(e.target.value)}
+            placeholder="Input signature here and import">
+          </textarea>
+        </div>
+        <footer className='flex justify-end space-x-2'>
+          <button onClick={closeModal} className='border rounded p-2 text-sky-700'>Cancel</button>
+          <button
+            onClick={importSignature}
+            disabled={isDisabled}
+            className={className}>
+            <ArrowUpTrayIcon className='w-4' />
+            <span>Import</span>
+          </button>
+        </footer>
+      </Modal>}
+    </>
   )
 }
 
@@ -812,70 +820,78 @@ const TransactionViewer: FC<{
           </ShareCurrentURLButton>
         </nav>
       </Hero>
-      <TransactionBodyViewer cardano={cardano} txBody={txBody} setRequiredPaymentKeys={setRequiredPaymentKeys} />
-      {txMessage && <Panel className='space-y-1 p-4'>
-        <div className='font-semibold'>Message</div>
-        <div>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
-      </Panel>}
-      {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <Panel>
-        <div className='p-4 space-y-2'>
-          <h2 className='font-semibold'>Required Payment Signatures</h2>
-          <ul className='space-y-1'>
-            {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
-              <SignatureViewer
-                className='flex space-x-1 items-center'
-                signedClassName='text-green-500'
-                name={keyHashHex}
-                signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
-            </li>)}
-          </ul>
-        </div>
-      </Panel>}
-      {nativeScripts && nativeScripts.length > 0 && <Panel>
-        <div className='p-4 space-y-2'>
-          <h2 className='font-semibold'>Native Scripts</h2>
-          <ul className='space-y-1'>
-            {nativeScripts.map((script, index) => <li key={index}>
-              <NativeScriptViewer
-                cardano={cardano}
-                verifyingData={signatureMap}
-                className='p-2 border rounded space-y-2'
-                headerClassName='font-semibold'
-                ulClassName='space-y-1'
-                nativeScript={script} />
-            </li>)}
-          </ul>
-        </div>
-      </Panel>}
-      <ManualSign signHandle={signHandle}>
-        <SignWithPersonalWalletButton
-          txHash={txHash.to_bytes()}
-          requiredKeyHashHexes={Array.from(signerRegistry)}
-          onSuccess={signHandle}
-          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-          Sign with personal wallet
-        </SignWithPersonalWalletButton>
-        <CIP30ModalButton
-          transaction={transaction}
-          sign={signHandle}
-          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-          Sign with other wallets
-        </CIP30ModalButton>
-        <CopyVkeysButton
-          cardano={cardano}
-          vkeys={Array.from(signatureMap.values())}
-          className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
-          <ShareIcon className='w-4' />
-          <span>Copy my signatures</span>
-        </CopyVkeysButton>
-        <div className='flex grow justify-end items-center space-x-4'>
-          <SubmitTxButton
-            className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
-            transaction={signedTransaction}>
-            Submit Transaction
-          </SubmitTxButton>
-        </div>
-      </ManualSign>
+      <Panel>
+        <TransactionBodyViewer cardano={cardano} txBody={txBody} setRequiredPaymentKeys={setRequiredPaymentKeys} />
+        {txMessage && <div className='space-y-1 p-4'>
+          <div className='font-semibold'>Message</div>
+          <div className='p-2 border rounded'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+        </div>}
+        {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <div>
+          <div className='p-4 space-y-2'>
+            <h2 className='font-semibold'>Required Payment Signatures</h2>
+            <ul className='space-y-1 rounded border p-2'>
+              {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
+                <SignatureViewer
+                  className='flex space-x-1 items-center'
+                  signedClassName='text-green-500'
+                  name={keyHashHex}
+                  signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
+              </li>)}
+            </ul>
+          </div>
+        </div>}
+        {nativeScripts && nativeScripts.length > 0 && <div>
+          <div className='p-4 space-y-2'>
+            <h2 className='font-semibold'>Native Scripts</h2>
+            <ul className='space-y-1'>
+              {nativeScripts.map((script, index) => <li key={index}>
+                <NativeScriptViewer
+                  cardano={cardano}
+                  verifyingData={signatureMap}
+                  className='p-2 border rounded space-y-2'
+                  headerClassName='font-semibold'
+                  ulClassName='space-y-1'
+                  nativeScript={script} />
+              </li>)}
+            </ul>
+          </div>
+        </div>}
+        <footer className='flex p-4 bg-gray-100 space-x-2'>
+          <SignWithPersonalWalletButton
+            txHash={txHash.to_bytes()}
+            requiredKeyHashHexes={Array.from(signerRegistry)}
+            onSuccess={signHandle}
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+            Sign with personal wallet
+          </SignWithPersonalWalletButton>
+          <CIP30ModalButton
+            transaction={transaction}
+            sign={signHandle}
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+            Sign with other wallet
+          </CIP30ModalButton>
+          <ImportSignatureModalButton
+            sign={signHandle}
+            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+            <ArrowUpTrayIcon className='w-4' />
+            <span>Import Signatures</span>
+          </ImportSignatureModalButton>
+          <CopyVkeysButton
+            cardano={cardano}
+            vkeys={Array.from(signatureMap.values())}
+            className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+            <ShareIcon className='w-4' />
+            <span>Copy my signatures</span>
+          </CopyVkeysButton>
+          <div className='flex grow justify-end items-center space-x-4'>
+            <SubmitTxButton
+              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
+              transaction={signedTransaction}>
+              Submit Transaction
+            </SubmitTxButton>
+          </div>
+        </footer>
+      </Panel>
     </div>
   )
 }
@@ -1519,4 +1535,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { AddressViewer, CIP30SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
+export { AddressViewer, CIP30SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
