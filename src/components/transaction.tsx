@@ -316,13 +316,65 @@ type TxSignError = {
   info: string
 }
 
-const SignTxButton: FC<{
+const CIP30ModalButton: FC<{
+  className?: string
+  children?: ReactNode
+  sign: (signature: string) => void
+  transaction: Transaction
+}> = ({ className, children, sign, transaction }) => {
+  const [modal, setModal] = useState(false)
+  const closeModal = () => setModal(false)
+  return (
+    <>
+      <button onClick={() => setModal(true)} className={className}>{children}</button>
+      {modal && <Modal className='bg-white text-center rounded sm:w-1/2 md:w-1/4' onBackgroundClick={closeModal}>
+        <header>
+          <h2 className='text-lg font-semibold border-b p-4'>Supported Wallets</h2>
+        </header>
+        <nav className='divide-y'>
+          <CIP30SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            sign={sign}
+            onFinish={closeModal}
+            name='nami'
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+          <CIP30SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            sign={sign}
+            onFinish={closeModal}
+            name='gero'
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+          <CIP30SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            sign={sign}
+            onFinish={closeModal}
+            name='eternl'
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+          <CIP30SignTxButton
+            transaction={transaction}
+            partialSign={true}
+            sign={sign}
+            onFinish={closeModal}
+            name='flint'
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+          <button onClick={closeModal} className='block w-full p-2 hover:bg-sky-100'>Cancel</button>
+        </nav>
+      </Modal>}
+    </>
+  )
+}
+
+const CIP30SignTxButton: FC<{
   className?: string,
   transaction: Transaction,
   partialSign: boolean,
-  signHandle: (_: string) => void,
+  sign: (_: string) => void,
+  onFinish?: () => void
   name: WalletName
-}> = ({ name, transaction, partialSign, signHandle, className }) => {
+}> = ({ name, transaction, partialSign, sign, className, onFinish }) => {
 
   const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
@@ -338,8 +390,6 @@ const SignTxButton: FC<{
     }
   }, [name])
 
-  if (!wallet) return null
-
   const errorHandle = (reason: Error | TxSignError) => {
     if ('info' in reason) {
       notify('error', reason.info)
@@ -353,7 +403,7 @@ const SignTxButton: FC<{
   }
 
   const clickHandle: MouseEventHandler<HTMLButtonElement> = async () => {
-    const walletAPI = await wallet.enable().catch(errorHandle)
+    const walletAPI = await wallet?.enable().catch(errorHandle)
     if (!walletAPI) return;
     const networkId = await walletAPI.getNetworkId()
     if (config.isMainnet ? networkId !== 1 : networkId !== 0) {
@@ -362,15 +412,17 @@ const SignTxButton: FC<{
     }
     walletAPI
       .signTx(toHex(transaction), partialSign)
-      .then(signHandle)
+      .then(sign)
       .catch(errorHandle)
+      .finally(onFinish)
   }
 
   return (
-    <button className={className} onClick={clickHandle}>
+    <button disabled={!wallet} className={className} onClick={clickHandle}>
       <span className='flex items-center space-x-1'>
-        <WalletIcon wallet={wallet} className='w-4' />
-        <span>Sign with {name}</span>
+        {wallet && <WalletIcon wallet={wallet} className='w-4' />}
+        <span>{name}</span>
+        {!wallet && <span>(Not Installed)</span>}
       </span>
     </button>
   )
@@ -822,30 +874,12 @@ const TransactionViewer: FC<{
           className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
           Sign with personal wallet
         </SignWithPersonalWalletButton>
-        <SignTxButton
+        <CIP30ModalButton
           transaction={transaction}
-          partialSign={true}
-          signHandle={signHandle}
-          name='nami'
-          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
-        <SignTxButton
-          transaction={transaction}
-          partialSign={true}
-          signHandle={signHandle}
-          name='gero'
-          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
-        <SignTxButton
-          transaction={transaction}
-          partialSign={true}
-          signHandle={signHandle}
-          name='eternl'
-          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
-        <SignTxButton
-          transaction={transaction}
-          partialSign={true}
-          signHandle={signHandle}
-          name='flint'
-          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400' />
+          sign={signHandle}
+          className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+          Sign with other wallets
+        </CIP30ModalButton>
         <div className='flex grow justify-end items-center space-x-4'>
           <SubmitTxButton
             className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
@@ -1497,4 +1531,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { AddressViewer, SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
+export { AddressViewer, CIP30SignTxButton, SubmitTxButton, TransactionBodyViewer, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, ManualSign, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
