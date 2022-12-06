@@ -771,8 +771,7 @@ const TransactionViewer: FC<{
   }, [nativeScripts, requiredPaymentKeys])
   const signedTransaction = useMemo(() => cardano.signTransaction(transaction, signatureMap.values()), [cardano, transaction, signatureMap])
   const txMessage = useMemo(() => cardano.getTxMessage(transaction), [cardano, transaction])
-
-  const addSignatures = (signatures: string[] | string) => {
+  const addSignatures = useCallback((signatures: string[] | string) => {
     const newMap = new Map(signatureMap)
 
     function getSignatures(): string[] {
@@ -804,7 +803,7 @@ const TransactionViewer: FC<{
     })
 
     setSignatureMap(newMap)
-  }
+  }, [signatureMap, cardano, signerRegistry, txHash])
 
   return (
     <div className='space-y-2'>
