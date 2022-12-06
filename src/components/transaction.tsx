@@ -772,7 +772,7 @@ const TransactionViewer: FC<{
   const signedTransaction = useMemo(() => cardano.signTransaction(transaction, signatureMap.values()), [cardano, transaction, signatureMap])
   const txMessage = useMemo(() => cardano.getTxMessage(transaction), [cardano, transaction])
 
-  const signHandle = (signatures: string[] | string) => {
+  const addSignatures = (signatures: string[] | string) => {
     const newMap = new Map(signatureMap)
 
     function getSignatures(): string[] {
@@ -859,18 +859,18 @@ const TransactionViewer: FC<{
           <SignWithPersonalWalletButton
             txHash={txHash.to_bytes()}
             requiredKeyHashHexes={Array.from(signerRegistry)}
-            onSuccess={signHandle}
+            onSuccess={addSignatures}
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
             Sign with personal wallet
           </SignWithPersonalWalletButton>
           <CIP30ModalButton
             transaction={transaction}
-            sign={signHandle}
+            sign={addSignatures}
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
             Sign with other wallet
           </CIP30ModalButton>
           <ImportSignatureModalButton
-            sign={signHandle}
+            sign={addSignatures}
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
             <ArrowUpTrayIcon className='w-4' />
             <span>Import Signatures</span>
