@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { MouseEventHandler, FC, ReactNode, ChangeEventHandler } from 'react'
 import { AssetAmount, ADAAmount, LabeledCurrencyInput, getADASymbol, ADAInput } from './currency'
-import { collectTransactionOutputs, decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useListTransactionsQuery, useStakePoolsQuery } from '../cardano/query-api'
+import { collectTransactionOutputs, decodeASCII, getAssetName, getBalanceByUTxOs, getPolicyId, useTransactionSummaryQuery, useStakePoolsQuery } from '../cardano/query-api'
 import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
@@ -738,7 +738,7 @@ const TransactionViewer: FC<{
   }, [signatureMap, cardano, txHash])
   const fee = useMemo(() => BigInt(txBody.fee().to_str()), [txBody])
   const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
-  const { data } = useListTransactionsQuery({ variables: { hashes: txInputs.map((input) => input.transaction_id().to_hex()) } })
+  const { data } = useTransactionSummaryQuery({ variables: { hashes: txInputs.map((input) => input.transaction_id().to_hex()) } })
   const txInputsRegistry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
   useEffect(() => {
     const keyHashes = new Set<string>()

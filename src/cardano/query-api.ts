@@ -329,9 +329,9 @@ fragment OutputFields on TransactionOutput {
 }
 `
 
-const ListTransactionsQuery = gql`
+const TransactionSummaryQuery = gql`
 ${OutputFields}
-query ListTransactions($hashes: [Hash32Hex]!) {
+query TransactionSummary($hashes: [Hash32Hex]!) {
   transactions(where: { hash: { _in: $hashes } }) {
     hash
     outputs {
@@ -341,10 +341,10 @@ query ListTransactions($hashes: [Hash32Hex]!) {
 }
 `
 
-const useListTransactionsQuery: Query<
+const useTransactionSummaryQuery: Query<
   { transactions: Transaction[] },
   { hashes: string[] }
-> = (options) => useQuery(ListTransactionsQuery, options)
+> = (options) => useQuery(TransactionSummaryQuery, options)
 
 type RecipientRegistry = Map<string, Map<number, Recipient>>
 
@@ -358,4 +358,4 @@ const collectTransactionOutputs = (transactions: Transaction[]): RecipientRegist
 }, new Map())
 
 export type { Value, RecipientRegistry }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useListTransactionsQuery, collectTransactionOutputs }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useTransactionSummaryQuery, collectTransactionOutputs }
