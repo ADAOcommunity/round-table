@@ -690,6 +690,25 @@ const TransactionViewer: FC<{
   }, [transaction])
   const txBody = useMemo(() => transaction.body(), [transaction])
   const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
+  const certificates = useMemo(() => {
+    const certs = txBody.certs()
+    if (!certs) return
+    return Array.from(toIter(certs))
+  }, [txBody])
+  const requiredStakingKeys: Set<string> | undefined = useMemo(() => {
+    if (!certificates) return
+    const collection = new Set<string>()
+
+    certificates.forEach((certificate) => {
+      const cert = certificate.as_stake_registration() ??
+                   certificate.as_stake_delegation() ??
+                   certificate.as_stake_deregistration()
+      const keyHashHex = cert?.stake_credential().to_keyhash()?.to_hex()
+      keyHashHex && collection.add(keyHashHex)
+    })
+
+    return collection
+  }, [certificates])
   const [requiredPaymentKeys, setRequiredPaymentKeys] = useState<Set<string> | undefined>()
   const signerRegistry = useMemo(() => {
     const signers = new Set<string>()
@@ -697,6 +716,7 @@ const TransactionViewer: FC<{
       Array.from(toIter(script.get_required_signers()), (signer) => signers.add(toHex(signer)))
     })
     requiredPaymentKeys?.forEach((keyHash) => signers.add(keyHash))
+    requiredStakingKeys?.forEach((keyHash) => signers.add(keyHash))
     return signers
   }, [nativeScripts, requiredPaymentKeys])
   const [signatureMap, setSignatureMap] = useState<SignatureMap>(updateSignatureMap(transaction.witness_set(), new Map(), txHash))
@@ -732,11 +752,6 @@ const TransactionViewer: FC<{
     setRequiredPaymentKeys(keyHashes)
   }, [cardano, txInputs, txInputsRegistry, setRequiredPaymentKeys])
   const txOutputs: Recipient[] = useMemo(() => getRecipientsFromCMLTransactionOutputs(txBody.outputs()), [txBody])
-  const certificates = useMemo(() => {
-    const certs = txBody.certs()
-    if (!certs) return
-    return Array.from(toIter(certs))
-  }, [txBody])
   const startSlot = useMemo(() => {
     const slot = txBody.validity_start_interval()?.to_str()
     if (slot) return parseInt(slot)
@@ -818,6 +833,20 @@ const TransactionViewer: FC<{
             <h2 className='font-semibold'>Required Payment Signatures</h2>
             <ul className='space-y-1 rounded border p-2'>
               {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
+                <SignatureViewer
+                  className='flex space-x-1 items-center'
+                  signedClassName='text-green-500'
+                  name={keyHashHex}
+                  signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
+              </li>)}
+            </ul>
+          </div>
+        </div>}
+        {requiredStakingKeys && requiredStakingKeys.size > 0 && <div>
+          <div className='p-4 space-y-1'>
+            <h2 className='font-semibold'>Required Staking Signatures</h2>
+            <ul className='space-y-1 rounded border p-2'>
+              {Array.from(requiredStakingKeys, (keyHashHex, index) => <li key={index}>
                 <SignatureViewer
                   className='flex space-x-1 items-center'
                   signedClassName='text-green-500'
