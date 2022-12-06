@@ -805,9 +805,9 @@ const TransactionViewer: FC<{
             <div className='space-y-1'>
               <div className='font-semibold'>Outputs</div>
               <ul className='space-y-1'>
-                {txOutputs.map((txOutput, index) =>
-                  <li key={index} className='p-2 border rounded'><RecipientViewer recipient={txOutput} /></li>
-                )}
+                {txOutputs.map((txOutput, index) => <li key={index} className='p-2 border rounded'>
+                  <RecipientViewer recipient={txOutput} />
+                </li>)}
                 <li className='p-2 border rounded space-x-1'>
                   <span>Fee:</span>
                   <ADAAmount lovelace={fee} />
