@@ -754,7 +754,6 @@ const TransactionViewer: FC<{
   transaction: Transaction
 }> = ({ cardano, transaction }) => {
   const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
-  const [config, _c] = useContext(ConfigContext)
   const nativeScripts = useMemo(() => {
     const scriptSet = transaction.witness_set().native_scripts()
     if (scriptSet) return Array.from(toIter(scriptSet))
