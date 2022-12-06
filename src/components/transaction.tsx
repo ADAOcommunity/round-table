@@ -331,35 +331,35 @@ const CIP30ModalButton: FC<{
         <header>
           <h2 className='text-lg font-semibold border-b p-4'>Supported Wallets</h2>
         </header>
-        <nav className='divide-y'>
+        <nav className='divide-y text-sky-700'>
           <CIP30SignTxButton
             transaction={transaction}
             partialSign={true}
             sign={sign}
             onFinish={closeModal}
             name='nami'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
           <CIP30SignTxButton
             transaction={transaction}
             partialSign={true}
             sign={sign}
             onFinish={closeModal}
             name='gero'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
           <CIP30SignTxButton
             transaction={transaction}
             partialSign={true}
             sign={sign}
             onFinish={closeModal}
             name='eternl'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
           <CIP30SignTxButton
             transaction={transaction}
             partialSign={true}
             sign={sign}
             onFinish={closeModal}
             name='flint'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 hover:bg-sky-100' />
+            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
           <button onClick={closeModal} className='block w-full p-2 hover:bg-sky-100'>Cancel</button>
         </nav>
       </Modal>}
