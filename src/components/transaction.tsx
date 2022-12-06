@@ -5,7 +5,7 @@ import { collectTransactionOutputs, decodeASCII, getAssetName, getBalanceByUTxOs
 import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Certificate, Transaction, TransactionBody, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -749,11 +749,28 @@ const TransactionLoader: FC<{
   )
 }
 
+type SignatureMap = Map<string, Vkeywitness>
+
+const updateSignatureMap = (witnessSet: TransactionWitnessSet, signatureMap: SignatureMap, txHash: TransactionHash): SignatureMap => {
+  const result = new Map(signatureMap)
+  const vkeyWitnessSet = witnessSet.vkeys()
+  if (!vkeyWitnessSet) return result
+
+  Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
+    const publicKey = vkeyWitness.vkey().public_key()
+    const keyHashHex = publicKey.hash().to_hex()
+    if (verifySignature(txHash, vkeyWitness)) {
+      result.set(keyHashHex, vkeyWitness)
+    }
+  })
+
+  return result
+}
+
 const TransactionViewer: FC<{
   cardano: Cardano
   transaction: Transaction
 }> = ({ cardano, transaction }) => {
-  const [signatureMap, setSignatureMap] = useState<Map<string, Vkeywitness>>(new Map())
   const nativeScripts = useMemo(() => {
     const scriptSet = transaction.witness_set().native_scripts()
     if (scriptSet) return Array.from(toIter(scriptSet))
@@ -769,11 +786,14 @@ const TransactionViewer: FC<{
     requiredPaymentKeys?.forEach((keyHash) => signers.add(keyHash))
     return signers
   }, [nativeScripts, requiredPaymentKeys])
-  const signedTransaction = useMemo(() => cardano.signTransaction(transaction, signatureMap.values()), [cardano, transaction, signatureMap])
+  const [signatureMap, setSignatureMap] = useState<SignatureMap>(updateSignatureMap(transaction.witness_set(), new Map(), txHash))
+  const signedTransaction = useMemo(() => {
+    const vkeys = new Array<Vkeywitness>()
+    signatureMap.forEach((vkey, keyHashHex) => signerRegistry.has(keyHashHex) && vkeys.push(vkey))
+    return cardano.signTransaction(transaction, vkeys)
+  }, [cardano, transaction, signatureMap, signerRegistry])
   const txMessage = useMemo(() => cardano.getTxMessage(transaction), [cardano, transaction])
   const addSignatures = useCallback((witnessSetHex: string) => {
-    const newMap = new Map(signatureMap)
-
     const result = getResult(() => {
       const bytes = Buffer.from(witnessSetHex, 'hex')
       return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
@@ -781,22 +801,8 @@ const TransactionViewer: FC<{
 
     if (!result.isOk) return
 
-    const witnessSet = result.data
-    const vkeyWitnessSet = witnessSet.vkeys()
-
-    if (!vkeyWitnessSet) return
-
-    Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
-      const publicKey = vkeyWitness.vkey().public_key()
-      const keyHash = publicKey.hash()
-      const hex = toHex(keyHash)
-      if (signerRegistry.has(hex) && verifySignature(txHash, vkeyWitness)) {
-        newMap.set(hex, vkeyWitness)
-      }
-    })
-
-    setSignatureMap(newMap)
-  }, [signatureMap, cardano, signerRegistry, txHash])
+    setSignatureMap(updateSignatureMap(result.data, signatureMap, txHash))
+  }, [signatureMap, cardano, txHash])
 
   return (
     <div className='space-y-2'>

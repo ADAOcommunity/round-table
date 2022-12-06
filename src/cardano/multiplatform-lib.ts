@@ -181,11 +181,11 @@ class Cardano {
     return metadatum && Array.from(toIter(metadatum), (metadata) => metadata.as_text())
   }
 
-  public signTransaction(transaction: Transaction, vkeyIter: IterableIterator<Vkeywitness>): Transaction {
+  public signTransaction(transaction: Transaction, vkeys: Vkeywitness[]): Transaction {
     const { Transaction, Vkeywitnesses } = this.lib
     const witnessSet = transaction.witness_set()
     const vkeyWitnessSet = Vkeywitnesses.new()
-    Array.from(vkeyIter, (vkey) => vkeyWitnessSet.add(vkey))
+    vkeys.forEach((vkey) => vkeyWitnessSet.add(vkey))
     witnessSet.set_vkeys(vkeyWitnessSet)
     return Transaction.new(transaction.body(), witnessSet, transaction.auxiliary_data())
   }
