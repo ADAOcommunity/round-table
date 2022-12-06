@@ -535,10 +535,10 @@ const SignatureSync: FC<{
   cardano: Cardano
   txHash: TransactionHash
   signatures: Map<string, Vkeywitness>
-  signHandle: (_: string) => void
+  addSignatures: (witnessSetHex: string) => void
   signers: Set<string>
   config: Config
-}> = ({ cardano, txHash, signatures, signers, signHandle, config }) => {
+}> = ({ cardano, txHash, signatures, signers, addSignatures, config }) => {
   const [isOn, setIsOn] = useState(false)
   const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
   const peers = config.gunPeers
@@ -573,7 +573,7 @@ const SignatureSync: FC<{
             if (data !== hex) node.put(hex)
           })
         } else {
-          node.on(signHandle)
+          node.on(addSignatures)
         }
 
         return node
@@ -771,35 +771,28 @@ const TransactionViewer: FC<{
   }, [nativeScripts, requiredPaymentKeys])
   const signedTransaction = useMemo(() => cardano.signTransaction(transaction, signatureMap.values()), [cardano, transaction, signatureMap])
   const txMessage = useMemo(() => cardano.getTxMessage(transaction), [cardano, transaction])
-  const addSignatures = useCallback((signatures: string[] | string) => {
+  const addSignatures = useCallback((witnessSetHex: string) => {
     const newMap = new Map(signatureMap)
 
-    function getSignatures(): string[] {
-      if (typeof signatures === 'string') return [signatures]
-      return signatures
-    }
+    const result = getResult(() => {
+      const bytes = Buffer.from(witnessSetHex, 'hex')
+      return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
+    })
 
-    getSignatures().forEach((signature) => {
-      const result = getResult(() => {
-        const bytes = Buffer.from(signature, 'hex')
-        return cardano.lib.TransactionWitnessSet.from_bytes(bytes)
-      })
+    if (!result.isOk) return
 
-      if (!result.isOk) return
+    const witnessSet = result.data
+    const vkeyWitnessSet = witnessSet.vkeys()
 
-      const witnessSet = result.data
-      const vkeyWitnessSet = witnessSet.vkeys()
+    if (!vkeyWitnessSet) return
 
-      if (!vkeyWitnessSet) return
-
-      Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
-        const publicKey = vkeyWitness.vkey().public_key()
-        const keyHash = publicKey.hash()
-        const hex = toHex(keyHash)
-        if (signerRegistry.has(hex) && verifySignature(txHash, vkeyWitness)) {
-          newMap.set(hex, vkeyWitness)
-        }
-      })
+    Array.from(toIter(vkeyWitnessSet), (vkeyWitness) => {
+      const publicKey = vkeyWitness.vkey().public_key()
+      const keyHash = publicKey.hash()
+      const hex = toHex(keyHash)
+      if (signerRegistry.has(hex) && verifySignature(txHash, vkeyWitness)) {
+        newMap.set(hex, vkeyWitness)
+      }
     })
 
     setSignatureMap(newMap)
