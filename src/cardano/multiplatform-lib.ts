@@ -332,6 +332,13 @@ class Cardano {
     return Certificate.new_stake_registration(StakeRegistration.new(credential))
   }
 
+  public createDeregistrationCertificate(rewardAddress: string): Certificate | undefined {
+    const { Address, Certificate, StakeDeregistration } = this.lib
+    const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()
+    if (!credential) return
+    return Certificate.new_stake_deregistration(StakeDeregistration.new(credential))
+  }
+
   public createDelegationCertificate(rewardAddress: string, poolId: string): Certificate | undefined {
     const { Address, Certificate, StakeDelegation, Ed25519KeyHash } = this.lib
     const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()

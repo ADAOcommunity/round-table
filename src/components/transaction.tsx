@@ -60,6 +60,18 @@ const CertificateListing: FC<{
     )
   }
 
+  cert = certificate.as_stake_deregistration()
+  if (cert) {
+    const { RewardAddress } = cardano.lib
+    const rewardAddress = RewardAddress.new(networkId, cert.stake_credential()).to_address().to_bech32()
+    return (
+      <>
+        <h2 className='font-semibold'>Stake Deregistration</h2>
+        <div>{rewardAddress}</div>
+      </>
+    )
+  }
+
   cert = certificate.as_stake_delegation()
   if (cert) {
     const { RewardAddress } = cardano.lib
@@ -1154,6 +1166,16 @@ const NewTransaction: FC<{
   const stakeDelegation = useMemo(() => {
     if (delegation) return cardano.createDelegationCertificate(rewardAddress, delegation.id)
   }, [cardano, delegation, rewardAddress])
+  const [stakeDeregistration, setStakeDeregistration] = useState<Certificate | undefined>()
+  const [withdrawAll, setWithdrawAll] = useState(false)
+
+  useEffect(() => {
+    if (stakeDeregistration) {
+      setDelegation(undefined)
+      availableReward > BigInt(0) && setWithdrawAll(true)
+    }
+  }, [availableReward, stakeDeregistration])
+
   const auxiliaryData = useMemo(() => {
     if (message.length > 0) {
       const { AuxiliaryData, MetadataJsonSchema } = cardano.lib
@@ -1165,7 +1187,6 @@ const NewTransaction: FC<{
       return data
     }
   }, [cardano, message])
-  const [withdrawAll, setWithdrawAll] = useState(false)
 
   const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
@@ -1256,6 +1277,7 @@ const NewTransaction: FC<{
     })
 
     if (stakeRegistration) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeRegistration)))
+    if (stakeDeregistration) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeDeregistration)))
     if (stakeDelegation) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeDelegation)))
 
     if (withdrawAll) {
@@ -1270,7 +1292,7 @@ const NewTransaction: FC<{
     if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, startSlot, expirySlot, availableReward, rewardAddress, withdrawAll])
+  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, startSlot, expirySlot, availableReward, rewardAddress, withdrawAll, stakeDeregistration])
 
   const changeRecipient = (index: number, recipient: Recipient) => {
     setRecipients(recipients.map((_recipient, _index) => index === _index ? recipient : _recipient))
@@ -1316,6 +1338,19 @@ const NewTransaction: FC<{
           <div className='p-2 border rounded'>
             <ADAAmount lovelace={availableReward} />
           </div>
+        </div>
+      </div>}
+      {stakeDeregistration && <div>
+        <header className='flex justify-between px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Stake Deregistration</h2>
+          <nav className='flex items-center'>
+            <button onClick={() => setStakeDeregistration(undefined)}>
+              <XMarkIcon className='w-4' />
+            </button>
+          </nav>
+        </header>
+        <div className='p-4 space-y-1'>
+          <div>{rewardAddress}</div>
         </div>
       </div>}
       {delegation && <div>
@@ -1450,7 +1485,14 @@ const NewTransaction: FC<{
             Withdraw
           </button>
           <button
-            className='p-2 rounded text-sky-700 border'
+            disabled={!isRegistered || !!stakeDeregistration}
+            className='p-2 rounded text-red-700 border disabled:bg-gray-100 disabled:text-gray-400'
+            onClick={() => isRegistered && setStakeDeregistration(cardano.createDeregistrationCertificate(rewardAddress))}>
+            Deregister
+          </button>
+          <button
+            disabled={!!stakeDeregistration}
+            className='p-2 rounded text-sky-700 border disabled:bg-gray-100 disabled:text-gray-400'
             onClick={() => setModal('delegation')}>
             Delegate
           </button>
