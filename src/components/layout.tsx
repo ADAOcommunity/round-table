@@ -188,8 +188,7 @@ const PersonalWalletListing: FC<{
   const isOnPage: boolean = useMemo(() => router.query.personalWalletId === wallet.id.toString(), [router.query.personalWalletId, wallet.id])
   const addresses: string[] | undefined = useMemo(() => {
     if (!cardano) return
-    return wallet
-      .personalAccounts
+    return Array.from(wallet.personalAccounts.values())
       .flatMap((account) => cardano.getAddressesFromPersonalAccount(account, isMainnet(config)))
   }, [cardano, wallet.personalAccounts, config])
   const balance: Value | undefined = useMemo(() => {

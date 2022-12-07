@@ -67,8 +67,8 @@ const Multisig: FC<{
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
   const accountIndex = 0
-  const account = useMemo(() => wallet.multisigAccounts[accountIndex], [wallet.multisigAccounts, accountIndex])
-  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(account, isMainnet(config)), [cardano, account, config])
+  const account = useMemo(() => wallet.multisigAccounts.get(accountIndex), [wallet.multisigAccounts, accountIndex])
+  const addresses = useMemo(() => account && cardano?.getAddressesFromMultisigAccount(account, isMainnet(config)), [cardano, account, config])
 
   if (!cardano || !addresses) return (
     <Modal><Loading /></Modal>
@@ -199,9 +199,9 @@ const Personal: FC<{
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
   const accountIndex = 0
-  const account = useMemo(() => wallet.personalAccounts[accountIndex], [wallet.personalAccounts, accountIndex])
-  const addresses = useMemo(() => cardano?.getAddressesFromPersonalAccount(account, isMainnet(config)), [cardano, account, config])
-  const rewardAddress = useMemo(() => cardano?.readRewardAddressFromPublicKey(account.publicKey, isMainnet(config)).to_address().to_bech32(), [cardano, config, account])
+  const account = useMemo(() => wallet.personalAccounts.get(accountIndex), [wallet.personalAccounts, accountIndex])
+  const addresses = useMemo(() => account && cardano?.getAddressesFromPersonalAccount(account, isMainnet(config)), [cardano, account, config])
+  const rewardAddress = useMemo(() => account && cardano?.readRewardAddressFromPublicKey(account.publicKey, isMainnet(config)).to_address().to_bech32(), [cardano, config, account])
   const [tab, setTab] = useState<'summary' | 'receive' | 'spend'>('summary')
 
   if (!addresses || !rewardAddress || !cardano) return (

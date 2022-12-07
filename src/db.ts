@@ -40,8 +40,8 @@ type PersonalWallet = BasicInfoParams & Timestamp & {
   id: number
   hash: Uint8Array
   rootKey: Uint8Array
-  personalAccounts: PersonalAccount[]
-  multisigAccounts: MultisigAccount[]
+  personalAccounts: Map<number, PersonalAccount>
+  multisigAccounts: Map<number, MultisigAccount>
 }
 
 type KeyHashIndex = {

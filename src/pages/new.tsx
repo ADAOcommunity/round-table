@@ -160,8 +160,8 @@ const NewPersonalWallet: FC = () => {
         const wallet: PersonalWallet = {
           id, name, description, hash,
           rootKey: new Uint8Array(ciphertext),
-          personalAccounts: [],
-          multisigAccounts: [],
+          personalAccounts: new Map(),
+          multisigAccounts: new Map(),
           updatedAt: new Date()
         }
         await cardano.generatePersonalAccount(wallet, password)

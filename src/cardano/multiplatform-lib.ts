@@ -402,8 +402,8 @@ class Cardano {
 
   public async generatePersonalAccount(wallet: PersonalWallet, password: string) {
     const rootKey = await this.getRootKey(wallet, password)
-    const accountIndex = wallet.personalAccounts.length
-    wallet.personalAccounts.push({ publicKey: personalPublicKey(rootKey, accountIndex).as_bytes(), paymentKeyHashes: [] })
+    const accountIndex = wallet.personalAccounts.size
+    wallet.personalAccounts.set(accountIndex, { publicKey: personalPublicKey(rootKey, accountIndex).as_bytes(), paymentKeyHashes: [] })
     Array.from({ length: 10 }, () => {
       this.generatePersonalAddress(wallet, accountIndex)
     })
@@ -411,15 +411,15 @@ class Cardano {
 
   public async generateMultisigAccount(wallet: PersonalWallet, password: string) {
     const rootKey = await this.getRootKey(wallet, password)
-    const accountIndex = wallet.multisigAccounts.length
-    wallet.multisigAccounts.push({ publicKey: multisigPublicKey(rootKey, accountIndex).as_bytes(), addresses: [] })
+    const accountIndex = wallet.multisigAccounts.size
+    wallet.multisigAccounts.set(accountIndex, { publicKey: multisigPublicKey(rootKey, accountIndex).as_bytes(), addresses: [] })
     Array.from({ length: 10 }, () => {
       this.generateMultisigAddress(wallet, accountIndex)
     })
   }
 
   public async generatePersonalAddress(wallet: PersonalWallet, accountIndex: number) {
-    const account = wallet.personalAccounts[accountIndex]
+    const account = wallet.personalAccounts.get(accountIndex)
     if (!account) throw new Error('No account found with this index')
     const { Bip32PublicKey } = this.lib
     const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
@@ -428,13 +428,13 @@ class Cardano {
     const paymentPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), PAYMENT_ROLE, index]
     const stakingKeyHash = personalStakingKeyHash(publicKey)
     const stakingPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, 0]
-    wallet.personalAccounts[accountIndex].paymentKeyHashes.push(paymentKeyHash.to_bytes())
+    account.paymentKeyHashes.push(paymentKeyHash.to_bytes())
     await db.keyHashIndices.put({ hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id })
     await db.keyHashIndices.put({ hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id })
   }
 
   public async generateMultisigAddress(wallet: PersonalWallet, accountIndex: number) {
-    const account = wallet.multisigAccounts[accountIndex]
+    const account = wallet.multisigAccounts.get(accountIndex)
     if (!account) throw new Error('No account found with this index')
     const { Bip32PublicKey } = this.lib
     const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
@@ -443,7 +443,7 @@ class Cardano {
     const paymentPath = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE), harden(accountIndex), PAYMENT_ROLE, index]
     const stakingKeyHash = publicKey.derive(STAKING_ROLE).derive(index).to_raw_key().hash()
     const stakingPath = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, index]
-    wallet.multisigAccounts[accountIndex].addresses.push({
+    account.addresses.push({
       paymentKeyHash: paymentKeyHash.to_bytes(),
       stakingKeyHash: stakingKeyHash.to_bytes()
     })
