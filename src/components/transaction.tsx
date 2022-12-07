@@ -722,7 +722,7 @@ const TransactionViewer: FC<{
     })
 
     return collection
-  }, [certificates])
+  }, [certificates, cardano, txWithdrawals])
   const [requiredPaymentKeys, setRequiredPaymentKeys] = useState<Set<string> | undefined>()
   const signerRegistry = useMemo(() => {
     const signers = new Set<string>()
@@ -732,7 +732,7 @@ const TransactionViewer: FC<{
     requiredPaymentKeys?.forEach((keyHash) => signers.add(keyHash))
     requiredStakingKeys?.forEach((keyHash) => signers.add(keyHash))
     return signers
-  }, [nativeScripts, requiredPaymentKeys])
+  }, [nativeScripts, requiredPaymentKeys, requiredStakingKeys])
   const [signatureMap, setSignatureMap] = useState<SignatureMap>(updateSignatureMap(transaction.witness_set(), new Map(), txHash))
   const signedTransaction = useMemo(() => {
     const vkeys = new Array<Vkeywitness>()
@@ -1168,7 +1168,7 @@ const NewTransaction: FC<{
   const [withdrawAll, setWithdrawAll] = useState(false)
   const withdrawalBuilder = useMemo(() => {
     if (withdrawAll && availableReward > 0) return cardano.createWithdrawalBuilder(rewardAddress, availableReward)
-  }, [withdrawAll, cardano])
+  }, [withdrawAll, cardano, availableReward, rewardAddress])
 
   const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
@@ -1269,7 +1269,7 @@ const NewTransaction: FC<{
     if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, startSlot, expirySlot])
+  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, withdrawalBuilder, startSlot, expirySlot])
 
   const changeRecipient = (index: number, recipient: Recipient) => {
     setRecipients(recipients.map((_recipient, _index) => index === _index ? recipient : _recipient))
