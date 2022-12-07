@@ -266,9 +266,11 @@ const ShowPersonalWallet: NextPage = () => {
   )
 
   const removeWallet = () => {
+    const walletId = personalWallet.id
     db
       .personalWallets
-      .delete(personalWallet.id)
+      .delete(walletId)
+      .then(async () => await db.keyHashIndices.where({ walletId }).delete())
       .then(() => router.push('/'))
       .catch((error) => {
         notify('error', 'Failed to delete')
