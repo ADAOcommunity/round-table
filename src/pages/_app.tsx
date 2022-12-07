@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { DateContext } from '../components/time'
 
 const apolloClient = createApolloClient(config)
+const title = isMainnet(config) ? 'RoundTable' : `RoundTable ${config.network}`
 
 function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
@@ -20,7 +21,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <ApolloProvider client={apolloClient}>
           <DateContext.Provider value={dateState}>
             <Head>
-              <title>RoundTable{isMainnet(config) ? '' : ` ${config.network}` }</title>
+              <title>{title}</title>
             </Head>
             <Component {...pageProps} />
           </DateContext.Provider>
