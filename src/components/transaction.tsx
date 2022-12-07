@@ -16,7 +16,7 @@ import Image from 'next/image'
 import Gun from 'gun'
 import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
-import { Loading, ProgressBar } from './status'
+import { Loading, ProgressBar, SpinnerIcon } from './status'
 import { NativeScriptViewer, SignatureViewer, Timelock } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
@@ -1530,6 +1530,7 @@ const StakePoolInfo: FC<{
   const maxStaked = 64e12
   const isRetired = stakePool.retirements && stakePool.retirements.length > 0
   const { SMASH } = config
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -1538,7 +1539,12 @@ const StakePoolInfo: FC<{
     const hash: string | undefined = stakePool.metadataHash
     const url = hash && new URL(['api/v1/metadata', id, hash].join('/'), SMASH)
 
-    url && fetchStakePoolMetaData(url.toString()).then((data) => isMounted && setMetaData(data))
+    if (url) {
+      setLoading(true)
+      fetchStakePoolMetaData(url.toString())
+        .then((data) => isMounted && setMetaData(data))
+        .finally(() => isMounted && setLoading(false))
+    }
 
     return () => {
       isMounted = false
@@ -1548,11 +1554,15 @@ const StakePoolInfo: FC<{
   return (
     <div className='border rounded divide-y shadow'>
       <header className='space-y-1 p-2'>
-        {metaData ? <Link href={metaData.homepage}>
-          <a className='block text-sky-700 truncate' target='_blank'>
-            [<strong>{metaData.ticker}</strong>] {metaData.name}
-          </a>
-        </Link> : <div className='text-gray-700'>{isRetired ? 'Retired' : 'Unknown'}</div>}
+        <div className='text-sky-700'>
+          {loading && <SpinnerIcon className='animate-spin w-4' />}
+          {!loading && metaData && <Link href={metaData.homepage}>
+            <a className='block truncate' target='_blank'>
+              [<strong>{metaData.ticker}</strong>] {metaData.name}
+            </a>
+          </Link>}
+        </div>
+        {!loading && !metaData && <div className='text-gray-700'>{isRetired ? 'Retired' : 'Unknown'}</div>}
         <div className='text-xs break-all'>{stakePool.id}</div>
       </header>
       <div className='p-2 text-sm space-y-1'>
