@@ -800,107 +800,99 @@ const TransactionViewer: FC<{
           </ShareCurrentURLButton>
         </nav>
       </Hero>
-      <Panel>
-        <div className='p-4 space-y-2'>
-          <div className='space-y-1'>
-            <h1 className='font-semibold'>Transaction</h1>
-            <div className='flex items-center space-x-1'>
-              <span>{txHash.to_hex()}</span>
-              <span>
-                <CardanoScanLink className='text-sky-700' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
-              </span>
-            </div>
-            {startSlot && <div className='flex items-center space-x-1'>
-              <span>Start slot:</span>
-              <Timelock slot={startSlot} type='TimelockStart' />
-            </div>}
-            {expirySlot && <div className='flex items-center space-x-1'>
-              <span>Expiry slot:</span>
-              <Timelock slot={expirySlot} type='TimelockExpiry' />
-            </div>}
+      <Panel className='p-4 space-y-2'>
+        <div className='space-y-1'>
+          <h1 className='font-semibold'>Transaction</h1>
+          <div className='flex items-center space-x-1'>
+            <span>{txHash.to_hex()}</span>
+            <span>
+              <CardanoScanLink className='text-sky-700' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
+            </span>
           </div>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-            <div className='space-y-1'>
-              <div className='font-semibold'>Inputs</div>
-              <ul className='space-y-1'>
-                {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
-                  <TransactionInputViewer input={input} registry={txInputsRegistry} />
-                </li>)}
-                {Array.from(txWithdrawals, ([address, amount], index) => <li key={index} className='p-2 border rounded'>
-                  <div>{address}</div>
-                  <div><ADAAmount lovelace={amount} /></div>
-                </li>)}
-              </ul>
-            </div>
-            <div className='space-y-1'>
-              <div className='font-semibold'>Outputs</div>
-              <ul className='space-y-1'>
-                {txOutputs.map((txOutput, index) => <li key={index} className='p-2 border rounded'>
-                  <RecipientViewer recipient={txOutput} />
-                </li>)}
-                <li className='p-2 border rounded space-x-1'>
-                  <span>Fee:</span>
-                  <ADAAmount lovelace={fee} />
-                </li>
-              </ul>
-            </div>
-          </div>
-          {certificates && <div className='space-y-1'>
-            <div className='font-semibold'>Certificates</div>
-            <CertificateList
-              cardano={cardano}
-              ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2'
-              liClassName='p-2 border rounded break-all'
-              certificates={certificates} />
+          {startSlot && <div className='flex items-center space-x-1'>
+            <span>Start slot:</span>
+            <Timelock slot={startSlot} type='TimelockStart' />
+          </div>}
+          {expirySlot && <div className='flex items-center space-x-1'>
+            <span>Expiry slot:</span>
+            <Timelock slot={expirySlot} type='TimelockExpiry' />
           </div>}
         </div>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+          <div className='space-y-1'>
+            <div className='font-semibold'>Inputs</div>
+            <ul className='space-y-1'>
+              {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
+                <TransactionInputViewer input={input} registry={txInputsRegistry} />
+              </li>)}
+              {Array.from(txWithdrawals, ([address, amount], index) => <li key={index} className='p-2 border rounded'>
+                <div>{address}</div>
+                <div><ADAAmount lovelace={amount} /></div>
+              </li>)}
+            </ul>
+          </div>
+          <div className='space-y-1'>
+            <div className='font-semibold'>Outputs</div>
+            <ul className='space-y-1'>
+              {txOutputs.map((txOutput, index) => <li key={index} className='p-2 border rounded'>
+                <RecipientViewer recipient={txOutput} />
+              </li>)}
+              <li className='p-2 border rounded space-x-1'>
+                <span>Fee:</span>
+                <ADAAmount lovelace={fee} />
+              </li>
+            </ul>
+          </div>
+        </div>
+        {certificates && <div className='space-y-1'>
+          <div className='font-semibold'>Certificates</div>
+          <CertificateList
+            cardano={cardano}
+            ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2'
+            liClassName='p-2 border rounded break-all'
+            certificates={certificates} />
+        </div>}
         {txMessage && <div className='space-y-1 p-4'>
           <div className='font-semibold'>Message</div>
           <div className='p-2 border rounded'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </div>}
-        {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <div>
-          <div className='p-4 space-y-1'>
-            <h2 className='font-semibold'>Required Payment Signatures</h2>
-            <ul className='space-y-1 rounded border p-2'>
-              {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
-                <SignatureViewer
-                  className='flex space-x-1 items-center'
-                  signedClassName='text-green-500'
-                  name={keyHashHex}
-                  signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
-              </li>)}
-            </ul>
-          </div>
+        {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <div className='space-y-1'>
+          <h2 className='font-semibold'>Required Payment Signatures</h2>
+          <ul className='space-y-1 rounded border p-2'>
+            {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
+              <SignatureViewer
+                className='flex space-x-1 items-center'
+                signedClassName='text-green-500'
+                name={keyHashHex}
+                signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
+            </li>)}
+          </ul>
         </div>}
-        {requiredStakingKeys && requiredStakingKeys.size > 0 && <div>
-          <div className='p-4 space-y-1'>
-            <h2 className='font-semibold'>Required Staking Signatures</h2>
-            <ul className='space-y-1 rounded border p-2'>
-              {Array.from(requiredStakingKeys, (keyHashHex, index) => <li key={index}>
-                <SignatureViewer
-                  className='flex space-x-1 items-center'
-                  signedClassName='text-green-500'
-                  name={keyHashHex}
-                  signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
-              </li>)}
-            </ul>
-          </div>
+        {requiredStakingKeys && requiredStakingKeys.size > 0 && <div className='space-y-1'>
+          <h2 className='font-semibold'>Required Staking Signatures</h2>
+          <ul className='space-y-1 rounded border p-2'>
+            {Array.from(requiredStakingKeys, (keyHashHex, index) => <li key={index}>
+              <SignatureViewer
+                className='flex space-x-1 items-center'
+                signedClassName='text-green-500'
+                name={keyHashHex}
+                signature={cardano.buildSignatureSetHex(signatureMap.get(keyHashHex))} />
+            </li>)}
+          </ul>
         </div>}
-        {nativeScripts && nativeScripts.length > 0 && <div>
-          <div className='p-4 space-y-1'>
-            <h2 className='font-semibold'>Native Scripts</h2>
-            <ul className='space-y-1'>
-              {nativeScripts.map((script, index) => <li key={index}>
-                <NativeScriptViewer
-                  cardano={cardano}
-                  verifyingData={signatureMap}
-                  className='p-2 border rounded space-y-2'
-                  headerClassName='font-semibold'
-                  ulClassName='space-y-1'
-                  nativeScript={script} />
-              </li>)}
-            </ul>
-          </div>
+        {nativeScripts && nativeScripts.length > 0 && <div className='space-y-1'>
+          <h2 className='font-semibold'>Native Scripts</h2>
+          <ul className='space-y-1'>
+            {nativeScripts.map((script, index) => <li key={index}>
+              <NativeScriptViewer
+                cardano={cardano}
+                verifyingData={signatureMap}
+                className='p-2 border rounded space-y-2'
+                headerClassName='font-semibold'
+                ulClassName='space-y-1'
+                nativeScript={script} />
+            </li>)}
+          </ul>
         </div>}
         <footer className='flex p-4 bg-gray-100 space-x-2'>
           <SignWithPersonalWalletButton
