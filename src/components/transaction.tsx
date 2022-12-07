@@ -802,7 +802,7 @@ const TransactionViewer: FC<{
       </Hero>
       <Panel className='p-4 space-y-2'>
         <div className='space-y-1'>
-          <h1 className='font-semibold'>Transaction</h1>
+          <h2 className='font-semibold'>Transaction ID</h2>
           <div className='flex items-center space-x-1'>
             <span>{txHash.to_hex()}</span>
             <span>
