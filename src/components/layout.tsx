@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
 import { ConfigContext } from '../cardano/config'
+import type { Config } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
@@ -286,16 +287,24 @@ const WalletList: FC = () => {
   )
 }
 
+const getCardanoScanHost = (config: Config): string => {
+  switch (config.network) {
+    case 'mainnet': return 'https://cardanoscan.io'
+    case 'testnet': return 'https://testnet.cardanoscan.io'
+    case 'preview': return 'https://preview.cardanoscan.io'
+  }
+}
+
 const CardanoScanLink: FC<{
   className?: string
   children: ReactNode
-  type: 'transaction'
+  type: 'transaction' | 'pool'
   id: string
 }> = ({ className, children, type, id }) => {
   const [config, _] = useContext(ConfigContext)
-  const host = config.isMainnet ? 'https://cardanoscan.io' : 'https://testnet.cardanoscan.io'
-  const href = [host, type, id].join('/')
-  return <a className={className} href={href} target='_blank' rel='noreferrer'>{children}</a>;
+  const host = getCardanoScanHost(config)
+  const href = new URL([type, id].join('/'), host)
+  return <a className={className} href={href.toString()} target='_blank' rel='noreferrer'>{children}</a>;
 }
 
 const Hero: FC<{

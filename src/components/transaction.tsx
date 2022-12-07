@@ -70,11 +70,17 @@ const CertificateListing: FC<{
   if (cert) {
     const { RewardAddress } = cardano.lib
     const rewardAddress = RewardAddress.new(networkId, cert.stake_credential()).to_address().to_bech32()
+    const poolId = cert.pool_keyhash().to_bech32('pool')
     return (
       <>
         <h2 className='font-semibold'>Stake Delegation</h2>
         <div>{rewardAddress}</div>
-        <div>{cert.pool_keyhash().to_bech32('pool')}</div>
+        <div className='flex space-x-1 items-center'>
+          <div>{poolId}</div>
+          <CardanoScanLink type='pool' id={poolId}>
+            <MagnifyingGlassCircleIcon className='w-4 text-sky-700' />
+          </CardanoScanLink>
+        </div>
       </>
     )
   }
