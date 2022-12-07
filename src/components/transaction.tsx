@@ -5,7 +5,7 @@ import { collectTransactionOutputs, decodeASCII, getAssetName, getBalanceByUTxOs
 import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
-import type { Address, Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs, SingleWithdrawalBuilder, WithdrawalBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { Config, ConfigContext } from '../cardano/config'
@@ -690,20 +690,34 @@ const TransactionViewer: FC<{
   }, [transaction])
   const txBody = useMemo(() => transaction.body(), [transaction])
   const txHash = useMemo(() => cardano.lib.hash_transaction(txBody), [cardano, txBody])
+  const txWithdrawals = useMemo(() => {
+    const result = new Map<string, bigint>()
+    const withdrawals = txBody.withdrawals()
+    if (!withdrawals) return result
+    Array.from(toIter(withdrawals.keys()), (address) => {
+      const amount = withdrawals.get(address)
+      if (amount) result.set(address.to_address().to_bech32(), BigInt(amount.to_str()))
+    })
+    return result
+  }, [txBody])
   const certificates = useMemo(() => {
     const certs = txBody.certs()
     if (!certs) return
     return Array.from(toIter(certs))
   }, [txBody])
   const requiredStakingKeys: Set<string> | undefined = useMemo(() => {
-    if (!certificates) return
+    if (!certificates && !txWithdrawals) return
     const collection = new Set<string>()
 
-    certificates.forEach((certificate) => {
+    certificates?.forEach((certificate) => {
       const cert = certificate.as_stake_registration() ??
-                   certificate.as_stake_delegation() ??
-                   certificate.as_stake_deregistration()
+        certificate.as_stake_delegation() ??
+        certificate.as_stake_deregistration()
       const keyHashHex = cert?.stake_credential().to_keyhash()?.to_hex()
+      keyHashHex && collection.add(keyHashHex)
+    })
+    txWithdrawals.forEach((_, address) => {
+      const keyHashHex = cardano.parseAddress(address).as_reward()?.payment_cred().to_keyhash()?.to_hex()
       keyHashHex && collection.add(keyHashHex)
     })
 
@@ -799,6 +813,10 @@ const TransactionViewer: FC<{
               <ul className='space-y-1'>
                 {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
                   <TransactionInputViewer input={input} registry={txInputsRegistry} />
+                </li>)}
+                {Array.from(txWithdrawals, ([address, amount], index) => <li key={index} className='p-2 border rounded'>
+                  <div>{address}</div>
+                  <div><ADAAmount lovelace={amount} /></div>
                 </li>)}
               </ul>
             </div>
@@ -1093,11 +1111,13 @@ const NewTransaction: FC<{
   utxos: TransactionOutput[]
   buildInputResult: (builder: SingleInputBuilder) => InputBuilderResult
   buildCertResult: (builder: SingleCertificateBuilder) => CertificateBuilderResult
+  buildWithdrawalResult: (builder: SingleWithdrawalBuilder) => WithdrawalBuilderResult
   defaultChangeAddress: string
   rewardAddress: string
+  availableReward: bigint
   isRegistered: boolean
   currentDelegation?: StakePool
-}> = ({ cardano, protocolParameters, buildInputResult, buildCertResult, rewardAddress, utxos, defaultChangeAddress, isRegistered, currentDelegation }) => {
+}> = ({ cardano, protocolParameters, buildInputResult, buildCertResult, buildWithdrawalResult, rewardAddress, availableReward, utxos, defaultChangeAddress, isRegistered, currentDelegation }) => {
   const [config, _c] = useContext(ConfigContext)
   const [now, _t] = useContext(DateContext)
   const currentSlot = estimateSlotByDate(now, config.network)
@@ -1145,6 +1165,10 @@ const NewTransaction: FC<{
       return data
     }
   }, [cardano, message])
+  const [withdrawAll, setWithdrawAll] = useState(false)
+  const withdrawalBuilder = useMemo(() => {
+    if (withdrawAll) return cardano.createWithdrawalBuilder(rewardAddress, availableReward)
+  }, [withdrawAll, cardano])
 
   const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
@@ -1237,6 +1261,8 @@ const NewTransaction: FC<{
     if (stakeRegistration) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeRegistration)))
     if (stakeDelegation) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeDelegation)))
 
+    if (withdrawalBuilder) txBuilder.add_withdrawal(buildWithdrawalResult(withdrawalBuilder))
+
     if (auxiliaryData) txBuilder.add_auxiliary_data(auxiliaryData)
 
     if (startSlot) txBuilder.set_validity_start_interval(BigNum.from_str(startSlot.toString()))
@@ -1275,6 +1301,26 @@ const NewTransaction: FC<{
           </li>
         )}
       </ul>
+      <div>
+        <header className='px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Available Reward</h2>
+          <div className='text-sm'>
+            <div>{rewardAddress}</div>
+            <label className='items-center space-x-1'>
+              <input
+                type='checkbox'
+                checked={withdrawAll}
+                onChange={() => setWithdrawAll(!withdrawAll)} />
+              <span>Withdraw All</span>
+            </label>
+          </div>
+        </header>
+        <div className='p-4 space-y-1'>
+          <div className='p-2 border rounded'>
+            <ADAAmount lovelace={availableReward} />
+          </div>
+        </div>
+      </div>
       {delegation && <div>
         <header className='flex justify-between px-4 py-2 bg-gray-100'>
           <div>

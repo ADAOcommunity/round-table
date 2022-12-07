@@ -10,14 +10,14 @@ import type { FC } from 'react'
 import { ConfigContext } from '../../cardano/config'
 import { CopyButton, Hero, Layout, Panel, Modal } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useUTxOSummaryQuery, isRegisteredOnChain } from '../../cardano/query-api'
+import { useUTxOSummaryQuery, isRegisteredOnChain, getAvailableReward } from '../../cardano/query-api'
 import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import { EditMultisigWallet, RemoveWallet, Summary } from '../../components/wallet'
 import { NewTransaction } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
-import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const Spend: FC<{
   address: string
@@ -30,6 +30,10 @@ const Spend: FC<{
     return builder.native_script(cardano.getPaymentNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
   }, [cardano, policy])
   const buildCertResult = useCallback((builder: SingleCertificateBuilder) => {
+    if (typeof policy === 'string') return builder.payment_key()
+    return builder.native_script(cardano.getStakingNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
+  }, [cardano, policy])
+  const buildWithdrawalResult = useCallback((builder: SingleWithdrawalBuilder) => {
     if (typeof policy === 'string') return builder.payment_key()
     return builder.native_script(cardano.getStakingNativeScriptFromPolicy(policy), cardano.lib.NativeScriptWitnessInfo.assume_signature_count())
   }, [cardano, policy])
@@ -51,6 +55,7 @@ const Spend: FC<{
   const { stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations } = data
   const isRegistered = isRegisteredOnChain(stakeRegistrations_aggregate, stakeDeregistrations_aggregate)
   const currentStakePool = isRegistered ? delegations[0]?.stakePool : undefined
+  const availableReward = getAvailableReward(data.rewards_aggregate, data.withdrawals_aggregate)
 
   return (
     <NewTransaction
@@ -59,7 +64,9 @@ const Spend: FC<{
       cardano={cardano}
       buildInputResult={buildInputResult}
       buildCertResult={buildCertResult}
+      buildWithdrawalResult={buildWithdrawalResult}
       rewardAddress={rewardAddress}
+      availableReward={availableReward}
       protocolParameters={protocolParameters}
       utxos={data.utxos}
       defaultChangeAddress={address} />

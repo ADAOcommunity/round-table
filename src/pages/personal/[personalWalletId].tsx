@@ -13,7 +13,7 @@ import { ConfigContext } from '../../cardano/config'
 import { DocumentDuplicateIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
 import { RemoveWallet, Summary } from '../../components/wallet'
-import { isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
+import { getAvailableReward, isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
 import { NewTransaction } from '../../components/transaction'
 import { formatDerivationPath } from '../../cardano/utils'
 
@@ -174,6 +174,7 @@ const Spend: FC<{
   const { stakeRegistrations_aggregate, stakeDeregistrations_aggregate, delegations } = data
   const isRegistered = isRegisteredOnChain(stakeRegistrations_aggregate, stakeDeregistrations_aggregate)
   const currentStakePool = isRegistered ? delegations[0]?.stakePool : undefined
+  const availableReward = getAvailableReward(data.rewards_aggregate, data.withdrawals_aggregate)
 
   return (
     <NewTransaction
@@ -182,7 +183,9 @@ const Spend: FC<{
       cardano={cardano}
       buildInputResult={(builder) => builder.payment_key()}
       buildCertResult={(builder) => builder.payment_key()}
+      buildWithdrawalResult={(builder) => builder.payment_key()}
       rewardAddress={rewardAddress}
+      availableReward={availableReward}
       protocolParameters={protocolParameters}
       utxos={data.utxos}
       defaultChangeAddress={defaultChangeAddress} />

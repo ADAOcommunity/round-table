@@ -1,5 +1,5 @@
 import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
-import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey, Bip32PublicKey, StakeCredential } from '@dcspark/cardano-multiplatform-lib-browser'
+import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey, Bip32PublicKey, StakeCredential, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
 import { db } from '../db'
 import type { PersonalAccount, PersonalWallet, MultisigAccount, Policy } from '../db'
@@ -337,6 +337,13 @@ class Cardano {
     const poolKeyHash = Ed25519KeyHash.from_bech32(poolId)
     if (!credential) return
     return Certificate.new_stake_delegation(StakeDelegation.new(credential, poolKeyHash))
+  }
+
+  public createWithdrawalBuilder(rewardAddress: string, amount: bigint): SingleWithdrawalBuilder | undefined {
+    const { Address, BigNum, SingleWithdrawalBuilder } = this.lib
+    const address = Address.from_bech32(rewardAddress).as_reward()
+    if (!address) return
+    return SingleWithdrawalBuilder.new(address, BigNum.from_str(amount.toString()))
   }
 
   public getNetworkId(isMainnet: boolean): number {
