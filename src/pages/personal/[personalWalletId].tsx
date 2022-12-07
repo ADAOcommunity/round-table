@@ -198,7 +198,7 @@ const Personal: FC<{
 }> = ({ wallet, className }) => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
-  const accountIndex = 0
+  const [accountIndex, setAccountIndex] = useState(0)
   const account = useMemo(() => wallet.personalAccounts.get(accountIndex), [wallet.personalAccounts, accountIndex])
   const addresses = useMemo(() => account && cardano?.getAddressesFromPersonalAccount(account, isMainnet(config)), [cardano, account, config])
   const rewardAddress = useMemo(() => account && cardano?.readRewardAddressFromPublicKey(account.publicKey, isMainnet(config)).to_address().to_bech32(), [cardano, config, account])
@@ -208,7 +208,7 @@ const Personal: FC<{
     <Modal><Loading /></Modal>
   )
 
-  const add = () => {
+  const addAddress = () => {
     cardano.generatePersonalAddress(wallet, accountIndex)
     db.personalWallets.put(wallet)
   }
@@ -216,32 +216,41 @@ const Personal: FC<{
   return (
     <div className={className}>
       <Portal id='personal-subtab'>
-        <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
-          <button
-            onClick={() => setTab('summary')}
-            disabled={tab === 'summary'}
-            className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-            Summary
-          </button>
-          <button
-            onClick={() => setTab('receive')}
-            disabled={tab === 'receive'}
-            className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-            Receive
-          </button>
-          <button
-            onClick={() => setTab('spend')}
-            disabled={tab === 'spend'}
-            className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
-            Spend
-          </button>
-        </nav>
+        <div className='flex space-x-2'>
+          <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
+            <button
+              onClick={() => setTab('summary')}
+              disabled={tab === 'summary'}
+              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+              Summary
+            </button>
+            <button
+              onClick={() => setTab('receive')}
+              disabled={tab === 'receive'}
+              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+              Receive
+            </button>
+            <button
+              onClick={() => setTab('spend')}
+              disabled={tab === 'spend'}
+              className='px-2 py-1 disabled:bg-white disabled:text-sky-700'>
+              Spend
+            </button>
+          </nav>
+          <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
+            <select onChange={(e) => setAccountIndex(parseInt(e.target.value))} className='px-2 py-1 bg-sky-700'>
+              {Array.from(wallet.personalAccounts, ([index, _]) => <option key={index} value={index}>
+                Account #{index}
+              </option>)}
+            </select>
+          </nav>
+        </div>
       </Portal>
       {tab === 'summary' && <Summary addresses={addresses} rewardAddress={rewardAddress} />}
       {tab === 'receive' && <Panel>
         <AddressTable addressName='Receiving Address' addresses={addresses} />
         <footer className='flex justify-end p-4 bg-gray-100'>
-          <button onClick={add} className='flex space-x-1 px-4 py-2 bg-sky-700 text-white rounded'>
+          <button onClick={addAddress} className='flex space-x-1 px-4 py-2 bg-sky-700 text-white rounded'>
             Add Address
           </button>
         </footer>
