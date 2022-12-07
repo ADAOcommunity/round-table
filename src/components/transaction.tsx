@@ -1167,7 +1167,7 @@ const NewTransaction: FC<{
   }, [cardano, message])
   const [withdrawAll, setWithdrawAll] = useState(false)
   const withdrawalBuilder = useMemo(() => {
-    if (withdrawAll) return cardano.createWithdrawalBuilder(rewardAddress, availableReward)
+    if (withdrawAll && availableReward > 0) return cardano.createWithdrawalBuilder(rewardAddress, availableReward)
   }, [withdrawAll, cardano])
 
   const closeModal = () => setModal(undefined)
@@ -1301,7 +1301,7 @@ const NewTransaction: FC<{
           </li>
         )}
       </ul>
-      <div>
+      {availableReward > 0 && <div>
         <header className='px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Available Reward</h2>
           <div className='text-sm'>
@@ -1320,7 +1320,7 @@ const NewTransaction: FC<{
             <ADAAmount lovelace={availableReward} />
           </div>
         </div>
-      </div>
+      </div>}
       {delegation && <div>
         <header className='flex justify-between px-4 py-2 bg-gray-100'>
           <div>
