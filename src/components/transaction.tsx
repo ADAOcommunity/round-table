@@ -1166,9 +1166,6 @@ const NewTransaction: FC<{
     }
   }, [cardano, message])
   const [withdrawAll, setWithdrawAll] = useState(false)
-  const withdrawalBuilder = useMemo(() => {
-    if (withdrawAll && availableReward > 0) return cardano.createWithdrawalBuilder(rewardAddress, availableReward)
-  }, [withdrawAll, cardano, availableReward, rewardAddress])
 
   const closeModal = () => setModal(undefined)
   const delegate = (stakePool: StakePool) => {
@@ -1261,7 +1258,11 @@ const NewTransaction: FC<{
     if (stakeRegistration) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeRegistration)))
     if (stakeDelegation) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeDelegation)))
 
-    if (withdrawalBuilder) txBuilder.add_withdrawal(buildWithdrawalResult(withdrawalBuilder))
+    if (withdrawAll) {
+      const builder = cardano.createWithdrawalBuilder(rewardAddress, availableReward)
+      if (!builder) throw new Error('Failed to create withdrawal builder')
+      txBuilder.add_withdrawal(buildWithdrawalResult(builder))
+    }
 
     if (auxiliaryData) txBuilder.add_auxiliary_data(auxiliaryData)
 
@@ -1269,7 +1270,7 @@ const NewTransaction: FC<{
     if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, withdrawalBuilder, startSlot, expirySlot])
+  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, startSlot, expirySlot, availableReward, rewardAddress, withdrawAll])
 
   const changeRecipient = (index: number, recipient: Recipient) => {
     setRecipients(recipients.map((_recipient, _index) => index === _index ? recipient : _recipient))
@@ -1301,21 +1302,17 @@ const NewTransaction: FC<{
           </li>
         )}
       </ul>
-      {availableReward > 0 && <div>
-        <header className='px-4 py-2 bg-gray-100'>
-          <h2 className='font-semibold'>Available Reward</h2>
-          <div className='text-sm'>
-            <div>{rewardAddress}</div>
-            <label className='items-center space-x-1'>
-              <input
-                type='checkbox'
-                checked={withdrawAll}
-                onChange={() => setWithdrawAll(!withdrawAll)} />
-              <span>Withdraw All</span>
-            </label>
-          </div>
+      {withdrawAll && <div>
+        <header className='flex justify-between px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold'>Withdraw Reward</h2>
+          <nav className='flex items-center'>
+            <button onClick={() => setWithdrawAll(false)}>
+              <XMarkIcon className='w-4' />
+            </button>
+          </nav>
         </header>
         <div className='p-4 space-y-1'>
+          <div>{rewardAddress}</div>
           <div className='p-2 border rounded'>
             <ADAAmount lovelace={availableReward} />
           </div>
@@ -1445,6 +1442,12 @@ const NewTransaction: FC<{
             className='p-2 rounded text-sky-700 border'
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
             Add Recipient
+          </button>
+          <button
+            disabled={withdrawAll || availableReward === BigInt(0)}
+            className='p-2 rounded text-sky-700 border disabled:bg-gray-100 disabled:text-gray-400'
+            onClick={() => setWithdrawAll(true)}>
+            Withdraw
           </button>
           <button
             className='p-2 rounded text-sky-700 border'
