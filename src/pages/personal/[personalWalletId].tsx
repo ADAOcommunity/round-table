@@ -9,7 +9,7 @@ import { db } from '../../db'
 import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
-import { ConfigContext } from '../../cardano/config'
+import { ConfigContext, isMainnet } from '../../cardano/config'
 import { DocumentDuplicateIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
 import { RemoveWallet, Summary } from '../../components/wallet'
@@ -68,7 +68,7 @@ const Multisig: FC<{
   const [config, _] = useContext(ConfigContext)
   const accountIndex = 0
   const account = useMemo(() => wallet.multisigAccounts[accountIndex], [wallet.multisigAccounts, accountIndex])
-  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(account, config.isMainnet), [cardano, account, config.isMainnet])
+  const addresses = useMemo(() => cardano?.getAddressesFromMultisigAccount(account, isMainnet(config)), [cardano, account, config])
 
   if (!cardano || !addresses) return (
     <Modal><Loading /></Modal>
@@ -200,8 +200,8 @@ const Personal: FC<{
   const [config, _] = useContext(ConfigContext)
   const accountIndex = 0
   const account = useMemo(() => wallet.personalAccounts[accountIndex], [wallet.personalAccounts, accountIndex])
-  const addresses = useMemo(() => cardano?.getAddressesFromPersonalAccount(account, config.isMainnet), [cardano, account, config.isMainnet])
-  const rewardAddress = useMemo(() => cardano?.readRewardAddressFromPublicKey(account.publicKey, config.isMainnet).to_address().to_bech32(), [cardano, config.isMainnet, account])
+  const addresses = useMemo(() => cardano?.getAddressesFromPersonalAccount(account, isMainnet(config)), [cardano, account, config])
+  const rewardAddress = useMemo(() => cardano?.readRewardAddressFromPublicKey(account.publicKey, isMainnet(config)).to_address().to_bech32(), [cardano, config, account])
   const [tab, setTab] = useState<'summary' | 'receive' | 'spend'>('summary')
 
   if (!addresses || !rewardAddress || !cardano) return (

@@ -11,10 +11,6 @@ const Configure: NextPage = () => {
     <Layout>
       <Panel className='p-4 space-y-2'>
         <p className='space-x-2'>
-          <span>Mode:</span>
-          <span>{config.isMainnet ? 'Mainnet' : 'Testnet'}</span>
-        </p>
-        <p className='space-x-2'>
           <span>Network:</span>
           <span>{config.network}</span>
         </p>

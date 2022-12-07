@@ -1,7 +1,8 @@
 import type { FC } from 'react'
 import { ChangeEventHandler, useContext } from "react"
 import NumberFormat from "react-number-format"
-import { Config, ConfigContext } from "../cardano/config"
+import { ConfigContext, isMainnet } from "../cardano/config"
+import type { Config } from "../cardano/config"
 
 const toDecimal = (value: bigint, decimals: number): string => {
   const text = value.toString()
@@ -51,7 +52,7 @@ const CurrencyInput: FC<{
   )
 }
 
-const getADASymbol = (config: Config) => config.isMainnet ? '₳' : 't₳'
+const getADASymbol = (config: Config) => isMainnet(config) ? '₳' : 't₳'
 
 const AssetAmount: FC<{
   quantity: bigint

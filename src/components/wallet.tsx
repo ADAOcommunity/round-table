@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState, useMemo } from 'react'
 import type { FC, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
-import { ConfigContext } from '../cardano/config'
+import { ConfigContext, isMainnet } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
@@ -385,7 +385,7 @@ const EditMultisigWallet: FC<{
   }, [params])
 
   const save = () => {
-    const id = cardano.getPolicyAddress(policy, config.isMainnet).to_bech32()
+    const id = cardano.getPolicyAddress(policy, isMainnet(config)).to_bech32()
     db.multisigWallets
       .put({ name, description, policy, id, updatedAt: new Date() }, id)
       .then(() => router.push(getMultisigWalletPath(policy)))

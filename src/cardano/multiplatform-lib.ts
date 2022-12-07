@@ -3,6 +3,7 @@ import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, Nat
 import { useEffect, useState } from 'react'
 import { db } from '../db'
 import type { PersonalAccount, PersonalWallet, MultisigAccount, Policy } from '../db'
+import { isMainnet } from './config'
 import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
@@ -29,7 +30,7 @@ const newRecipient = (): Recipient => {
 
 const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
   const networkId = address.network_id()
-  return config.isMainnet ? networkId === 1 : networkId === 0
+  return isMainnet(config) ? networkId === 1 : networkId === 0
 }
 
 const toAddressString = (address: Address): string => address.as_byron()?.to_base58() ?? address.to_bech32()

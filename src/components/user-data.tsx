@@ -7,7 +7,7 @@ import { db } from '../db'
 import type { MultisigWallet } from '../db'
 
 type UserData = {
-  isMainnet: boolean
+  network: string
   version: string
   multisigWallets: MultisigWallet[]
 }
@@ -54,11 +54,11 @@ const ExportUserDataButton: FC = () => {
   if (!multisigWallets) return null
 
   const userData: UserData = {
-    isMainnet: config.isMainnet,
+    network: config.network,
     version: '2',
     multisigWallets
   }
-  const filename = `roundtable-backup.${config.isMainnet ? 'mainnet' : 'testnet'}.json`
+  const filename = `roundtable-backup.${config.network}.json`
 
   return (
     <DownloadButton
@@ -98,7 +98,7 @@ const ImportUserData: FC = () => {
   const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
     if (!userDataJSON) return;
     const userData = JSON.parse(userDataJSON)
-    if (userData.isMainnet !== config.isMainnet) return;
+    if (userData.network !== config.network) return;
     importUserData(userData)
   }
 
@@ -115,7 +115,7 @@ const ImportUserData: FC = () => {
     if (!userDataJSON) return false
     const userData = JSON.parse(userDataJSON)
     if (!userData) return false
-    if (userData.isMainnet !== config.isMainnet) return false
+    if (userData.network !== config.network) return false
     return true
   }
 

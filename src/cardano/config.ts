@@ -19,13 +19,14 @@ const parseNetwork = (text: string): Network => {
 }
 
 type Config = {
-  isMainnet: boolean
   network: Network
   queryAPI: QueryAPI
   submitAPI: string[]
   SMASH: string
   gunPeers: string[]
 }
+
+const isMainnet = (config: Config) => config.network === 'mainnet'
 
 const defaultGraphQLMainnet = 'https://d.graphql-api.mainnet.dandelion.link'
 const defaultGraphQLTestnet = 'https://graphql.preview.lidonation.com/graphql'
@@ -41,7 +42,6 @@ const defaultSMASHMainnet = 'https://smash.cardano-mainnet.iohk.io/api/v1'
 const defaultSMASHTestnet = 'https://preview-smash.panl.org'
 
 const defaultConfig: Config = {
-  isMainnet: true,
   network: 'mainnet',
   queryAPI: { type: 'graphql', URI: defaultGraphQLMainnet },
   submitAPI: defaultSubmitURIMainnet,
@@ -50,19 +50,17 @@ const defaultConfig: Config = {
 }
 
 const createConfig = (): Config => {
-  const isMainnet = !process.env.NEXT_PUBLIC_TESTNET
   const network = parseNetwork(process.env.NEXT_PUBLIC_NETWORK ?? 'mainnet')
-  const defaultGraphQL = isMainnet ? defaultGraphQLMainnet : defaultGraphQLTestnet
-  const defaultSubmitURI = isMainnet ? defaultSubmitURIMainnet : defaultSubmitURITestnet
+  const defaultGraphQL = network === 'mainnet' ? defaultGraphQLMainnet : defaultGraphQLTestnet
+  const defaultSubmitURI = network === 'mainnet' ? defaultSubmitURIMainnet : defaultSubmitURITestnet
   const grapQLURI = process.env.NEXT_PUBLIC_GRAPHQL ?? defaultGraphQL
   const submitEnv = process.env.NEXT_PUBLIC_SUBMIT
   const submitURI = submitEnv ? submitEnv.split(';') : defaultSubmitURI
-  const defaultSMASH = isMainnet ? defaultSMASHMainnet : defaultSMASHTestnet
+  const defaultSMASH = network === 'mainnet' ? defaultSMASHMainnet : defaultSMASHTestnet
   const SMASH = process.env.NEXT_PUBLIC_SMASH ?? defaultSMASH
   const gunPeers = (process.env.NEXT_PUBLIC_GUN ?? '').split(';')
 
   return {
-    isMainnet,
     network,
     queryAPI: { type: 'graphql', URI: grapQLURI },
     submitAPI: submitURI,
@@ -76,4 +74,4 @@ const config = createConfig()
 const ConfigContext = createContext<[Config, (x: Config) => void]>([defaultConfig, (_) => {}])
 
 export type { Config, Network }
-export { ConfigContext, config }
+export { ConfigContext, config, isMainnet }

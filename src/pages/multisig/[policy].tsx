@@ -7,7 +7,7 @@ import { db } from '../../db'
 import type { Policy } from '../../db'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import type { FC } from 'react'
-import { ConfigContext } from '../../cardano/config'
+import { ConfigContext, isMainnet } from '../../cardano/config'
 import { CopyButton, Hero, Layout, Panel, Modal } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useUTxOSummaryQuery, isRegisteredOnChain, getAvailableReward } from '../../cardano/query-api'
@@ -137,15 +137,14 @@ const GetPolicy: NextPage = () => {
     if (!cardano || !policyContent) return
     if (typeof policyContent !== 'string') throw new Error('Cannot parse the policy')
     const { Address } = cardano.lib
-    const { isMainnet } = config
     if (Address.is_valid_bech32(policyContent)) return {
       policy: policyContent,
       address: policyContent,
-      rewardAddress: cardano.getPolicyRewardAddress(policyContent, isMainnet).to_address().to_bech32()
+      rewardAddress: cardano.getPolicyRewardAddress(policyContent, isMainnet(config)).to_address().to_bech32()
     }
     const policy: Policy = JSON.parse(policyContent)
-    const address = cardano.getPolicyAddress(policy, isMainnet).to_bech32()
-    const rewardAddress = cardano.getPolicyRewardAddress(policy, isMainnet).to_address().to_bech32()
+    const address = cardano.getPolicyAddress(policy, isMainnet(config)).to_bech32()
+    const rewardAddress = cardano.getPolicyRewardAddress(policy, isMainnet(config)).to_address().to_bech32()
     return { policy, address, rewardAddress }
   }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'remove' | 'native script'>('summary')

@@ -1,6 +1,6 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
-import { ConfigContext, config } from '../cardano/config'
+import { ConfigContext, config, isMainnet } from '../cardano/config'
 import Head from 'next/head'
 import { NotificationContext, useNotification } from '../components/notification'
 import { ApolloProvider } from '@apollo/client'
@@ -20,7 +20,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <ApolloProvider client={apolloClient}>
           <DateContext.Provider value={dateState}>
             <Head>
-              <title>{config.isMainnet ? 'RoundTable' : 'RoundTable Testnet'}</title>
+              <title>RoundTable{isMainnet(config) ? '' : ` ${config.network}` }</title>
             </Head>
             <Component {...pageProps} />
           </DateContext.Provider>

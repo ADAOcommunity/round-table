@@ -8,7 +8,8 @@ import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
 import type { Address, Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs, SingleWithdrawalBuilder, WithdrawalBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
 import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
-import { Config, ConfigContext } from '../cardano/config'
+import { ConfigContext, isMainnet } from '../cardano/config'
+import type { Config } from '../cardano/config'
 import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal } from './layout'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -43,14 +44,7 @@ const CertificateListing: FC<{
   certificate: Certificate
 }> = ({ cardano, certificate }) => {
   const [config, _] = useContext(ConfigContext)
-  const networkId = useMemo(() => {
-    const { NetworkInfo } = cardano.lib
-    if (config.isMainnet) {
-      return NetworkInfo.mainnet().network_id()
-    } else {
-      return NetworkInfo.testnet().network_id()
-    }
-  }, [cardano, config])
+  const networkId: number = useMemo(() => cardano.getNetworkId(isMainnet(config)), [cardano, config])
 
   let cert
 
@@ -300,7 +294,7 @@ const CIP30SignTxButton: FC<{
     const walletAPI = await wallet?.enable().catch(errorHandle)
     if (!walletAPI) return;
     const networkId = await walletAPI.getNetworkId()
-    if (config.isMainnet ? networkId !== 1 : networkId !== 0) {
+    if (isMainnet(config) ? networkId !== 1 : networkId !== 0) {
       notify('error', `${name} is on wrong network.`)
       return
     }
@@ -436,7 +430,7 @@ const SignatureSync: FC<{
   const [isOn, setIsOn] = useState(false)
   const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
   const peers = config.gunPeers
-  const network = config.isMainnet ? 'mainnet' : 'testnet'
+  const network = config.network
 
   useEffect(() => {
     let isMounted = true

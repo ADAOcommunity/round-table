@@ -3,7 +3,7 @@ import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
-import { ConfigContext } from '../cardano/config'
+import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -190,8 +190,8 @@ const PersonalWalletListing: FC<{
     if (!cardano) return
     return wallet
       .personalAccounts
-      .flatMap((account) => cardano.getAddressesFromPersonalAccount(account, config.isMainnet))
-  }, [cardano, wallet.personalAccounts, config.isMainnet])
+      .flatMap((account) => cardano.getAddressesFromPersonalAccount(account, isMainnet(config)))
+  }, [cardano, wallet.personalAccounts, config])
   const balance: Value | undefined = useMemo(() => {
     if (!addresses || !balances) return
     const values: Value[] = []
@@ -221,11 +221,11 @@ const MultisigWalletListing: FC<{
     const policyContent = router.query.policy
     if (typeof policyContent === 'string') {
       const policy: Policy = JSON.parse(policyContent)
-      const id = cardano?.getPolicyAddress(policy, config.isMainnet).to_bech32()
+      const id = cardano?.getPolicyAddress(policy, isMainnet(config)).to_bech32()
       if (id) return id === wallet.id
     }
     return false
-  }, [cardano, config.isMainnet, router.query.policy, wallet.id])
+  }, [cardano, config, router.query.policy, wallet.id])
 
   return (
     <WalletLink href={getMultisigWalletPath(wallet.policy)} name={wallet.name} isOnPage={isOnPage} lovelace={lovelace}>
@@ -245,10 +245,10 @@ const WalletList: FC = () => {
     multisigWallets?.forEach(({ id }) => result.add(id))
     personalWallets?.forEach(({ personalAccounts }) => {
       personalAccounts.forEach((account) =>
-        cardano.getAddressesFromPersonalAccount(account, config.isMainnet).forEach((address) => result.add(address)))
+        cardano.getAddressesFromPersonalAccount(account, isMainnet(config)).forEach((address) => result.add(address)))
     })
     return Array.from(result)
-  }, [multisigWallets, personalWallets, config.isMainnet, cardano])
+  }, [multisigWallets, personalWallets, config, cardano])
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
@@ -339,7 +339,7 @@ const Layout: FC<{
       <PrimaryBar />
       <WalletList />
       <div className='w-full bg-sky-100 overflow-y-auto'>
-        {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
+        {!isMainnet(config) && <div className='p-1 bg-red-900 text-white text-center'>You are using {config.network} network</div>}
         <div className='p-2 h-screen space-y-2'>
           <ChainProgress />
           {children}
