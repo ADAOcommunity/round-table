@@ -521,21 +521,15 @@ const Summary: FC<{
       {balance.assets.size > 0 && <div className='space-y-1'>
         <h2 className='font-semibold'>Assets</h2>
         <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
-          {Array.from(balance.assets).map(([id, quantity]) => {
-            const symbol = Buffer.from(getAssetName(id), 'hex').toString('ascii')
-            return (
-              <li key={id} className='p-2 border rounded'>
-                <AssetAmount
-                  quantity={quantity}
-                  decimals={0}
-                  symbol={symbol} />
-                <div className='space-x-1 text-sm truncate'>
-                  <span>{getPolicyId(id)}</span>
-                </div>
-              </li>
-            )
-          }
-          )}
+          {Array.from(balance.assets, ([id, quantity]) => <li key={id} className='p-2 border rounded'>
+            <AssetAmount
+              quantity={quantity}
+              decimals={0}
+              symbol={Buffer.from(getAssetName(id), 'hex').toString('ascii')} />
+            <div className='space-x-1 text-sm truncate'>
+              <span>{getPolicyId(id)}</span>
+            </div>
+          </li>)}
         </ul>
       </div>}
     </Panel>
