@@ -116,7 +116,7 @@ const Calendar: FC<{
             </tr>
           </thead>
           <tbody>
-            {weeks.map((dates, index) => <tr key={index}>
+            {weeks.map((dates) => <tr key={dates.map(date => date.getTime()).join('-')}>
               {Array.from({ length: 7 }, (_, i) => i).map((day) => {
                 const date = dates[day]
                 if (!date) return (
