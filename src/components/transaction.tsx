@@ -1533,7 +1533,7 @@ const StakePoolPicker: FC<{
         </span>
       </div>
       {stakePools && <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
-        {stakePools.map((stakePool, index) => <li key={index}><StakePoolInfo stakePool={stakePool} delegate={delegate} /></li>)}
+        {stakePools.map((stakePool) => <li key={stakePool.id}><StakePoolInfo stakePool={stakePool} delegate={delegate} /></li>)}
       </ul>}
       {isIdBlank && data && <nav className='flex items-center justify-between'>
         <button
