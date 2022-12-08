@@ -284,6 +284,11 @@ const EditPolicy: FC<{
     setPolicy({ type, policies })
   }, [policies, setPolicy])
 
+  const setRequiredNumber = useCallback((number: number) => {
+    if (typeof policy === 'string') return
+    if (policy.type === 'NofK') setPolicy({ ...policy, number })
+  }, [policy, setPolicy])
+
   if (typeof policy === 'string') return (
     <>
       <SignatureBadge />
@@ -319,7 +324,7 @@ const EditPolicy: FC<{
               className='p-1 h-full'
               max={policies.length}
               required={policy.number}
-              onCommit={(number) => setPolicy({ ...policy, number })} />}
+              onCommit={setRequiredNumber} />}
           <div className='px-2 py-1 space-x-1'>
             <span>of</span>
             <span>{policies.length}</span>
