@@ -1185,20 +1185,19 @@ const NewTransaction: FC<{
     }
   }, [cardano, message])
 
-  const closeModal = () => setModal(undefined)
-  const delegate = (stakePool: StakePool) => {
+  const closeModal = useCallback(() => setModal(undefined), [])
+  const delegate = useCallback(() => (stakePool: StakePool) => {
     setDelegation(stakePool)
     closeModal()
-  }
-  const confirmStartSlot = (slot: number) => {
+  }, [closeModal])
+  const confirmStartSlot = useCallback(() => (slot: number) => {
     setStartSlot(slot)
     closeModal()
-  }
-  const confirmExpirySlot = (slot: number) => {
+  }, [closeModal])
+  const confirmExpirySlot = useCallback((slot: number) => {
     setExpirySlot(slot)
     closeModal()
-  }
-
+  }, [closeModal])
   useEffect(() => {
     if (isChangeSettingDisabled) {
       setChangeAddress(defaultChangeAddress)
