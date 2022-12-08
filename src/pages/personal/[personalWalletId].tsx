@@ -1,8 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { useContext, useEffect, useMemo, useState } from 'react'
-import type { FC } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { FC, ChangeEventHandler } from 'react'
 import { AskPasswordModalButton, ConfirmModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
 import { db, updateWallet } from '../../db'
@@ -16,6 +16,7 @@ import { RemoveWallet, Summary } from '../../components/wallet'
 import { getAvailableReward, isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
 import { NewTransaction } from '../../components/transaction'
 import { formatDerivationPath } from '../../cardano/utils'
+import { SingleCertificateBuilder, SingleInputBuilder, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 
 const DerivationPath: FC<{
   keyHash?: Uint8Array
@@ -46,7 +47,7 @@ const AddressTable: FC<{
         </tr>
       </thead>
       <tbody className='divide-y'>
-        {addresses.map((address, index) => <tr key={index}>
+        {addresses.map((address) => <tr key={address}>
           <td className='px-4 py-2 items-center'>
             <span>{address}</span>
             <CopyButton className='p-2 text-sky-700' content={address} ms={500}>
@@ -160,6 +161,7 @@ const Spend: FC<{
     if (!address) throw new Error('No address is found for change')
     return address
   }, [addresses])
+  const buildResult = useCallback((builder: SingleInputBuilder | SingleCertificateBuilder | SingleWithdrawalBuilder) => builder.payment_key(), [])
 
   if (error) {
     console.error(error)
@@ -181,9 +183,9 @@ const Spend: FC<{
       isRegistered={isRegistered}
       currentDelegation={currentStakePool}
       cardano={cardano}
-      buildInputResult={(builder) => builder.payment_key()}
-      buildCertResult={(builder) => builder.payment_key()}
-      buildWithdrawalResult={(builder) => builder.payment_key()}
+      buildInputResult={buildResult}
+      buildCertResult={buildResult}
+      buildWithdrawalResult={buildResult}
       rewardAddress={rewardAddress}
       availableReward={availableReward}
       protocolParameters={protocolParameters}
@@ -204,17 +206,16 @@ const Personal: FC<{
   const addresses = useMemo(() => account && cardano?.getAddressesFromPersonalAccount(account, isMainnet(config)), [cardano, account, config])
   const rewardAddress = useMemo(() => account && cardano?.readRewardAddressFromPublicKey(account.publicKey, isMainnet(config)).to_address().to_bech32(), [cardano, config, account])
   const [tab, setTab] = useState<'summary' | 'receive' | 'spend'>('summary')
+  const selectAccount: ChangeEventHandler<HTMLSelectElement> = useCallback((e) => setAccountIndex(parseInt(e.target.value)), [])
 
-  if (!addresses || !rewardAddress || !cardano) return (
-    <Modal><Loading /></Modal>
-  )
-
-  const addAddress = () => {
+  const addAddress = useCallback(() => {
+    if (!cardano) return
     const indices = cardano.generatePersonalAddress(wallet, accountIndex)
     db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
-  }
+  }, [cardano, wallet, accountIndex])
 
-  const addAccount = async (password: string) => {
+  const addAccount = useCallback(async (password: string) => {
+    if (!cardano) return
     const keys = Array.from(wallet.personalAccounts.keys())
     const newAccountIndex = Math.max(...keys) + 1
     cardano.generatePersonalAccount(wallet, password, newAccountIndex).then((indices) => {
@@ -222,9 +223,9 @@ const Personal: FC<{
     })
       .then(() => setAccountIndex(newAccountIndex))
       .catch(() => notify('error', 'Failed to add account'))
-  }
+  }, [cardano, notify, wallet])
 
-  const deleteAccount = () => {
+  const deleteAccount = useCallback(() => {
     if (!account) return
     const keyHashes = account.paymentKeyHashes
     wallet.personalAccounts.delete(accountIndex)
@@ -234,7 +235,11 @@ const Personal: FC<{
         .then(() => db.keyHashIndices.where('hash').anyOf(keyHashes).delete())
     )
       .then(() => setAccountIndex(0))
-  }
+  }, [account, accountIndex, wallet])
+
+  if (!addresses || !rewardAddress || !cardano) return (
+    <Modal><Loading /></Modal>
+  )
 
   return (
     <div className={className}>
@@ -261,7 +266,7 @@ const Personal: FC<{
             </button>
           </nav>
           <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
-            <select value={accountIndex} onChange={(e) => setAccountIndex(parseInt(e.target.value))} className='px-2 py-1 bg-sky-700'>
+            <select value={accountIndex} onChange={selectAccount} className='px-2 py-1 bg-sky-700'>
               {Array.from(wallet.personalAccounts, ([index, _]) => <option key={index} value={index}>
                 Account #{index}
               </option>)}
@@ -306,11 +311,8 @@ const ShowPersonalWallet: NextPage = () => {
   const [tab, setTab] = useState<'personal' | 'multisig' | 'edit' | 'remove'>('personal')
   const { notify } = useContext(NotificationContext)
 
-  if (!personalWallet) return (
-    <Modal><Loading /></Modal>
-  )
-
-  const removeWallet = () => {
+  const removeWallet = useCallback(() => {
+    if (!personalWallet) return
     const walletId = personalWallet.id
     db
       .personalWallets
@@ -321,7 +323,11 @@ const ShowPersonalWallet: NextPage = () => {
         notify('error', 'Failed to delete')
         console.error(error)
       })
-  }
+  }, [notify, personalWallet, router])
+
+  if (!personalWallet) return (
+    <Modal><Loading /></Modal>
+  )
 
   return (
     <Layout>

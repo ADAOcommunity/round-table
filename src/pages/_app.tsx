@@ -5,15 +5,15 @@ import Head from 'next/head'
 import { NotificationContext, useNotification } from '../components/notification'
 import { ApolloProvider } from '@apollo/client'
 import { createApolloClient } from '../cardano/query-api'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { DateContext } from '../components/time'
 
 const apolloClient = createApolloClient(config)
-const title = isMainnet(config) ? 'RoundTable' : `RoundTable ${config.network}`
 
 function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
   const dateState = useState<Date>(new Date())
+  const title = useMemo(() => isMainnet(config) ? 'RoundTable' : `RoundTable ${config.network}`, [])
 
   return (
     <ConfigContext.Provider value={[config, () => {}]}>
