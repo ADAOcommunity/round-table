@@ -1186,11 +1186,11 @@ const NewTransaction: FC<{
   }, [cardano, message])
 
   const closeModal = useCallback(() => setModal(undefined), [])
-  const delegate = useCallback(() => (stakePool: StakePool) => {
+  const delegate = useCallback((stakePool: StakePool) => {
     setDelegation(stakePool)
     closeModal()
   }, [closeModal])
-  const confirmStartSlot = useCallback(() => (slot: number) => {
+  const confirmStartSlot = useCallback((slot: number) => {
     setStartSlot(slot)
     closeModal()
   }, [closeModal])
