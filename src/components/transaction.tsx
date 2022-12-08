@@ -441,7 +441,7 @@ const SignatureSync: FC<{
 }> = ({ cardano, txHash, signatures, signers, addSignatures, config }) => {
   const [isOn, setIsOn] = useState(false)
   const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
-  const switchToggle = useCallback(() => setIsOn(!isOn), [])
+  const switchToggle = useCallback(() => setIsOn(!isOn), [isOn])
   const peers = config.gunPeers
   const network = config.network
 
