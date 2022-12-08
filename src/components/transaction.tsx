@@ -1042,6 +1042,7 @@ const TransactionRecipient: FC<{
   }, [setRecipient, recipient])
 
   const minLovelace = useMemo(() => cardano.isValidAddress(recipient.address) ? getMinLovelace(recipient) : undefined, [recipient, cardano, getMinLovelace])
+  const selectAsset = useCallback((id: string) => setAsset(id, BigInt(0)), [setAsset])
 
   return (
     <div className='p-4 space-y-2'>
@@ -1086,7 +1087,7 @@ const TransactionRecipient: FC<{
           )
         })}
       </ul>
-      <AddAssetButton budget={budget} value={recipient.value} onSelect={(id) => setAsset(id, BigInt(0))} />
+      <AddAssetButton budget={budget} value={recipient.value} onSelect={selectAsset} />
     </div>
   )
 }
@@ -1290,13 +1291,13 @@ const NewTransaction: FC<{
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
   }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, startSlot, expirySlot, availableReward, rewardAddress, withdrawAll, stakeDeregistration])
 
-  const changeRecipient = (index: number, recipient: Recipient) => {
+  const changeRecipient = useCallback((index: number, recipient: Recipient) => {
     setRecipients(recipients.map((_recipient, _index) => index === _index ? recipient : _recipient))
-  }
+  }, [recipients])
 
-  const deleteRecipient = (index: number) => {
+  const deleteRecipient = useCallback((index: number) => {
     setRecipients(recipients.filter((_, _index) => index !== _index))
-  }
+  }, [recipients])
 
   return (
     <Panel>
