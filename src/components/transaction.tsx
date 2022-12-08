@@ -854,7 +854,7 @@ const TransactionViewer: FC<{
             liClassName='p-2 border rounded break-all'
             certificates={certificates} />
         </div>}
-        {txMessage && <div className='space-y-1 p-4'>
+        {txMessage && <div className='space-y-1'>
           <div className='font-semibold'>Message</div>
           <div className='p-2 border rounded'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
         </div>}
