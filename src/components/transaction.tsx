@@ -1011,17 +1011,18 @@ const TransactionRecipient: FC<{
 }> = ({ cardano, recipient, budget, getMinLovelace, onChange }) => {
 
   const [config, _] = useContext(ConfigContext)
-  const { address, value } = recipient
-  const setRecipient = (recipient: Recipient) => {
+  const setRecipient = useCallback((recipient: Recipient) => {
     onChange(recipient)
-  }
-  const setAddress = (address: string) => {
+  }, [onChange])
+  const setAddress = useCallback((address: string) => {
     setRecipient({ ...recipient, address })
-  }
-  const setLovelace = (lovelace: bigint) => {
+  }, [setRecipient, recipient])
+  const setLovelace = useCallback((lovelace: bigint) => {
+    const { value } = recipient
     setRecipient({ ...recipient, value: { ...value, lovelace } })
-  }
-  const setAsset = (id: string, quantity: bigint) => {
+  }, [setRecipient, recipient])
+  const setAsset = useCallback((id: string, quantity: bigint) => {
+    const { value } = recipient
     setRecipient({
       ...recipient,
       value: {
@@ -1029,28 +1030,29 @@ const TransactionRecipient: FC<{
         assets: new Map(value.assets).set(id, quantity)
       }
     })
-  }
-  const deleteAsset = (id: string) => {
+  }, [setRecipient, recipient])
+  const deleteAsset = useCallback((id: string) => {
+    const { value } = recipient
     const newAssets = new Map(value.assets)
     newAssets.delete(id)
     setRecipient({
       ...recipient,
       value: { ...value, assets: newAssets }
     })
-  }
+  }, [setRecipient, recipient])
 
-  const minLovelace = cardano.isValidAddress(address) ? getMinLovelace(recipient) : undefined
+  const minLovelace = useMemo(() => cardano.isValidAddress(recipient.address) ? getMinLovelace(recipient) : undefined, [recipient, cardano, getMinLovelace])
 
   return (
     <div className='p-4 space-y-2'>
-      <RecipientAddressInput address={address} setAddress={setAddress} cardano={cardano} />
+      <RecipientAddressInput address={recipient.address} setAddress={setAddress} cardano={cardano} />
       <div>
         <LabeledCurrencyInput
           symbol={getADASymbol(config)}
           decimal={6}
-          value={value.lovelace}
+          value={recipient.value.lovelace}
           min={minLovelace}
-          max={value.lovelace + budget.lovelace}
+          max={recipient.value.lovelace + budget.lovelace}
           onChange={setLovelace}
           placeholder='0.000000' />
         {minLovelace ? <p className='text-sm space-x-1'>
@@ -1064,7 +1066,7 @@ const TransactionRecipient: FC<{
         </p> : null}
       </div>
       <ul className='space-y-2'>
-        {Array.from(value.assets).map(([id, quantity]) => {
+        {Array.from(recipient.value.assets).map(([id, quantity]) => {
           const symbol = decodeASCII(getAssetName(id))
           const assetBudget = (budget.assets.get(id) || BigInt(0))
           const onChange = (value: bigint) => setAsset(id, value)
@@ -1084,7 +1086,7 @@ const TransactionRecipient: FC<{
           )
         })}
       </ul>
-      <AddAssetButton budget={budget} value={value} onSelect={(id) => setAsset(id, BigInt(0))} />
+      <AddAssetButton budget={budget} value={recipient.value} onSelect={(id) => setAsset(id, BigInt(0))} />
     </div>
   )
 }
