@@ -223,7 +223,7 @@ const CIP30ModalButton: FC<{
   transaction: Transaction
 }> = ({ className, children, sign, transaction }) => {
   const [modal, setModal] = useState(false)
-  const closeModal = () => setModal(false)
+  const closeModal = useCallback(() => setModal(false), [])
   return (
     <>
       <button onClick={() => setModal(true)} className={className}>{children}</button>
@@ -441,6 +441,7 @@ const SignatureSync: FC<{
 }> = ({ cardano, txHash, signatures, signers, addSignatures, config }) => {
   const [isOn, setIsOn] = useState(false)
   const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
+  const switchToggle = useCallback(() => setIsOn(!isOn), [])
   const peers = config.gunPeers
   const network = config.network
 
@@ -486,7 +487,7 @@ const SignatureSync: FC<{
   })
 
   return (
-    <Toggle isOn={isOn} onChange={() => setIsOn(!isOn)} />
+    <Toggle isOn={isOn} onChange={switchToggle} />
   )
 }
 
@@ -517,7 +518,8 @@ const ImportSignatureModalButton: FC<{
   const [modal, setModal] = useState(false)
   const [signature, setSignature] = useState('')
   const isDisabled = !signature
-  const closeModal = () => setModal(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const openModal = useCallback(() => setModal(true), [])
   const importSignature = () => {
     sign(signature)
     setSignature('')
@@ -526,7 +528,7 @@ const ImportSignatureModalButton: FC<{
 
   return (
     <>
-      <button onClick={() => setModal(true)} className={className}>{children}</button>
+      <button onClick={openModal} className={className}>{children}</button>
       {modal && <Modal className='bg-white text-center rounded p-4 space-y-2 w-1/2 md:w-1/3' onBackgroundClick={closeModal}>
         <div>
           <textarea
@@ -565,8 +567,8 @@ const SignWithPersonalWalletButton: FC<{
   const [modal, setModal] = useState(false)
   const [password, setPassword] = useState('')
   const { notify } = useContext(NotificationContext)
-
-  const closeModal = () => setModal(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const openModal = useCallback(() => setModal(true), [])
 
   useEffect(() => {
     if (!modal) {
@@ -604,7 +606,7 @@ const SignWithPersonalWalletButton: FC<{
 
   return (
     <>
-      <button onClick={() => setModal(true)} className={className}>{children}</button>
+      <button onClick={openModal} className={className}>{children}</button>
       {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
         <header>
           <h2 className='text-lg text-center font-semibold'>Sign Transaction</h2>
