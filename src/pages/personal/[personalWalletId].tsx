@@ -49,7 +49,7 @@ const AddressTable: FC<{
         {addresses.map((address, index) => <tr key={index}>
           <td className='px-4 py-2 items-center'>
             <span>{address}</span>
-            <CopyButton className='p-2 text-sky-700' getContent={() => address} ms={500}>
+            <CopyButton className='p-2 text-sky-700' content={address} ms={500}>
               <DocumentDuplicateIcon className='w-4' />
             </CopyButton>
           </td>

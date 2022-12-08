@@ -157,11 +157,11 @@ const TransactionInputViewer: FC<{
 const AddressViewer: FC<{
   address: Address
 }> = ({ address }) => {
-  const bech32 = address.to_bech32()
+  const bech32 = useMemo(() => address.to_bech32(), [address])
   return (
     <span className='flex items-center'>
       <span>{bech32}</span>
-      <CopyButton className='p-2 text-sm text-sky-700' getContent={() => bech32} ms={500}>
+      <CopyButton className='p-2 text-sm text-sky-700' content={bech32} ms={500}>
         <DocumentDuplicateIcon className='w-4' />
       </CopyButton>
     </span>
@@ -496,11 +496,11 @@ const CopyVkeysButton: FC<{
   children: ReactNode
   vkeys: Vkeywitness[]
 }> = ({ cardano, className, children, vkeys }) => {
-  const hex = useMemo(() => cardano.buildSignatureSetHex(vkeys) ?? '', [cardano, vkeys])
+  const hex = useMemo(() => cardano.buildSignatureSetHex(vkeys), [cardano, vkeys])
 
   return (
     <CopyButton
-      getContent={() => hex}
+      content={hex}
       disabled={vkeys.length === 0}
       ms={500}
       className={className}>

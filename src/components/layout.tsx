@@ -49,15 +49,16 @@ const CopyButton: FC<{
   children: ReactNode
   copied?: ReactNode
   disabled?: boolean
-  getContent: () => string
+  content?: string
   ms?: number
-}> = ({ children, copied, className, disabled, getContent, ms }) => {
+}> = ({ children, copied, className, disabled, content, ms }) => {
   const [isCopied, setIsCopied] = useState(false)
 
-  const clickHandle = () => {
-    navigator.clipboard.writeText(getContent())
+  const click = useCallback(() => {
+    if (!content) return
+    navigator.clipboard.writeText(content)
     setIsCopied(true)
-  }
+  }, [content])
 
   useEffect(() => {
     let isMounted = true
@@ -73,7 +74,7 @@ const CopyButton: FC<{
   }, [isCopied, ms])
 
   return (
-    <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
+    <button className={className} disabled={disabled || isCopied || !content} onClick={click}>
       {isCopied ? (copied ?? 'Copied!') : children}
     </button>
   )
@@ -83,8 +84,11 @@ const ShareCurrentURLButton: FC<{
   className?: string
   children: ReactNode
 }> = ({ children, className }) => {
+  const [currentURL, setCurrentURL] = useState<string | undefined>()
+  useEffect(() => setCurrentURL(document.location.href), [])
+
   return (
-    <CopyButton className={className} getContent={() => document.location.href} ms={500}>
+    <CopyButton className={className} content={currentURL} ms={500}>
       {children}
     </CopyButton>
   )

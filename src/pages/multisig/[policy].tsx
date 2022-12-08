@@ -171,13 +171,13 @@ const GetPolicy: NextPage = () => {
           <div>
             <div className='flex items-center'>
               <span>{result.address}</span>
-              <CopyButton className='p-2 text-sm text-white' getContent={() => result.address} ms={500}>
+              <CopyButton className='p-2 text-sm text-white' content={result.address} ms={500}>
                 <DocumentDuplicateIcon className='w-4' />
               </CopyButton>
             </div>
             <div className='flex items-center'>
               <span>{result.rewardAddress}</span>
-              <CopyButton className='p-2 text-sm text-white' getContent={() => result.rewardAddress} ms={500}>
+              <CopyButton className='p-2 text-sm text-white' content={result.rewardAddress} ms={500}>
                 <DocumentDuplicateIcon className='w-4' />
               </CopyButton>
             </div>
