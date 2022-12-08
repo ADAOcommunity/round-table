@@ -479,8 +479,7 @@ const Summary: FC<{
 }> = ({ addresses, rewardAddress }) => {
   const { data } = useSummaryQuery({
     variables: { addresses, rewardAddress },
-    fetchPolicy: 'cache-first',
-    pollInterval: 10000
+    fetchPolicy: 'network-only'
   })
 
   const result: { balance: Value, reward: bigint, delegation?: Delegation } | undefined = useMemo(() => {
