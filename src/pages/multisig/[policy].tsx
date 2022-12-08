@@ -150,17 +150,17 @@ const GetPolicy: NextPage = () => {
   const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'remove' | 'native script'>('summary')
   const multisigWallet = useLiveQuery(async () => result && db.multisigWallets.get(result.address), [result])
   const { notify } = useContext(NotificationContext)
-
-  const removeWallet = (id: string) => {
+  const removeWallet = useCallback(() => {
+    if (!multisigWallet) return
     db
       .multisigWallets
-      .delete(id)
+      .delete(multisigWallet.id)
       .then(() => router.push('/'))
       .catch((error) => {
         notify('error', 'Failed to delete')
         console.error(error)
       })
-  }
+  }, [notify, router, multisigWallet])
 
   return (
     <Layout>
@@ -225,7 +225,7 @@ const GetPolicy: NextPage = () => {
         {tab === 'summary' && <Summary addresses={[result.address]} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} rewardAddress={result.rewardAddress} />}
         {tab === 'edit' && multisigWallet && <EditMultisigWallet cardano={cardano} params={multisigWallet} />}
-        {tab === 'remove' && multisigWallet && <RemoveWallet walletName={multisigWallet.name} remove={() => removeWallet(multisigWallet.id)} />}
+        {tab === 'remove' && multisigWallet && <RemoveWallet walletName={multisigWallet.name} remove={removeWallet} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}
     </Layout>

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState, useMemo } from 'react'
+import { useCallback, useContext, useEffect, useState, useMemo } from 'react'
 import type { FC, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler, ReactNode } from 'react'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
@@ -107,11 +107,12 @@ const SlotInput: FC<{
   const [config, _] = useContext(ConfigContext)
   const [slot, setSlot] = useState<number>(initialSlot ?? estimateSlotByDate(new Date(), config.network))
   const date = estimateDateBySlot(slot, config.network)
+  const changeDate = useCallback((date: Date) => setSlot(estimateSlotByDate(date, config.network)), [config.network])
 
   return (
     <div className={className}>
       <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={slot} onCommit={setSlot} />
-      <Calendar isRed={isLocked} selectedDate={date} onChange={(date) => setSlot(estimateSlotByDate(date, config.network))} />
+      <Calendar isRed={isLocked} selectedDate={date} onChange={changeDate} />
       <nav className='flex justify-end space-x-2'>
         <button
           onClick={cancel}
@@ -135,6 +136,11 @@ const AddTimelock: FC<{
 }> = ({ className, add, cancel }) => {
   const [type, setType] = useState<'TimelockStart' | 'TimelockExpiry'>('TimelockStart')
   const [now, _t] = useContext(DateContext)
+  const confirmSlot = useCallback((slot: number) => add({ type, slot }), [add, type])
+  const isLocked = useCallback((date: Date) => {
+    if (type === 'TimelockExpiry') return date <= now
+    return false
+  }, [type, now])
 
   return (
     <div className={className}>
@@ -171,8 +177,8 @@ const AddTimelock: FC<{
       <SlotInput
         className='space-y-1'
         cancel={cancel}
-        confirm={(slot) => add({ type, slot })}
-        isLocked={type === 'TimelockStart' ? () => false : (date) => date <= now} />
+        confirm={confirmSlot}
+        isLocked={isLocked} />
     </div>
   )
 }
@@ -252,7 +258,31 @@ const EditPolicy: FC<{
   setPolicy: (policy: Policy) => void
 }> = ({ cardano, className, ulClassName, liClassName, policy, setPolicy }) => {
   const [modal, setModal] = useState<'address' | 'timelock' | undefined>()
-  const closeModal = () => setModal(undefined)
+  const closeModal = useCallback(() => setModal(undefined), [])
+  const policies = useMemo(() => {
+    if (typeof policy === 'string') return
+    if (policy.type === 'TimelockStart') return
+    if (policy.type === 'TimelockExpiry') return
+    return policy.policies
+  }, [policy])
+
+  const addPolicy = useCallback((newPolicy: Policy) => {
+    if (typeof policy === 'string') return
+    if (policy.type === 'TimelockStart') return
+    if (policy.type === 'TimelockExpiry') return
+    setPolicy({ ...policy, policies: policy.policies.concat(newPolicy) })
+    closeModal()
+  }, [closeModal, policy, setPolicy])
+
+  const setPolicyType: ChangeEventHandler<HTMLSelectElement> = useCallback((event) => {
+    if (!policies) return
+    const type = parsePolicyType(event.target.value)
+    if (type === 'NofK') {
+      setPolicy({ type, policies, number: policies.length })
+      return
+    }
+    setPolicy({ type, policies })
+  }, [policies, setPolicy])
 
   if (typeof policy === 'string') return (
     <>
@@ -275,26 +305,10 @@ const EditPolicy: FC<{
     </div>
   )
 
-  const addPolicy = (newPolicy: Policy) => {
-    setPolicy({ ...policy, policies: policy.policies.concat(newPolicy) })
-    closeModal()
-  }
-
-  const policies = policy.policies
-
-  const setPolicyType: ChangeEventHandler<HTMLSelectElement> = (event) => {
-    const type = parsePolicyType(event.target.value)
-    if (type === 'NofK') {
-      setPolicy({ type, policies, number: policies.length })
-      return
-    }
-    setPolicy({ type, policies })
-  }
-
   return (
     <div className={className}>
       <nav className='flex space-x-2 text-sm'>
-        {policies.length > 0 && <div className='flex border rounded divide-x items-center'>
+        {policies && policies.length > 0 && <div className='flex border rounded divide-x items-center'>
           <select className='bg-white text-sky-700 px-2 py-1' onChange={setPolicyType}>
             <option value="All">All</option>
             <option value="Any">Any</option>
@@ -330,7 +344,7 @@ const EditPolicy: FC<{
           <span>Add Nested Policy</span>
         </button>
       </nav>
-      {policies.length > 0 && <ul className={ulClassName}>
+      {policies && policies.length > 0 && <ul className={ulClassName}>
         {policies.map((subPolicy, index) => {
           const removeItem = () => {
             setPolicy({ ...policy, policies: policies.filter((_, i) => i !== index) })

@@ -4,7 +4,7 @@ import type { Result } from '../cardano/multiplatform-lib'
 import { Hero, Layout, Modal, Panel } from '../components/layout'
 import { Loading } from '../components/status'
 import { EditMultisigWallet } from '../components/wallet'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { createWallet, db } from '../db'
 import type { MultisigWalletParams, PersonalWallet } from '../db'
@@ -90,7 +90,7 @@ const RecoverHDWallet: FC<{
     return cardano?.lib.Bip32PrivateKey.from_bip39_entropy(entropy, Buffer.from(BIP32Passphrase, 'utf8'))
   }), [BIP32Passphrase, cardano?.lib.Bip32PrivateKey, isBIP32PassphraseValid, words, wordset])
   const [modal, setModal] = useState<'new' | undefined>()
-  const closeModal = () => setModal(undefined)
+  const closeModal = useCallback(() => setModal(undefined), [])
   useEffect(() => {
     if (rootKeyResult.isOk) setRootKey(rootKeyResult.data)
   }, [rootKeyResult, setRootKey])
