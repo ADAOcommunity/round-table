@@ -102,7 +102,7 @@ const SlotInput: FC<{
   initialSlot?: number
   cancel: () => void
   confirm: (slot: number) => void
-  isLocked: (date: Date, selectedDate: Date) => boolean
+  isLocked?: (date: Date, selectedDate: Date) => boolean
 }> = ({ className, cancel, confirm, initialSlot, isLocked }) => {
   const [config, _] = useContext(ConfigContext)
   const [slot, setSlot] = useState<number>(initialSlot ?? estimateSlotByDate(new Date(), config.network))

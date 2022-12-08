@@ -4,7 +4,7 @@ import { ConfigContext } from '../cardano/config'
 import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength } from '../cardano/utils'
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
-const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
+const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => {}])
 
 const ChainProgress: FC<{
   className?: string
@@ -55,14 +55,14 @@ function monthIter(year: number, month: number): IterableIterator<Date> {
       if (value.getMonth() === month) return { done: false, value }
       return { done: true, value: null }
     },
-    [Symbol.iterator]: function() { return this }
+    [Symbol.iterator]: function () { return this }
   }
 }
 
 const Calendar: FC<{
   selectedDate: Date
   onChange: (date: Date) => void
-  isRed: (date: Date, selectedDate: Date) => boolean
+  isRed?: (date: Date, selectedDate: Date) => boolean
 }> = ({ selectedDate, onChange, isRed }) => {
   const [date, setDate] = useState<Date>(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const year = date.getFullYear()
@@ -122,15 +122,15 @@ const Calendar: FC<{
                 if (!date) return (
                   <td key={day}></td>
                 )
-                const tdClassName = isRed(date, selectedDate) ? 'bg-red-100 text-red-700' : ''
+                const tdClassName = isRed && isRed(date, selectedDate) ? 'bg-red-100 text-red-700' : ''
                 let buttonClassName = 'block w-full p-2 rounded hover:text-white '
-                if (isRed(date, selectedDate)) {
+                if (isRed && isRed(date, selectedDate)) {
                   buttonClassName = buttonClassName + 'hover:bg-red-700 '
                 } else {
                   buttonClassName = buttonClassName + 'text-sky-700 hover:bg-sky-700 '
                 }
                 if (isOnSelectedDate(date)) {
-                  buttonClassName = buttonClassName + 'text-white ' + (isRed(date, selectedDate) ? 'bg-red-700' : 'bg-sky-700')
+                  buttonClassName = buttonClassName + 'text-white ' + (isRed && isRed(date, selectedDate) ? 'bg-red-700' : 'bg-sky-700')
                 }
                 return (
                   <td key={day} className={tdClassName}>

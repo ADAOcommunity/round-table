@@ -1388,7 +1388,7 @@ const NewTransaction: FC<{
             </nav>
             {modal === 'start' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3 space-y-1' onBackgroundClick={closeModal}>
               <h2 className='font-semibold'>Start Slot</h2>
-              <SlotInput className='space-y-2' confirm={confirmStartSlot} cancel={closeModal} initialSlot={startSlot} isLocked={() => false} />
+              <SlotInput className='space-y-2' confirm={confirmStartSlot} cancel={closeModal} initialSlot={startSlot} />
             </Modal>}
           </div>
           <div className='flex items-center space-x-2'>
@@ -1400,7 +1400,7 @@ const NewTransaction: FC<{
             </nav>
             {modal === 'expiry' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3 space-y-1' onBackgroundClick={closeModal}>
               <h2 className='font-semibold'>Expiry Slot</h2>
-              <SlotInput className='space-y-2' confirm={confirmExpirySlot} cancel={closeModal} initialSlot={startSlot} isLocked={() => false} />
+              <SlotInput className='space-y-2' confirm={confirmExpirySlot} cancel={closeModal} initialSlot={startSlot} />
             </Modal>}
           </div>
         </div>
