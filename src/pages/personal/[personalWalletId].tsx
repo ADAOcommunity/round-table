@@ -3,7 +3,7 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
-import { AskPasswordModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
+import { AskPasswordModalButton, ConfirmModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
 import { db, updateWallet } from '../../db'
 import type { PersonalWallet } from '../../db'
@@ -224,6 +224,18 @@ const Personal: FC<{
       .catch(() => notify('error', 'Failed to add account'))
   }
 
+  const deleteAccount = () => {
+    if (!account) return
+    const keyHashes = account.paymentKeyHashes
+    wallet.personalAccounts.delete(accountIndex)
+    db.transaction('rw', db.personalWallets, db.keyHashIndices, () =>
+      db.personalWallets
+        .put(wallet)
+        .then(() => db.keyHashIndices.where('hash').anyOf(keyHashes).delete())
+    )
+      .then(() => setAccountIndex(0))
+  }
+
   return (
     <div className={className}>
       <Portal id='personal-subtab'>
@@ -260,7 +272,17 @@ const Personal: FC<{
           </nav>
         </div>
       </Portal>
-      {tab === 'summary' && <Summary addresses={addresses} rewardAddress={rewardAddress} />}
+      {tab === 'summary' && <Summary addresses={addresses} rewardAddress={rewardAddress}>
+        <footer className='flex justify-end p-4 bg-gray-100'>
+          <ConfirmModalButton
+            disabled={accountIndex === 0}
+            onConfirm={deleteAccount}
+            message={'Do you really want to remove Account #' + accountIndex}
+            className='px-4 py-2 bg-red-700 text-white rounded disabled:border disabled:text-gray-400 disabled:bg-gray-100'>
+            REMOVE
+          </ConfirmModalButton>
+        </footer>
+      </Summary>}
       {tab === 'receive' && <Panel>
         <AddressTable addressName='Receiving Address' addresses={addresses} />
         <footer className='flex justify-end p-4 bg-gray-100'>

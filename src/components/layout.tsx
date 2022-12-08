@@ -402,4 +402,33 @@ const AskPasswordModalButton: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, AskPasswordModalButton }
+const ConfirmModalButton: FC<{
+  className?: string
+  children?: ReactNode
+  disabled?: boolean
+  message?: string
+  onConfirm: () => void
+}> = ({ className, children, onConfirm, message, disabled }) => {
+  const [modal, setModal] = useState(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const confirm = useCallback(() => {
+    onConfirm()
+    closeModal()
+  }, [closeModal, onConfirm])
+
+  return (
+    <>
+      <button onClick={() => setModal(true)} className={className} disabled={disabled}>{children}</button>
+      {modal && <Modal className='bg-white p-4 rounded space-y-4 text-sm w-full md:w-1/3 lg:w-1/4' onBackgroundClick={closeModal}>
+        <h2 className='text-center text-lg font-semibold'>Please Confirm</h2>
+        <div className='text-center text-lg'>{message}</div>
+        <nav className='flex justify-end space-x-2'>
+          <button className='border rounded p-2 text-sky-700' onClick={closeModal}>Cancel</button>
+          <button onClick={confirm} className={className} disabled={disabled}>{children}</button>
+        </nav>
+      </Modal>}
+    </>
+  )
+}
+
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, AskPasswordModalButton, ConfirmModalButton }

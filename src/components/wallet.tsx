@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState, useMemo } from 'react'
-import type { FC, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler } from 'react'
+import type { FC, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler, ReactNode } from 'react'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
@@ -476,7 +476,8 @@ const RemoveWallet: FC<{
 const Summary: FC<{
   addresses: string[]
   rewardAddress: string
-}> = ({ addresses, rewardAddress }) => {
+  children?: ReactNode
+}> = ({ addresses, rewardAddress, children }) => {
   const { data } = useSummaryQuery({
     variables: { addresses, rewardAddress },
     fetchPolicy: 'network-only'
@@ -501,37 +502,40 @@ const Summary: FC<{
   const { balance, reward, delegation } = result
 
   return (
-    <Panel className='p-4 space-y-2'>
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
-        <div className='space-y-1'>
-          <h2 className='font-semibold'>Balance</h2>
-          <div>
-            <ADAAmount lovelace={balance.lovelace} />
-            <span> + </span>
-            (<ADAAmount lovelace={reward} /> reward)
+    <Panel>
+      <div className='p-4 space-y-2'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
+          <div className='space-y-1'>
+            <h2 className='font-semibold'>Balance</h2>
+            <div>
+              <ADAAmount lovelace={balance.lovelace} />
+              <span> + </span>
+              (<ADAAmount lovelace={reward} /> reward)
+            </div>
+          </div>
+          <div className='space-y-1'>
+            <h2 className='font-semibold'>Delegation</h2>
+            <div>{rewardAddress}</div>
+            {delegation && <StakePoolInfo stakePool={delegation.stakePool} />}
+            {!delegation && <div>N/A</div>}
           </div>
         </div>
-        <div className='space-y-1'>
-          <h2 className='font-semibold'>Delegation</h2>
-          <div>{rewardAddress}</div>
-          {delegation && <StakePoolInfo stakePool={delegation.stakePool} />}
-          {!delegation && <div>N/A</div>}
-        </div>
+        {balance.assets.size > 0 && <div className='space-y-1'>
+          <h2 className='font-semibold'>Assets</h2>
+          <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
+            {Array.from(balance.assets, ([id, quantity]) => <li key={id} className='p-2 border rounded'>
+              <AssetAmount
+                quantity={quantity}
+                decimals={0}
+                symbol={Buffer.from(getAssetName(id), 'hex').toString('ascii')} />
+              <div className='space-x-1 text-sm truncate'>
+                <span>{getPolicyId(id)}</span>
+              </div>
+            </li>)}
+          </ul>
+        </div>}
       </div>
-      {balance.assets.size > 0 && <div className='space-y-1'>
-        <h2 className='font-semibold'>Assets</h2>
-        <ul className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2'>
-          {Array.from(balance.assets, ([id, quantity]) => <li key={id} className='p-2 border rounded'>
-            <AssetAmount
-              quantity={quantity}
-              decimals={0}
-              symbol={Buffer.from(getAssetName(id), 'hex').toString('ascii')} />
-            <div className='space-x-1 text-sm truncate'>
-              <span>{getPolicyId(id)}</span>
-            </div>
-          </li>)}
-        </ul>
-      </div>}
+      {children}
     </Panel>
   )
 }
