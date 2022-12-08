@@ -1,4 +1,4 @@
-import { useMemo, useContext, useEffect, useState } from 'react'
+import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
@@ -368,4 +368,35 @@ const Modal: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal }
+const AskPasswordModalButton: FC<{
+  className?: string
+  children?: ReactNode
+  onConfirm: (password: string) => void
+}> = ({ className, children, onConfirm }) => {
+  const [modal, setModal] = useState(false)
+  const [password, setPassword] = useState('')
+  const closeModal = useCallback(() => setModal(false), [])
+  const confirm = useCallback(() => {
+    onConfirm(password)
+    closeModal()
+  }, [password, closeModal, onConfirm])
+
+  return (
+    <>
+      <button onClick={() => setModal(true)} className={className}>{children}</button>
+      {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
+        <input
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
+          type='password' className='block w-full border rounded p-2 text-lg outline-none'
+          placeholder='Password' />
+        <nav className='flex justify-end space-x-2'>
+          <button className='border rounded p-2 text-sky-700' onClick={closeModal}>Cancel</button>
+          <button onClick={confirm} className='p-2 bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400' disabled={password.length === 0}>{children}</button>
+        </nav>
+      </Modal>}
+    </>
+  )
+}
+
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, AskPasswordModalButton }

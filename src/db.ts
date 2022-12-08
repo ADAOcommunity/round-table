@@ -68,5 +68,5 @@ class LocalDatabase extends Dexie {
 
 const db = new LocalDatabase()
 
-export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount }
+export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount, KeyHashIndex }
 export { db }

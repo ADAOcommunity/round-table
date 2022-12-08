@@ -164,11 +164,13 @@ const NewPersonalWallet: FC = () => {
           multisigAccounts: new Map(),
           updatedAt: new Date()
         }
-        await cardano.generatePersonalAccount(wallet, password)
-        await cardano.generateMultisigAccount(wallet, password)
-        db.personalWallets.add(wallet).then(() => {
-          router.push(getPersonalWalletPath(id))
-        })
+        const personalResult = await cardano.generatePersonalAccount(wallet, password)
+        const multisigResult = await cardano.generateMultisigAccount(wallet, password)
+        const keyHashIndices = [personalResult.indices, multisigResult.indices].flat()
+        db.transaction('rw', db.personalWallets, db.keyHashIndices, () => db.personalWallets.add(wallet).then(() => db.keyHashIndices.bulkPut(keyHashIndices)))
+          .then(() => {
+            router.push(getPersonalWalletPath(id))
+          })
       })
       .catch((error) => {
         notify('error', 'Failed to save the key')

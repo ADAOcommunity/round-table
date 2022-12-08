@@ -3,9 +3,9 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
-import { CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
+import { AskPasswordModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
-import { db } from '../../db'
+import { db, KeyHashIndex } from '../../db'
 import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
@@ -192,6 +192,8 @@ const Spend: FC<{
   )
 }
 
+const updateWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.personalWallets.put(wallet).then(() => db.keyHashIndices.bulkPut(indices))
+
 const Personal: FC<{
   wallet: PersonalWallet
   className?: string
@@ -209,8 +211,14 @@ const Personal: FC<{
   )
 
   const addAddress = () => {
-    cardano.generatePersonalAddress(wallet, accountIndex)
-    db.personalWallets.put(wallet)
+    const indices = cardano.generatePersonalAddress(wallet, accountIndex)
+    db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
+  }
+
+  const addAccount = async (password: string) => {
+    const { accountIndex, indices } = await cardano.generatePersonalAccount(wallet, password)
+    db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
+      .then(() => setAccountIndex(accountIndex))
   }
 
   return (
@@ -238,11 +246,14 @@ const Personal: FC<{
             </button>
           </nav>
           <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
-            <select onChange={(e) => setAccountIndex(parseInt(e.target.value))} className='px-2 py-1 bg-sky-700'>
+            <select value={accountIndex} onChange={(e) => setAccountIndex(parseInt(e.target.value))} className='px-2 py-1 bg-sky-700'>
               {Array.from(wallet.personalAccounts, ([index, _]) => <option key={index} value={index}>
                 Account #{index}
               </option>)}
             </select>
+            <AskPasswordModalButton onConfirm={addAccount} className='px-2 py-1'>
+              Add Account
+            </AskPasswordModalButton>
           </nav>
         </div>
       </Portal>

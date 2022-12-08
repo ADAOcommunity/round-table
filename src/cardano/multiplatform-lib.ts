@@ -2,7 +2,7 @@ import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-
 import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey, Bip32PublicKey, StakeCredential, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
 import { db } from '../db'
-import type { PersonalAccount, PersonalWallet, MultisigAccount, Policy } from '../db'
+import type { PersonalAccount, PersonalWallet, MultisigAccount, Policy, KeyHashIndex } from '../db'
 import { isMainnet } from './config'
 import type { Config } from './config'
 import type { Value } from './query-api'
@@ -400,25 +400,23 @@ class Cardano {
     return collection
   }
 
-  public async generatePersonalAccount(wallet: PersonalWallet, password: string) {
+  public async generatePersonalAccount(wallet: PersonalWallet, password: string): Promise<{ accountIndex: number, indices: KeyHashIndex[] }> {
     const rootKey = await this.getRootKey(wallet, password)
     const accountIndex = wallet.personalAccounts.size
     wallet.personalAccounts.set(accountIndex, { publicKey: personalPublicKey(rootKey, accountIndex).as_bytes(), paymentKeyHashes: [] })
-    Array.from({ length: 10 }, () => {
-      this.generatePersonalAddress(wallet, accountIndex)
-    })
+    const indices = Array.from({ length: 10 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
+    return { accountIndex, indices }
   }
 
-  public async generateMultisigAccount(wallet: PersonalWallet, password: string) {
+  public async generateMultisigAccount(wallet: PersonalWallet, password: string): Promise<{ accountIndex: number, indices: KeyHashIndex[] }> {
     const rootKey = await this.getRootKey(wallet, password)
     const accountIndex = wallet.multisigAccounts.size
     wallet.multisigAccounts.set(accountIndex, { publicKey: multisigPublicKey(rootKey, accountIndex).as_bytes(), addresses: [] })
-    Array.from({ length: 10 }, () => {
-      this.generateMultisigAddress(wallet, accountIndex)
-    })
+    const indices = Array.from({ length: 10 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
+    return { accountIndex, indices }
   }
 
-  public async generatePersonalAddress(wallet: PersonalWallet, accountIndex: number) {
+  public generatePersonalAddress(wallet: PersonalWallet, accountIndex: number): KeyHashIndex[] {
     const account = wallet.personalAccounts.get(accountIndex)
     if (!account) throw new Error('No account found with this index')
     const { Bip32PublicKey } = this.lib
@@ -429,11 +427,13 @@ class Cardano {
     const stakingKeyHash = personalStakingKeyHash(publicKey)
     const stakingPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, 0]
     account.paymentKeyHashes.push(paymentKeyHash.to_bytes())
-    await db.keyHashIndices.put({ hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id })
-    await db.keyHashIndices.put({ hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id })
+    return [
+      { hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id },
+      { hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id }
+    ]
   }
 
-  public async generateMultisigAddress(wallet: PersonalWallet, accountIndex: number) {
+  public generateMultisigAddress(wallet: PersonalWallet, accountIndex: number): KeyHashIndex[] {
     const account = wallet.multisigAccounts.get(accountIndex)
     if (!account) throw new Error('No account found with this index')
     const { Bip32PublicKey } = this.lib
@@ -447,8 +447,10 @@ class Cardano {
       paymentKeyHash: paymentKeyHash.to_bytes(),
       stakingKeyHash: stakingKeyHash.to_bytes()
     })
-    await db.keyHashIndices.put({ hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id })
-    await db.keyHashIndices.put({ hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id })
+    return [
+      { hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id },
+      { hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id }
+    ]
   }
 
   public readStakeCredentialFromKeyHash(bytes: Uint8Array): StakeCredential {
