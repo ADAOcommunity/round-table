@@ -380,6 +380,9 @@ const AskPasswordModalButton: FC<{
     onConfirm(password)
     closeModal()
   }, [password, closeModal, onConfirm])
+  useEffect(() => {
+    if (!modal) setPassword('')
+  }, [modal])
 
   return (
     <>

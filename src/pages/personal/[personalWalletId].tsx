@@ -5,7 +5,7 @@ import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { AskPasswordModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
-import { db, KeyHashIndex } from '../../db'
+import { db, updateWallet } from '../../db'
 import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
@@ -74,16 +74,16 @@ const Multisig: FC<{
     <Modal><Loading /></Modal>
   )
 
-  const add = () => {
-    cardano.generateMultisigAddress(wallet, accountIndex)
-    db.personalWallets.put(wallet)
+  const addAddress = () => {
+    const indices = cardano.generateMultisigAddress(wallet, accountIndex)
+    db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
   }
 
   return (
     <Panel>
       <AddressTable addresses={addresses} addressName='Address for multisig' />
       <footer className='flex justify-end p-4 bg-gray-100'>
-        <button onClick={add} className='flex space-x-1 px-4 py-2 bg-sky-700 text-white rounded'>
+        <button onClick={addAddress} className='flex space-x-1 px-4 py-2 bg-sky-700 text-white rounded'>
           Add Address
         </button>
       </footer>
@@ -192,14 +192,13 @@ const Spend: FC<{
   )
 }
 
-const updateWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.personalWallets.put(wallet).then(() => db.keyHashIndices.bulkPut(indices))
-
 const Personal: FC<{
   wallet: PersonalWallet
   className?: string
 }> = ({ wallet, className }) => {
   const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
+  const { notify } = useContext(NotificationContext)
   const [accountIndex, setAccountIndex] = useState(0)
   const account = useMemo(() => wallet.personalAccounts.get(accountIndex), [wallet.personalAccounts, accountIndex])
   const addresses = useMemo(() => account && cardano?.getAddressesFromPersonalAccount(account, isMainnet(config)), [cardano, account, config])
@@ -216,9 +215,13 @@ const Personal: FC<{
   }
 
   const addAccount = async (password: string) => {
-    const { accountIndex, indices } = await cardano.generatePersonalAccount(wallet, password)
-    db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
-      .then(() => setAccountIndex(accountIndex))
+    const keys = Array.from(wallet.personalAccounts.keys())
+    const newAccountIndex = Math.max(...keys) + 1
+    cardano.generatePersonalAccount(wallet, password, newAccountIndex).then((indices) => {
+      return db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
+    })
+      .then(() => setAccountIndex(newAccountIndex))
+      .catch(() => notify('error', 'Failed to add account'))
   }
 
   return (

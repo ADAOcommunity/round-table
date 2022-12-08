@@ -400,20 +400,16 @@ class Cardano {
     return collection
   }
 
-  public async generatePersonalAccount(wallet: PersonalWallet, password: string): Promise<{ accountIndex: number, indices: KeyHashIndex[] }> {
+  public async generatePersonalAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
     const rootKey = await this.getRootKey(wallet, password)
-    const accountIndex = wallet.personalAccounts.size
     wallet.personalAccounts.set(accountIndex, { publicKey: personalPublicKey(rootKey, accountIndex).as_bytes(), paymentKeyHashes: [] })
-    const indices = Array.from({ length: 10 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
-    return { accountIndex, indices }
+    return Array.from({ length: 10 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
   }
 
-  public async generateMultisigAccount(wallet: PersonalWallet, password: string): Promise<{ accountIndex: number, indices: KeyHashIndex[] }> {
+  public async generateMultisigAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
     const rootKey = await this.getRootKey(wallet, password)
-    const accountIndex = wallet.multisigAccounts.size
     wallet.multisigAccounts.set(accountIndex, { publicKey: multisigPublicKey(rootKey, accountIndex).as_bytes(), addresses: [] })
-    const indices = Array.from({ length: 10 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
-    return { accountIndex, indices }
+    return Array.from({ length: 10 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
   }
 
   public generatePersonalAddress(wallet: PersonalWallet, accountIndex: number): KeyHashIndex[] {

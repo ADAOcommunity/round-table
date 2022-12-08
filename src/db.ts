@@ -68,5 +68,8 @@ class LocalDatabase extends Dexie {
 
 const db = new LocalDatabase()
 
+const createWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.personalWallets.add(wallet).then(() => db.keyHashIndices.bulkPut(indices))
+const updateWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.personalWallets.put(wallet).then(() => db.keyHashIndices.bulkPut(indices))
+
 export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount, KeyHashIndex }
-export { db }
+export { db, createWallet, updateWallet }
