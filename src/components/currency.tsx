@@ -1,5 +1,5 @@
+import { ChangeEventHandler, useCallback, useContext } from "react"
 import type { FC } from 'react'
-import { ChangeEventHandler, useContext } from "react"
 import NumberFormat from "react-number-format"
 import { ConfigContext, isMainnet } from "../cardano/config"
 import type { Config } from "../cardano/config"
@@ -29,11 +29,11 @@ const CurrencyInput: FC<{
 }> = ({ disabled, value, onChange, decimals, ...props }) => {
   const inputValue = toDecimal(value, decimals)
 
-  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
+  const changeHandle: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
     const [i, f] = event.target.value.split('.', 2)
     const number = BigInt(i + (f || '0').slice(0, decimals).padEnd(decimals, '0'))
     onChange(number)
-  }
+  }, [decimals, onChange])
 
   return (
     <NumberFormat
@@ -85,10 +85,10 @@ const LabeledCurrencyInput: FC<{
   placeholder?: string
 }> = (props) => {
   const { decimal, value, onChange, min, max, maxButton, symbol, placeholder } = props
-  const changeHandle = (value: bigint) => {
+  const changeHandle = useCallback((value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
-  }
+  }, [max, onChange])
   const isValid = value > 0 && value <= max && (min ? value >= min : true)
 
   return (
