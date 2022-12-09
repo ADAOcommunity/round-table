@@ -4,7 +4,7 @@ import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { Loading } from '../../components/status'
 import { db } from '../../db'
-import type { Policy } from '../../db'
+import type { Policy, MultisigWalletParams } from '../../db'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext, isMainnet } from '../../cardano/config'
@@ -149,6 +149,14 @@ const GetPolicy: NextPage = () => {
   }, [cardano, config, policyContent])
   const [tab, setTab] = useState<'summary' | 'spend' | 'edit' | 'remove' | 'native script'>('summary')
   const multisigWallet = useLiveQuery(async () => result && db.multisigWallets.get(result.address), [result])
+  const walletParams: MultisigWalletParams | undefined = useMemo(() => {
+    if (multisigWallet) return multisigWallet
+    if (result) return {
+      name: '',
+      description: '',
+      policy: result.policy
+    }
+  }, [multisigWallet, result])
   const { notify } = useContext(NotificationContext)
   const removeWallet = useCallback(() => {
     if (!multisigWallet) return
@@ -224,7 +232,7 @@ const GetPolicy: NextPage = () => {
         </Hero>
         {tab === 'summary' && <Summary addresses={[result.address]} rewardAddress={result.rewardAddress} />}
         {tab === 'spend' && <Spend cardano={cardano} policy={result.policy} address={result.address} rewardAddress={result.rewardAddress} />}
-        {tab === 'edit' && multisigWallet && <EditMultisigWallet cardano={cardano} params={multisigWallet} />}
+        {tab === 'edit' && walletParams && <EditMultisigWallet cardano={cardano} params={walletParams} />}
         {tab === 'remove' && multisigWallet && <RemoveWallet walletName={multisigWallet.name} remove={removeWallet} />}
         {tab === 'native script' && typeof result.policy !== 'string' && <ShowNativeScript cardano={cardano} policy={result.policy} />}
       </div>}
