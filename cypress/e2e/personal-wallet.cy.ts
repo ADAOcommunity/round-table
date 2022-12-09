@@ -2,14 +2,14 @@ const walletName = 'Main Wallet'
 const password = 'ic{K6Bio"pMS'
 const walletDesc = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
 const recoveryPhrase: string[] = [
-  'moral',   'equip',   'attract',
-  'bacon',   'century', 'glad',
-  'frown',   'bottom',  'attitude',
-  'base',    'deputy',  'pink',
-  'erosion', 'beauty',  'razor',
-  'route',   'leave',   'wool',
-  'type',    'tell',    'trend',
-  'skin',    'weapon',  'blush'
+  'moral', 'equip', 'attract',
+  'bacon', 'century', 'glad',
+  'frown', 'bottom', 'attitude',
+  'base', 'deputy', 'pink',
+  'erosion', 'beauty', 'razor',
+  'route', 'leave', 'wool',
+  'type', 'tell', 'trend',
+  'skin', 'weapon', 'blush'
 ]
 
 describe('Personal wallet', () => {
@@ -131,7 +131,41 @@ describe('Personal wallet', () => {
       .should('have.text', "m/1854'/1815'/0'/2/1")
   })
 
+  it('should be able to sign personal transactions', () => {
+    cy.visit('http://localhost:3000/base64/hKYAgYJYIPrhts%2B6OZKM83FFizlaIjZeIG%2FV7j2hqj5EPXQWBbr1AAGCglg5AKdbKhCK0NX7pEVrac89ZN%2BdIztHu%2FU4K5sYpMMuQroBlTd3CjKTqQd5p%2FUfu4BkQWJhU0plpOMHGgAOzBaCWDkAyF8t8490ivOyLC4q%2FFUcOOhJ3eBqvJ4o6a%2FUZy5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wcaAGiQ2QIaAAK1EQMaAD0gUwSCggCCAFgcLkK6AZU3dwoyk6kHeaf1H7uAZEFiYVNKZaTjB4MCggBYHC5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wdYHAzLBKcAAKxvP29HJWhW8XJOGpPP0tSX4lgg85sIGgA7ztOg9fY%3D')
+    cy.contains('Sign with personal wallet').click()
+    cy.get('#modal-root').get('input').type(password).should('have.value', password)
+    cy.get('#modal-root').contains('Sign with personal wallet').click()
+
+    cy.contains('c85f2df38f748af3b22c2e2afc551c38e849dde06abc9e28e9afd467')
+      .parent()
+      .should('have.class', 'text-green-500')
+
+    cy.contains('2e42ba019537770a3293a90779a7f51fbb8064416261534a65a4e307')
+      .parent()
+      .should('have.class', 'text-green-500')
+  })
+
+  it('should be able to sign multisig transactions', () => {
+    cy.visit('http://localhost:3000/base64/hKcAgYJYID8suzDDldXtmJgQSIlDudo6DK9M97u29zCZT%2Bx0dO%2B4AAGCglg5MN2pvVjCEyxN2SovQlroQPC5835EpAYIsN4ETgivQOTCSRD%2FEahABE6qc3O1WDh%2BYaz1IdR8bTLHGgAOzBaCWDkw3am9WMITLE3ZKi9CWuhA8LnzfkSkBgiw3gROCK9A5MJJEP8RqEAETqpzc7VYOH5hrPUh1HxtMscaAGh37QIaAALN%2FQMaAD0jmQSCggCCAVgcr0DkwkkQ%2FxGoQAROqnNztVg4fmGs9SHUfG0yx4MCggFYHK9A5MJJEP8RqEAETqpzc7VYOH5hrPUh1HxtMsdYHDhnoJcpoflUdi7qA1qC4tnToU8fp5GgIu8NokIHWCAyfuLnoW9WFfctNWtc1yQGV9OPdh3ZeR2SxgDHo4kHMggaADvSGaEBgoIBgYIAWBxdSLn4TNzZuO1rCjniOUbs09XuGwxdQDIVV5ZhggGBggBYHINVPYPeMIDUIxq6YkhMlJ4M4O2rmpv3eBlG57H1oRkCoqFjbXNngXgbTXVsdGlzaWcgRGVsZWdhdGlvbiBUZXN0aW5n')
+    cy.contains('Sign with personal wallet').click()
+    cy.get('#modal-root').get('input').type(password).should('have.value', password)
+    cy.get('#modal-root').contains('Sign with personal wallet').click()
+
+    cy.contains('5d48b9f84cdcd9b8ed6b0a39e23946ecd3d5ee1b0c5d403215579661')
+      .parent()
+      .should('have.class', 'text-green-500')
+
+    cy.contains('83553d83de3080d4231aba62484c949e0ce0edab9a9bf7781946e7b1')
+      .parent()
+      .should('have.class', 'text-green-500')
+  })
+
   it('should be able to get removed', () => {
+    cy.contains(walletName).click()
+
+    cy.wait(15000)
+
     cy.contains('Remove').click()
     cy.contains('Remove Wallet').parent().get('input').type(walletName)
     cy.contains('REMOVE').click()
