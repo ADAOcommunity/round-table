@@ -69,32 +69,11 @@ describe('Personal wallet', () => {
       .should('have.text', "m/1852'/1815'/0'/2/0")
   })
 
-  it('should have multisig addresses created', () => {
-    cy.contains('Multisig').click()
-
-    cy.contains('addr_test1qzp420vrmccgp4prr2axyjzvjj0qec8d4wdfhamcr9rw0v2afzulsnxumxuw66c2883rj3hv6027uxcvt4qry92hjess4uch94')
-      .closest('td')
-      .next('td')
-      .should('have.text', "m/1854'/1815'/0'/0/0")
-      .next('td')
-      .should('have.text', "m/1854'/1815'/0'/2/0")
-
-    cy.contains('addr_test1qpxvl6tnc2d9adsr0p0508xsjxewwsx7snkp3xffgume3qyfn88gvkfnmscje2sazy7mmrsm8n5tkvfr8n7dhezdmhnqng95xm')
-      .closest('td')
-      .next('td')
-      .should('have.text', "m/1854'/1815'/0'/0/1")
-      .next('td')
-      .should('have.text', "m/1854'/1815'/0'/2/1")
-  })
-
   it('should be able to add personal accounts', () => {
-    cy.contains('Personal').click()
     cy.contains('Add Account').click()
     cy.get('input[type="Password"]').type(password)
     cy.get('#modal-root').contains('Add Account').click()
-    cy.contains('Add Account').parent().get('select').select('1')
-
-    cy.contains('Receive').click()
+    cy.contains('Add Account').parent().get('select').should('have.value', '1')
 
     cy.contains('addr_test1qz856plw0a560m23p5j6jwjj3sezjnrya0q6qjs7uezvrzqlcrjtpd2lkd088ka782nu8937fklr5lw75xs49wkhs6gsjyg4yw')
       .closest('td')
@@ -132,6 +111,24 @@ describe('Personal wallet', () => {
       .should('have.text', "m/1852'/1815'/0'/0/0")
       .next('td')
       .should('have.text', "m/1852'/1815'/0'/2/0")
+  })
+
+  it('should have multisig addresses created', () => {
+    cy.contains('Multisig').click()
+
+    cy.contains('addr_test1qzp420vrmccgp4prr2axyjzvjj0qec8d4wdfhamcr9rw0v2afzulsnxumxuw66c2883rj3hv6027uxcvt4qry92hjess4uch94')
+      .closest('td')
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/0/0")
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/2/0")
+
+    cy.contains('addr_test1qpxvl6tnc2d9adsr0p0508xsjxewwsx7snkp3xffgume3qyfn88gvkfnmscje2sazy7mmrsm8n5tkvfr8n7dhezdmhnqng95xm')
+      .closest('td')
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/0/1")
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/2/1")
   })
 
   it('should be able to get removed', () => {
