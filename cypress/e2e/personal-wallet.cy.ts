@@ -118,6 +118,22 @@ describe('Personal wallet', () => {
       .should('have.text', "m/1852'/1815'/1'/2/0")
   })
 
+  it('should be able to remove account', () => {
+    cy.contains('Summary').click()
+    cy.contains('REMOVE').click()
+    cy.get('#modal-root').contains('REMOVE').click()
+
+    cy.contains('Add Account').parent().get('select').should('have.value', '0')
+
+    cy.contains('Receive').click()
+    cy.contains('addr_test1qry97t0n3a6g4uaj9shz4lz4rsuwsjwaup4te83gaxhageewg2aqr9fhwu9r9yafqau60aglhwqxgstzv9f55edyuvrsku53n7')
+      .closest('td')
+      .next('td')
+      .should('have.text', "m/1852'/1815'/0'/0/0")
+      .next('td')
+      .should('have.text', "m/1852'/1815'/0'/2/0")
+  })
+
   it('should be able to get removed', () => {
     cy.contains('Remove').click()
     cy.contains('Remove Wallet').parent().get('input').type(walletName)
