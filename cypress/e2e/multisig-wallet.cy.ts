@@ -164,7 +164,7 @@ describe('Create a new wallet', () => {
   it('Should import user data', () => {
     cy.visit('http://localhost:3000/config')
     const downloadsFolder = Cypress.config('downloadsFolder')
-    const downloadedFilename = downloadsFolder + '/roundtable-backup.testnet.json'
+    const downloadedFilename = downloadsFolder + '/roundtable-backup.preview.json'
 
     cy.get('input[type=file]')
       .selectFile(downloadedFilename)
