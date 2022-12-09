@@ -1,5 +1,6 @@
+const walletName = 'Main Wallet'
+
 describe('Personal wallet', () => {
-  const walletName = 'Main Wallet'
   const walletDesc = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
   const password = 'ic{K6Bio"pMS'
   const recoveryPhrase: string[] = [
@@ -67,5 +68,29 @@ describe('Personal wallet', () => {
       .should('have.text', "m/1852'/1815'/0'/0/2")
       .next('td')
       .should('have.text', "m/1852'/1815'/0'/2/0")
+  })
+
+  it('should have multisig addresses created', () => {
+    cy.contains('Multisig').click()
+
+    cy.contains('addr_test1qzp420vrmccgp4prr2axyjzvjj0qec8d4wdfhamcr9rw0v2afzulsnxumxuw66c2883rj3hv6027uxcvt4qry92hjess4uch94')
+      .closest('td')
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/0/0")
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/2/0")
+
+    cy.contains('addr_test1qpxvl6tnc2d9adsr0p0508xsjxewwsx7snkp3xffgume3qyfn88gvkfnmscje2sazy7mmrsm8n5tkvfr8n7dhezdmhnqng95xm')
+      .closest('td')
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/0/1")
+      .next('td')
+      .should('have.text', "m/1854'/1815'/0'/2/1")
+  })
+
+  it('should be able to get removed', () => {
+    cy.contains('Remove').click()
+    cy.contains('Remove Wallet').parent().get('input').type(walletName)
+    cy.contains('REMOVE').click()
   })
 })
