@@ -13,6 +13,10 @@ const recoveryPhrase: string[] = [
 ]
 
 describe('Personal wallet', () => {
+  before(() => {
+    window.indexedDB.deleteDatabase('round-table')
+  })
+
   it('should be able to recover with recovery phrase', () => {
     cy.visit('http://localhost:3000/')
     cy.contains('New Wallet').click()
@@ -65,6 +69,18 @@ describe('Personal wallet', () => {
       .closest('td')
       .next('td')
       .should('have.text', "m/1852'/1815'/0'/0/2")
+      .next('td')
+      .should('have.text', "m/1852'/1815'/0'/2/0")
+  })
+
+  it('should be able to add personal address', () => {
+    cy.get('td').should('not.have.text', 'addr_test1qqufezchqmhg3xqq8flp6h9v4vkf8cw903uhscry7pqay83wg2aqr9fhwu9r9yafqau60aglhwqxgstzv9f55edyuvrsjv5cn9')
+    cy.get('td').should('not.have.text', "m/1852'/1815'/0'/0/10")
+    cy.contains('Add Address').click()
+    cy.contains('addr_test1qqufezchqmhg3xqq8flp6h9v4vkf8cw903uhscry7pqay83wg2aqr9fhwu9r9yafqau60aglhwqxgstzv9f55edyuvrsjv5cn9')
+      .closest('td')
+      .next('td')
+      .should('have.text', "m/1852'/1815'/0'/0/10")
       .next('td')
       .should('have.text', "m/1852'/1815'/0'/2/0")
   })
@@ -133,6 +149,9 @@ describe('Personal wallet', () => {
 
   it('should be able to sign personal transactions', () => {
     cy.visit('http://localhost:3000/base64/hKYAgYJYIPrhts%2B6OZKM83FFizlaIjZeIG%2FV7j2hqj5EPXQWBbr1AAGCglg5AKdbKhCK0NX7pEVrac89ZN%2BdIztHu%2FU4K5sYpMMuQroBlTd3CjKTqQd5p%2FUfu4BkQWJhU0plpOMHGgAOzBaCWDkAyF8t8490ivOyLC4q%2FFUcOOhJ3eBqvJ4o6a%2FUZy5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wcaAGiQ2QIaAAK1EQMaAD0gUwSCggCCAFgcLkK6AZU3dwoyk6kHeaf1H7uAZEFiYVNKZaTjB4MCggBYHC5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wdYHAzLBKcAAKxvP29HJWhW8XJOGpPP0tSX4lgg85sIGgA7ztOg9fY%3D')
+
+    cy.wait(15000)
+
     cy.contains('Sign with personal wallet').click()
     cy.get('#modal-root').get('input').type(password).should('have.value', password)
     cy.get('#modal-root').contains('Sign with personal wallet').click()
@@ -148,6 +167,9 @@ describe('Personal wallet', () => {
 
   it('should be able to sign multisig transactions', () => {
     cy.visit('http://localhost:3000/base64/hKcAgYJYID8suzDDldXtmJgQSIlDudo6DK9M97u29zCZT%2Bx0dO%2B4AAGCglg5MN2pvVjCEyxN2SovQlroQPC5835EpAYIsN4ETgivQOTCSRD%2FEahABE6qc3O1WDh%2BYaz1IdR8bTLHGgAOzBaCWDkw3am9WMITLE3ZKi9CWuhA8LnzfkSkBgiw3gROCK9A5MJJEP8RqEAETqpzc7VYOH5hrPUh1HxtMscaAGh37QIaAALN%2FQMaAD0jmQSCggCCAVgcr0DkwkkQ%2FxGoQAROqnNztVg4fmGs9SHUfG0yx4MCggFYHK9A5MJJEP8RqEAETqpzc7VYOH5hrPUh1HxtMsdYHDhnoJcpoflUdi7qA1qC4tnToU8fp5GgIu8NokIHWCAyfuLnoW9WFfctNWtc1yQGV9OPdh3ZeR2SxgDHo4kHMggaADvSGaEBgoIBgYIAWBxdSLn4TNzZuO1rCjniOUbs09XuGwxdQDIVV5ZhggGBggBYHINVPYPeMIDUIxq6YkhMlJ4M4O2rmpv3eBlG57H1oRkCoqFjbXNngXgbTXVsdGlzaWcgRGVsZWdhdGlvbiBUZXN0aW5n')
+
+    cy.wait(15000)
+
     cy.contains('Sign with personal wallet').click()
     cy.get('#modal-root').get('input').type(password).should('have.value', password)
     cy.get('#modal-root').contains('Sign with personal wallet').click()

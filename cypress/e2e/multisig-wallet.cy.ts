@@ -1,4 +1,8 @@
 describe('Create a new wallet', () => {
+  before(() => {
+    window.indexedDB.deleteDatabase('round-table')
+  })
+
   const walletName = "Test wallet"
   const walletDesc = "This is a description of the wallet"
   const addresses = [
@@ -109,7 +113,7 @@ describe('Create a new wallet', () => {
     cy.contains('Save')
       .click()
 
-    cy.wait(1500)
+    cy.wait(15000)
 
     cy.contains(walletName).click()
 
