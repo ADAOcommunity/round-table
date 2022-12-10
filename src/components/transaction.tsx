@@ -150,7 +150,9 @@ const TransactionInputViewer: FC<{
   )
 
   return (
-    <div className={className}>{hash}#{index}</div>
+    <div className={className}>
+      <div className='break-all'>{hash}#{index}</div>
+    </div>
   )
 }
 
