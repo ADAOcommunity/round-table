@@ -238,7 +238,7 @@ const NewPersonalWallet: FC = () => {
         </div>
         <div className='space-y-1'>
           <div className="after:content-['*'] after:text-red-500">Recovery Phrase</div>
-          <div className='grid grid-cols-2 gap-2'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
             <RecoverHDWallet className='space-y-2' setRootKey={setRootKey} />
           </div>
         </div>
