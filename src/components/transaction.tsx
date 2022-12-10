@@ -6,7 +6,7 @@ import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
 import type { Address, Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs, SingleWithdrawalBuilder, WithdrawalBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon, WalletIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
@@ -274,7 +274,7 @@ const SignTxButton: FC<{
   return (
     <>
       <button onClick={openModal} className={className}>{children}</button>
-      {modal && <Modal className='bg-white divide-y text-center rounded w-full overflow-hidden md:w-1/3 lg:w-1/4 xl:w-1/6' onBackgroundClick={closeModal}>
+      {modal && <Modal className='bg-white divide-y text-center rounded w-full overflow-hidden md:w-1/2 lg:w-1/3 xl:w-1/5' onBackgroundClick={closeModal}>
         {!signingWallet && <>
           <header>
             <h2 className='font-semibold p-4'>Choose a wallet</h2>
@@ -284,7 +284,8 @@ const SignTxButton: FC<{
               key={wallet.id}
               onClick={() => setSigningWallet(wallet)}
               className={SignTxButtonClassName}>
-              {wallet.name}
+              <WalletIcon className='w-4' />
+              <span>{wallet.name}</span>
             </button>)}
             <button onClick={() => setSigningWallet('import')} className={SignTxButtonClassName}>
               <ArrowUpTrayIcon className='w-4' />
