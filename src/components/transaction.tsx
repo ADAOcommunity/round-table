@@ -257,6 +257,7 @@ const SignTxButton: FC<{
       })
       .finally(() => closeModal())
   }, [cardano, closeModal, onSuccess, password, requiredKeyHashHexes, signingWallet, txHash, notify])
+  const isDisabled: boolean = useMemo(() => !signingWallet || !cardano || !txHash || password.length === 0, [signingWallet, cardano, txHash, password])
 
   return (
     <>
@@ -302,7 +303,13 @@ const SignTxButton: FC<{
               className='block w-full border rounded p-1 text-center text-lg outline-none' />
           </label>
           <nav>
-            <button onClick={signWithPersonalWallet} className='block w-full p-2 text-white bg-sky-700'>Sign</button>
+            <button
+              disabled={isDisabled}
+              onClick={signWithPersonalWallet}
+              className='flex w-full p-2 space-x-1 items-center justify-center text-white bg-sky-700 disabled:bg-gray-100 disabled:text-gray-500'>
+              <PencilIcon className='w-4' />
+              <span>Sign</span>
+            </button>
           </nav>
         </>}
       </Modal>}
