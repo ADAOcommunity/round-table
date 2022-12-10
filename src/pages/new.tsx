@@ -6,7 +6,7 @@ import { Loading } from '../components/status'
 import { EditMultisigWallet } from '../components/wallet'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
-import { createWallet, db } from '../db'
+import { createPersonalWallet, db } from '../db'
 import type { MultisigWalletParams, PersonalWallet } from '../db'
 import { mnemonicToEntropy, generateMnemonic, wordlists } from 'bip39'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -167,8 +167,7 @@ const NewPersonalWallet: FC = () => {
         const personalIndices = await cardano.generatePersonalAccount(wallet, password, 0)
         const multisigIndices = await cardano.generateMultisigAccount(wallet, password, 0)
         const keyHashIndices = [personalIndices, multisigIndices].flat()
-        db.transaction('rw', db.personalWallets, db.keyHashIndices, () => createWallet(wallet, keyHashIndices))
-          .then(() => router.push(getPersonalWalletPath(id)))
+        createPersonalWallet(wallet, keyHashIndices).then(() => router.push(getPersonalWalletPath(id)))
       })
       .catch((error) => {
         notify('error', 'Failed to save the key')

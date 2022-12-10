@@ -68,8 +68,19 @@ class LocalDatabase extends Dexie {
 
 const db = new LocalDatabase()
 
-const createWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.personalWallets.add(wallet).then(() => db.keyHashIndices.bulkPut(indices))
-const updateWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.personalWallets.put(wallet).then(() => db.keyHashIndices.bulkPut(indices))
+const createPersonalWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.transaction('rw', db.personalWallets, db.keyHashIndices, async () => {
+  return db.personalWallets.add(wallet).then(() => db.keyHashIndices.bulkPut(indices))
+})
+const updatePersonalWallet = (wallet: PersonalWallet, indices: KeyHashIndex[]) => db.transaction('rw', db.personalWallets, db.keyHashIndices, async () => {
+  return db.personalWallets.put(wallet).then(() => db.keyHashIndices.bulkPut(indices))
+})
+const deletePersonalWallet = (wallet: PersonalWallet) => db.transaction('rw', db.personalWallets, db.keyHashIndices, async () => {
+  const walletId = wallet.id
+  return db.personalWallets.delete(walletId).then(() => db.keyHashIndices.where({ walletId }).delete())
+})
+const updatePersonalWalletAndDeindex = (wallet: PersonalWallet, keyHashes: Uint8Array[]) => db.transaction('rw', db.personalWallets, db.keyHashIndices, async () => {
+  return db.personalWallets.put(wallet).then(() => db.keyHashIndices.where('hash').anyOf(keyHashes).delete())
+})
 
 export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount, KeyHashIndex }
-export { db, createWallet, updateWallet }
+export { db, createPersonalWallet, updatePersonalWallet, updatePersonalWalletAndDeindex, deletePersonalWallet }

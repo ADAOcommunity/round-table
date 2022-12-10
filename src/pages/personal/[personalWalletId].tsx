@@ -5,7 +5,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC, ChangeEventHandler } from 'react'
 import { AskPasswordModalButton, ConfirmModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { Loading } from '../../components/status'
-import { db, updateWallet } from '../../db'
+import { db, deletePersonalWallet, updatePersonalWallet, updatePersonalWalletAndDeindex } from '../../db'
 import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
@@ -77,7 +77,7 @@ const Multisig: FC<{
 
   const addAddress = () => {
     const indices = cardano.generateMultisigAddress(wallet, accountIndex)
-    db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
+    updatePersonalWallet(wallet, indices)
   }
 
   return (
@@ -211,7 +211,7 @@ const Personal: FC<{
   const addAddress = useCallback(() => {
     if (!cardano) return
     const indices = cardano.generatePersonalAddress(wallet, accountIndex)
-    db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
+    updatePersonalWallet(wallet, indices)
   }, [cardano, wallet, accountIndex])
 
   const addAccount = useCallback(async (password: string) => {
@@ -219,7 +219,7 @@ const Personal: FC<{
     const keys = Array.from(wallet.personalAccounts.keys())
     const newAccountIndex = Math.max(...keys) + 1
     cardano.generatePersonalAccount(wallet, password, newAccountIndex).then((indices) => {
-      return db.transaction('rw', db.personalWallets, db.keyHashIndices, () => updateWallet(wallet, indices))
+      return updatePersonalWallet(wallet, indices)
     })
       .then(() => setAccountIndex(newAccountIndex))
       .catch(() => notify('error', 'Failed to add account'))
@@ -229,11 +229,7 @@ const Personal: FC<{
     if (!account) return
     const keyHashes = account.paymentKeyHashes
     wallet.personalAccounts.delete(accountIndex)
-    db.transaction('rw', db.personalWallets, db.keyHashIndices, () =>
-      db.personalWallets
-        .put(wallet)
-        .then(() => db.keyHashIndices.where('hash').anyOf(keyHashes).delete())
-    )
+    updatePersonalWalletAndDeindex(wallet, keyHashes)
       .then(() => setAccountIndex(0))
   }, [account, accountIndex, wallet])
 
@@ -313,11 +309,7 @@ const ShowPersonalWallet: NextPage = () => {
 
   const removeWallet = useCallback(() => {
     if (!personalWallet) return
-    const walletId = personalWallet.id
-    db
-      .personalWallets
-      .delete(walletId)
-      .then(async () => await db.keyHashIndices.where({ walletId }).delete())
+    deletePersonalWallet(personalWallet)
       .then(() => router.push('/'))
       .catch((error) => {
         notify('error', 'Failed to delete')
