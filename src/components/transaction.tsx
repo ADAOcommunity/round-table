@@ -877,7 +877,7 @@ const TransactionViewer: FC<{
           <CopyVkeysButton
             cardano={cardano}
             vkeys={Array.from(signatureMap.values())}
-            className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
+            className='flex items-center space-x-1 p-2 disabled:border rounded text-sky-700 border disabled:bg-gray-100 disabled:text-gray-400'>
             <ShareIcon className='w-4' />
             <span>Copy Signatures</span>
           </CopyVkeysButton>
