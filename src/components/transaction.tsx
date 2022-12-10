@@ -219,7 +219,7 @@ type TxSignError = {
 }
 
 const CIP30Names: CIP30WalletName[] = ['nami', 'gero', 'eternl', 'flint']
-const SignTxButtonClassName = 'flex w-full justify-center p-2 text-sky-700 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
+const SignTxButtonClassName = 'flex w-full items-center justify-center p-2 text-sky-700 space-x-1 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
 const SignTxButton: FC<{
   className?: string
   onSuccess: (signature: string) => void
@@ -234,12 +234,12 @@ const SignTxButton: FC<{
   const closeModal = useCallback(() => setModal(false), [])
   const openModal = useCallback(() => setModal(true), [])
   const personalWallets = useLiveQuery(async () => db.personalWallets.toArray())
-  const [signingWallet, setSigningWallet] = useState<PersonalWallet | undefined>()
+  const [signingWallet, setSigningWallet] = useState<PersonalWallet | 'import' | undefined>()
   useEffect(() => {
     if (!modal) setSigningWallet(undefined)
   }, [modal])
   const signWithPersonalWallet = useCallback(async (password: string) => {
-    if (!signingWallet || !cardano || !txHash) return
+    if (!signingWallet || signingWallet === 'import' || !cardano || !txHash) return
     cardano
       .signWithPersonalWallet(requiredKeyHashHexes, txHash, signingWallet, password)
       .then((vkeywitnesses) => {
@@ -264,6 +264,10 @@ const SignTxButton: FC<{
       return result
     }, new Map()))
   }, [])
+  const importSignature = useCallback((signature: string) => {
+    onSuccess(signature)
+    closeModal()
+  }, [closeModal, onSuccess])
 
   if ((!personalWallets || personalWallets.length === 0) && CIP30Wallets.size === 0) return null
 
@@ -282,6 +286,10 @@ const SignTxButton: FC<{
               className={SignTxButtonClassName}>
               {wallet.name}
             </button>)}
+            <button onClick={() => setSigningWallet('import')} className={SignTxButtonClassName}>
+              <ArrowUpTrayIcon className='w-4' />
+              <span>Import</span>
+            </button>
             {Array.from(CIP30Wallets, ([name, wallet]) => <CIP30SignTxButton
               key={name}
               transaction={transaction}
@@ -305,15 +313,43 @@ const SignTxButton: FC<{
               <span>Choose others</span>
             </button>
           </header>
-          <PasswordBox
+          {signingWallet !== 'import' && <PasswordBox
             disabled={isDisabled}
             title={signingWallet.name}
             onConfirm={signWithPersonalWallet}>
             <PencilIcon className='w-4' />
             <span>Sign</span>
-          </PasswordBox>
+          </PasswordBox>}
+          {signingWallet === 'import' && <ImportSignatureBox onConfirm={importSignature} />}
         </>}
       </Modal>}
+    </>
+  )
+}
+
+const ImportSignatureBox: FC<{
+  onConfirm: (signature: string) => void
+}> = ({ onConfirm }) => {
+  const [signature, setSignature] = useState('')
+
+  return (
+    <>
+      <div>
+        <textarea
+          value={signature}
+          onChange={(e) => setSignature(e.target.value)}
+          rows={6}
+          placeholder='Input signature here and import'
+          className='block w-full p-2 outline-none text-sm'>
+        </textarea>
+      </div>
+      <button
+        onClick={() => onConfirm(signature)}
+        disabled={!signature}
+        className='flex space-x-1 items-center justify-center w-full p-2 bg-sky-700 text-white disabled:text-gray-500 disabled:bg-gray-100'>
+        <ArrowUpTrayIcon className='w-4' />
+        <span>Import</span>
+      </button>
     </>
   )
 }
@@ -544,50 +580,6 @@ const CopyVkeysButton: FC<{
       className={className}>
       {children}
     </CopyButton>
-  )
-}
-
-const ImportSignatureModalButton: FC<{
-  className?: string
-  children?: ReactNode
-  sign: (signature: string) => void
-}> = ({ className, children, sign }) => {
-  const [modal, setModal] = useState(false)
-  const [signature, setSignature] = useState('')
-  const isDisabled = !signature
-  const closeModal = useCallback(() => setModal(false), [])
-  const openModal = useCallback(() => setModal(true), [])
-  const importSignature = () => {
-    sign(signature)
-    setSignature('')
-    closeModal()
-  }
-
-  return (
-    <>
-      <button onClick={openModal} className={className}>{children}</button>
-      {modal && <Modal className='bg-white text-center rounded p-4 space-y-2 w-1/2 md:w-1/3' onBackgroundClick={closeModal}>
-        <div>
-          <textarea
-            className='block w-full p-2 border rounded outline-none'
-            rows={4}
-            value={signature}
-            onChange={(e) => setSignature(e.target.value)}
-            placeholder="Input signature here and import">
-          </textarea>
-        </div>
-        <footer className='flex justify-end space-x-2'>
-          <button onClick={closeModal} className='border rounded p-2 text-sky-700'>Cancel</button>
-          <button
-            onClick={importSignature}
-            disabled={isDisabled}
-            className={className}>
-            <ArrowUpTrayIcon className='w-4' />
-            <span>Import</span>
-          </button>
-        </footer>
-      </Modal>}
-    </>
   )
 }
 
@@ -862,12 +854,6 @@ const TransactionViewer: FC<{
             <PencilIcon className='w-4' />
             <span>Sign</span>
           </SignTxButton>
-          <ImportSignatureModalButton
-            sign={addSignatures}
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-            <ArrowUpTrayIcon className='w-4' />
-            <span>Import Signatures</span>
-          </ImportSignatureModalButton>
           <CopyVkeysButton
             cardano={cardano}
             vkeys={Array.from(signatureMap.values())}
