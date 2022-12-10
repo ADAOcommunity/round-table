@@ -88,7 +88,7 @@ describe('Personal wallet', () => {
   it('should be able to add personal accounts', () => {
     cy.contains('Add Account').click()
     cy.get('input[type="Password"]').type(password)
-    cy.get('#modal-root').contains('Add Account').click()
+    cy.get('#modal-root').contains('Confirm').click()
     cy.contains('Add Account').parent().get('select').should('have.value', '1')
 
     cy.contains('addr_test1qz856plw0a560m23p5j6jwjj3sezjnrya0q6qjs7uezvrzqlcrjtpd2lkd088ka782nu8937fklr5lw75xs49wkhs6gsjyg4yw')
@@ -152,9 +152,10 @@ describe('Personal wallet', () => {
 
     cy.wait(15000)
 
-    cy.contains('Sign with personal wallet').click()
+    cy.get('footer').contains('Sign').click()
+    cy.get('#modal-root').contains(walletName).click()
     cy.get('#modal-root').get('input').type(password).should('have.value', password)
-    cy.get('#modal-root').contains('Sign with personal wallet').click()
+    cy.get('#modal-root').contains('Sign').click()
 
     cy.contains('c85f2df38f748af3b22c2e2afc551c38e849dde06abc9e28e9afd467')
       .parent()
@@ -170,9 +171,10 @@ describe('Personal wallet', () => {
 
     cy.wait(15000)
 
-    cy.contains('Sign with personal wallet').click()
+    cy.get('footer').contains('Sign').click()
+    cy.get('#modal-root').contains(walletName).click()
     cy.get('#modal-root').get('input').type(password).should('have.value', password)
-    cy.get('#modal-root').contains('Sign with personal wallet').click()
+    cy.get('#modal-root').contains('Sign').click()
 
     cy.contains('5d48b9f84cdcd9b8ed6b0a39e23946ecd3d5ee1b0c5d403215579661')
       .parent()
