@@ -174,18 +174,18 @@ type WalletAPI = {
   getNetworkId(): Promise<number>
 }
 
-type Wallet = {
+type CIP30Wallet = {
   enable(): Promise<WalletAPI>
   name: string
   icon: string
   apiVersion: string
 }
 
-const WalletIcon: FC<{
+const CIP30WalletIcon: FC<{
   height?: number
   width?: number
   className?: string
-  wallet: Wallet
+  wallet: CIP30Wallet
 }> = ({ height, width, wallet, className }) => {
   const { name, icon } = wallet
   return (
@@ -199,9 +199,9 @@ const WalletIcon: FC<{
   )
 }
 
-type WalletName = 'eternl' | 'nami' | 'gero' | 'flint'
+type CIP30WalletName = 'eternl' | 'nami' | 'gero' | 'flint'
 
-const getWallet = (name: WalletName): Wallet | undefined => {
+const getCIP30Wallet = (name: CIP30WalletName): CIP30Wallet | undefined => {
   const cardano = (window as any).cardano
   switch (name) {
     case 'eternl': return cardano?.eternl
@@ -216,7 +216,7 @@ type TxSignError = {
   info: string
 }
 
-const CIP30Names: WalletName[] = ['nami', 'gero', 'eternl', 'flint']
+const CIP30Names: CIP30WalletName[] = ['nami', 'gero', 'eternl', 'flint']
 const SignTxButtonClassName = 'flex w-full justify-center p-2 text-sky-700 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
 const SignTxButton: FC<{
   className?: string
@@ -254,6 +254,16 @@ const SignTxButton: FC<{
       .finally(() => closeModal())
   }, [cardano, closeModal, onSuccess, requiredKeyHashHexes, signingWallet, txHash, notify])
   const isDisabled: boolean = useMemo(() => !signingWallet || !cardano || !txHash, [signingWallet, cardano, txHash])
+  const [CIP30Wallets, setCIP30Wallets] = useState(new Map<CIP30WalletName, CIP30Wallet>())
+  useEffect(() => {
+    setCIP30Wallets(CIP30Names.reduce((result, name) => {
+      const wallet = getCIP30Wallet(name)
+      if (wallet) result.set(name, wallet)
+      return result
+    }, new Map()))
+  }, [])
+
+  if ((!personalWallets || personalWallets.length === 0) && CIP30Wallets.size === 0) return null
 
   return (
     <>
@@ -270,14 +280,17 @@ const SignTxButton: FC<{
               className={SignTxButtonClassName}>
               {wallet.name}
             </button>)}
-            {CIP30Names.map((walletName) => <CIP30SignTxButton
-              key={walletName}
+            {Array.from(CIP30Wallets, ([name, wallet]) => <CIP30SignTxButton
+              key={name}
               transaction={transaction}
               partialSign={true}
               sign={onSuccess}
               onFinish={closeModal}
-              name={walletName}
-              className={SignTxButtonClassName} />)}
+              wallet={wallet}
+              className={SignTxButtonClassName}>
+              <CIP30WalletIcon wallet={wallet} className='w-4' />
+              <span>{name}</span>
+            </CIP30SignTxButton>)}
             <button onClick={closeModal} className={SignTxButtonClassName}>Cancel</button>
           </nav>
         </>}
@@ -305,61 +318,47 @@ const SignTxButton: FC<{
 
 const CIP30SignTxButton: FC<{
   className?: string,
+  children: ReactNode
   transaction: Transaction,
   partialSign: boolean,
   sign: (_: string) => void,
   onFinish?: () => void
-  name: WalletName
-}> = ({ name, transaction, partialSign, sign, className, onFinish }) => {
+  wallet: CIP30Wallet
+}> = ({ wallet, transaction, partialSign, sign, className, children, onFinish }) => {
 
   const [config, _] = useContext(ConfigContext)
   const { notify } = useContext(NotificationContext)
-  const [wallet, setWallet] = useState<Wallet | undefined>(undefined)
 
-  useEffect(() => {
-    let isMounted = true
-
-    isMounted && setWallet(getWallet(name))
-
-    return () => {
-      isMounted = false
-    }
-  }, [name])
-
-  const errorHandle = (reason: Error | TxSignError) => {
-    if ('info' in reason) {
-      notify('error', reason.info)
-      return
-    }
-    if ('message' in reason) {
-      notify('error', reason.message)
-      return
-    }
-    console.error(reason)
-  }
-
-  const clickHandle: MouseEventHandler<HTMLButtonElement> = async () => {
-    const walletAPI = await wallet?.enable().catch(errorHandle)
-    if (!walletAPI) return;
-    const networkId = await walletAPI.getNetworkId()
-    if (isMainnet(config) ? networkId !== 1 : networkId !== 0) {
-      notify('error', `${name} is on wrong network.`)
-      return
-    }
-    walletAPI
-      .signTx(toHex(transaction), partialSign)
-      .then(sign)
-      .catch(errorHandle)
+  const onClick: MouseEventHandler<HTMLButtonElement> = useCallback(() => {
+    wallet
+      .enable()
+      .then(async (walletAPI) => {
+        const networkId = await walletAPI.getNetworkId()
+        if (isMainnet(config) ? networkId !== 1 : networkId !== 0) {
+          notify('error', `${name} is on wrong network.`)
+          return
+        }
+        return walletAPI
+          .signTx(toHex(transaction), partialSign)
+          .then(sign)
+      })
+      .catch((reason: Error | TxSignError) => {
+        if ('info' in reason) {
+          notify('error', reason.info)
+          return
+        }
+        if ('message' in reason) {
+          notify('error', reason.message)
+          return
+        }
+        console.error(reason)
+      })
       .finally(onFinish)
-  }
+  }, [wallet, config, notify, onFinish, partialSign, sign, transaction])
 
   return (
-    <button disabled={!wallet} className={className} onClick={clickHandle}>
-      <span className='flex items-center space-x-1'>
-        {wallet && <WalletIcon wallet={wallet} className='w-4' />}
-        <span>{name}</span>
-        {!wallet && <span>(Not Installed)</span>}
-      </span>
+    <button className={className} onClick={onClick}>
+      {children}
     </button>
   )
 }
@@ -439,15 +438,15 @@ const SubmitTxButton: FC<{
 const WalletInfo: FC<{
   className?: string
   children: ReactNode
-  name: WalletName
+  name: CIP30WalletName
   src: string
 }> = ({ name, className, children, src }) => {
-  const [wallet, setWallet] = useState<Wallet | undefined>(undefined)
+  const [wallet, setWallet] = useState<CIP30Wallet | undefined>(undefined)
 
   useEffect(() => {
     let isMounted = true
 
-    isMounted && setWallet(getWallet(name))
+    isMounted && setWallet(getCIP30Wallet(name))
 
     return () => {
       isMounted = false
