@@ -6,7 +6,7 @@ import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
 import type { Address, Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs, SingleWithdrawalBuilder, WithdrawalBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
-import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
+import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
@@ -216,52 +216,95 @@ type TxSignError = {
   info: string
 }
 
-const CIP30ModalButton: FC<{
+const CIP30Names: WalletName[] = ['nami', 'gero', 'eternl', 'flint']
+const SignTxButtonClassName = 'flex w-full justify-center p-2 text-sky-700 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
+const SignTxButton: FC<{
   className?: string
-  children?: ReactNode
-  sign: (signature: string) => void
+  onSuccess: (signature: string) => void
   transaction: Transaction
-}> = ({ className, children, sign, transaction }) => {
+  requiredKeyHashHexes: string[]
+  children: ReactNode
+}> = ({ className, onSuccess, transaction, requiredKeyHashHexes, children }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const { notify } = useContext(NotificationContext)
+  const txHash = useMemo(() => cardano?.lib.hash_transaction(transaction.body()).to_bytes(), [cardano, transaction])
   const [modal, setModal] = useState(false)
   const closeModal = useCallback(() => setModal(false), [])
+  const openModal = useCallback(() => setModal(true), [])
+  const personalWallets = useLiveQuery(async () => db.personalWallets.toArray())
+  const [signingWallet, setSigningWallet] = useState<PersonalWallet | undefined>()
+  const [password, setPassword] = useState('')
+  useEffect(() => {
+    if (!modal) {
+      setSigningWallet(undefined)
+      setPassword('')
+    }
+  }, [modal])
+  const signWithPersonalWallet = useCallback(async () => {
+    if (!signingWallet || !cardano || !txHash) return
+    cardano
+      .signWithPersonalWallet(requiredKeyHashHexes, txHash, signingWallet, password)
+      .then((vkeywitnesses) => {
+        const { TransactionWitnessSetBuilder } = cardano.lib
+        const builder = TransactionWitnessSetBuilder.new()
+        vkeywitnesses.forEach((vkeywitness) => builder.add_vkey(vkeywitness))
+        onSuccess(toHex(builder.build()))
+        notify('success', 'Signed successfully')
+      })
+      .catch((error) => {
+        notify('error', 'Failed to sign')
+        console.error(error)
+      })
+      .finally(() => closeModal())
+  }, [cardano, closeModal, onSuccess, password, requiredKeyHashHexes, signingWallet, txHash, notify])
+
   return (
     <>
-      <button onClick={() => setModal(true)} className={className}>{children}</button>
-      {modal && <Modal className='bg-white text-center rounded sm:w-1/2 md:w-1/4' onBackgroundClick={closeModal}>
-        <header>
-          <h2 className='text-lg font-semibold border-b p-4'>Supported Wallets</h2>
-        </header>
-        <nav className='divide-y text-sky-700'>
-          <CIP30SignTxButton
-            transaction={transaction}
-            partialSign={true}
-            sign={sign}
-            onFinish={closeModal}
-            name='nami'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
-          <CIP30SignTxButton
-            transaction={transaction}
-            partialSign={true}
-            sign={sign}
-            onFinish={closeModal}
-            name='gero'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
-          <CIP30SignTxButton
-            transaction={transaction}
-            partialSign={true}
-            sign={sign}
-            onFinish={closeModal}
-            name='eternl'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
-          <CIP30SignTxButton
-            transaction={transaction}
-            partialSign={true}
-            sign={sign}
-            onFinish={closeModal}
-            name='flint'
-            className='flex w-full justify-center p-2 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100' />
-          <button onClick={closeModal} className='block w-full p-2 hover:bg-sky-100'>Cancel</button>
-        </nav>
+      <button onClick={openModal} className={className}>{children}</button>
+      {modal && <Modal className='bg-white divide-y text-center rounded w-full overflow-hidden md:w-1/3 lg:w-1/4 xl:w-1/6' onBackgroundClick={closeModal}>
+        {!signingWallet && <>
+          <header>
+            <h2 className='font-semibold p-4'>Choose a wallet</h2>
+          </header>
+          <nav className='divide-y text-sky-700'>
+            {personalWallets?.map((wallet) => <button
+              key={wallet.id}
+              onClick={() => setSigningWallet(wallet)}
+              className={SignTxButtonClassName}>
+              {wallet.name}
+            </button>)}
+            {CIP30Names.map((walletName) => <CIP30SignTxButton
+              key={walletName}
+              transaction={transaction}
+              partialSign={true}
+              sign={onSuccess}
+              onFinish={closeModal}
+              name={walletName}
+              className={SignTxButtonClassName} />)}
+            <button onClick={closeModal} className={SignTxButtonClassName}>Cancel</button>
+          </nav>
+        </>}
+        {signingWallet && <>
+          <header>
+            <button onClick={() => setSigningWallet(undefined)}
+              className={SignTxButtonClassName}>
+              <ChevronLeftIcon className='w-4' />
+              <span>Choose others</span>
+            </button>
+          </header>
+          <label className='block px-4 py-6 space-y-4'>
+            <div className='font-semibold'>{signingWallet.name}</div>
+            <input
+              type='password'
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder='Password'
+              className='block w-full border rounded p-1 text-center text-lg outline-none' />
+          </label>
+          <nav>
+            <button onClick={signWithPersonalWallet} className='block w-full p-2 text-white bg-sky-700'>Sign</button>
+          </nav>
+        </>}
       </Modal>}
     </>
   )
@@ -554,88 +597,6 @@ const ImportSignatureModalButton: FC<{
   )
 }
 
-const SignWithPersonalWalletButton: FC<{
-  className?: string
-  children: ReactNode
-  txHash: Uint8Array
-  requiredKeyHashHexes: string[]
-  onSuccess: (signatures: string) => void
-}> = ({ className, children, txHash, requiredKeyHashHexes, onSuccess }) => {
-  const cardano = useCardanoMultiplatformLib()
-  const wallets = useLiveQuery(async () => db.personalWallets.toArray())
-  const [signingWallet, setSigningWallet] = useState<PersonalWallet | undefined>()
-  const [modal, setModal] = useState(false)
-  const [password, setPassword] = useState('')
-  const { notify } = useContext(NotificationContext)
-  const closeModal = useCallback(() => setModal(false), [])
-  const openModal = useCallback(() => setModal(true), [])
-
-  useEffect(() => {
-    if (!modal) {
-      setSigningWallet(undefined)
-      setPassword('')
-    }
-  }, [modal])
-
-  useEffect(() => {
-    if (!signingWallet && wallets) setSigningWallet(wallets[0])
-  }, [wallets, signingWallet])
-
-  if (!wallets || wallets.length === 0) return null
-  if (!cardano) return (
-    <Modal><Loading /></Modal>
-  )
-
-  const sign = async () => {
-    if (!signingWallet) return
-    cardano
-      .signWithPersonalWallet(requiredKeyHashHexes, txHash, signingWallet, password)
-      .then((vkeywitnesses) => {
-        const { TransactionWitnessSetBuilder } = cardano.lib
-        const builder = TransactionWitnessSetBuilder.new()
-        vkeywitnesses.forEach((vkeywitness) => builder.add_vkey(vkeywitness))
-        onSuccess(toHex(builder.build()))
-        notify('success', 'Signed successfully')
-      })
-      .catch((error) => {
-        notify('error', 'Failed to sign')
-        console.error(error)
-      })
-      .finally(() => closeModal())
-  }
-
-  return (
-    <>
-      <button onClick={openModal} className={className}>{children}</button>
-      {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
-        <header>
-          <h2 className='text-lg text-center font-semibold'>Sign Transaction</h2>
-        </header>
-        <div className='flex justify-center'>
-          <nav className='rounded border-sky-700 border text-sm overflow-hidden'>
-            {wallets.map((wallet) => <button
-              key={wallet.id}
-              onClick={() => setSigningWallet(wallet)}
-              disabled={signingWallet && wallet.id === signingWallet.id}
-              className='px-2 py-1 disabled:bg-sky-700 disabled:text-white'>
-              {wallet.name}
-            </button>)}
-          </nav>
-        </div>
-        <input
-          onChange={(e) => setPassword(e.target.value)}
-          value={password}
-          type='password' className='block w-full border rounded p-2 text-lg outline-none'
-          placeholder='Password' />
-        <nav className='flex justify-end space-x-2'>
-          <button className='border rounded p-2 text-sky-700' onClick={closeModal}>Cancel</button>
-          <button onClick={sign} className={className} disabled={password.length === 0 || !signingWallet}>{children}</button>
-        </nav>
-      </Modal>}
-    </>
-  )
-}
-
 const TransactionLoader: FC<{
   content: Uint8Array
 }> = ({ content }) => {
@@ -899,19 +860,14 @@ const TransactionViewer: FC<{
           </div>}
         </div>
         <footer className='flex p-4 bg-gray-100 space-x-2'>
-          <SignWithPersonalWalletButton
-            txHash={txHash.to_bytes()}
+          <SignTxButton
+            transaction={transaction}
             requiredKeyHashHexes={Array.from(signerRegistry)}
             onSuccess={addSignatures}
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-            Sign with personal wallet
-          </SignWithPersonalWalletButton>
-          <CIP30ModalButton
-            transaction={transaction}
-            sign={addSignatures}
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-            Sign with other wallet
-          </CIP30ModalButton>
+            <PencilIcon className='w-4' />
+            <span>Sign</span>
+          </SignTxButton>
           <ImportSignatureModalButton
             sign={addSignatures}
             className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
@@ -923,7 +879,7 @@ const TransactionViewer: FC<{
             vkeys={Array.from(signatureMap.values())}
             className='flex space-x-1 justify-center items-center p-2 border text-sky-700 rounded w-48 disabled:text-gray-400'>
             <ShareIcon className='w-4' />
-            <span>Copy my signatures</span>
+            <span>Copy Signatures</span>
           </CopyVkeysButton>
           <div className='flex grow justify-end items-center space-x-4'>
             <SubmitTxButton
