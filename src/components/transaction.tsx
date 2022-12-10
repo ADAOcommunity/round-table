@@ -287,7 +287,8 @@ const SignTxButton: FC<{
         </>}
         {signingWallet && <>
           <header>
-            <button onClick={() => setSigningWallet(undefined)}
+            <button
+              onClick={() => setSigningWallet(undefined)}
               className={SignTxButtonClassName}>
               <ChevronLeftIcon className='w-4' />
               <span>Choose others</span>
