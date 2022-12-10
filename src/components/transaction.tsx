@@ -335,7 +335,7 @@ const CIP30SignTxButton: FC<{
       .then(async (walletAPI) => {
         const networkId = await walletAPI.getNetworkId()
         if (isMainnet(config) ? networkId !== 1 : networkId !== 0) {
-          notify('error', `${name} is on wrong network.`)
+          notify('error', 'Wrong network.')
           return
         }
         return walletAPI
