@@ -267,7 +267,7 @@ const Personal: FC<{
                 Account #{index}
               </option>)}
             </select>
-            <AskPasswordModalButton onConfirm={addAccount} className='px-2 py-1'>
+            <AskPasswordModalButton title={wallet.name} onConfirm={addAccount} className='px-2 py-1'>
               Add Account
             </AskPasswordModalButton>
           </nav>

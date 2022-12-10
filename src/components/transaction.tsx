@@ -10,7 +10,7 @@ import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTra
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
-import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal } from './layout'
+import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, PasswordBox } from './layout'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import Gun from 'gun'
@@ -233,14 +233,10 @@ const SignTxButton: FC<{
   const openModal = useCallback(() => setModal(true), [])
   const personalWallets = useLiveQuery(async () => db.personalWallets.toArray())
   const [signingWallet, setSigningWallet] = useState<PersonalWallet | undefined>()
-  const [password, setPassword] = useState('')
   useEffect(() => {
-    if (!modal) {
-      setSigningWallet(undefined)
-      setPassword('')
-    }
+    if (!modal) setSigningWallet(undefined)
   }, [modal])
-  const signWithPersonalWallet = useCallback(async () => {
+  const signWithPersonalWallet = useCallback(async (password: string) => {
     if (!signingWallet || !cardano || !txHash) return
     cardano
       .signWithPersonalWallet(requiredKeyHashHexes, txHash, signingWallet, password)
@@ -256,8 +252,8 @@ const SignTxButton: FC<{
         console.error(error)
       })
       .finally(() => closeModal())
-  }, [cardano, closeModal, onSuccess, password, requiredKeyHashHexes, signingWallet, txHash, notify])
-  const isDisabled: boolean = useMemo(() => !signingWallet || !cardano || !txHash || password.length === 0, [signingWallet, cardano, txHash, password])
+  }, [cardano, closeModal, onSuccess, requiredKeyHashHexes, signingWallet, txHash, notify])
+  const isDisabled: boolean = useMemo(() => !signingWallet || !cardano || !txHash, [signingWallet, cardano, txHash])
 
   return (
     <>
@@ -294,24 +290,13 @@ const SignTxButton: FC<{
               <span>Choose others</span>
             </button>
           </header>
-          <label className='block px-4 py-6 space-y-4'>
-            <div className='font-semibold'>{signingWallet.name}</div>
-            <input
-              type='password'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder='Password'
-              className='block w-full border rounded p-1 text-center text-lg outline-none' />
-          </label>
-          <nav>
-            <button
-              disabled={isDisabled}
-              onClick={signWithPersonalWallet}
-              className='flex w-full p-2 space-x-1 items-center justify-center text-white bg-sky-700 disabled:bg-gray-100 disabled:text-gray-500'>
-              <PencilIcon className='w-4' />
-              <span>Sign</span>
-            </button>
-          </nav>
+          <PasswordBox
+            disabled={isDisabled}
+            title={signingWallet.name}
+            onConfirm={signWithPersonalWallet}>
+            <PencilIcon className='w-4' />
+            <span>Sign</span>
+          </PasswordBox>
         </>}
       </Modal>}
     </>

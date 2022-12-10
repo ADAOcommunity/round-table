@@ -372,35 +372,62 @@ const Modal: FC<{
   )
 }
 
-const AskPasswordModalButton: FC<{
-  className?: string
-  children?: ReactNode
+const PasswordBox: FC<{
+  title: string
+  children: ReactNode
+  disabled?: boolean
   onConfirm: (password: string) => void
-}> = ({ className, children, onConfirm }) => {
-  const [modal, setModal] = useState(false)
+}> = ({ title, children, disabled, onConfirm }) => {
   const [password, setPassword] = useState('')
-  const closeModal = useCallback(() => setModal(false), [])
   const confirm = useCallback(() => {
     onConfirm(password)
+  }, [onConfirm, password])
+
+  return (<>
+    <label className='block px-4 py-6 space-y-4'>
+      <div className='font-semibold'>{title}</div>
+      <input
+        type='password'
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder='Password'
+        className='block w-full border rounded p-1 text-center text-lg outline-none' />
+    </label>
+    <nav>
+      <button
+        disabled={disabled || password.length === 0}
+        onClick={confirm}
+        className='flex w-full p-2 space-x-1 items-center justify-center text-white bg-sky-700 disabled:bg-gray-100 disabled:text-gray-500'>
+        {children}
+      </button>
+    </nav>
+  </>)
+}
+
+const AskPasswordModalButton: FC<{
+  className?: string
+  title: string
+  disabled?: boolean
+  children?: ReactNode
+  onConfirm: (password: string) => void
+}> = ({ className, title, disabled, children, onConfirm }) => {
+  const [modal, setModal] = useState(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const confirm = useCallback((password: string) => {
+    onConfirm(password)
     closeModal()
-  }, [password, closeModal, onConfirm])
-  useEffect(() => {
-    if (!modal) setPassword('')
-  }, [modal])
+  }, [closeModal, onConfirm])
 
   return (
     <>
       <button onClick={() => setModal(true)} className={className}>{children}</button>
-      {modal && <Modal className='bg-white p-4 rounded space-y-4 sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
-        <input
-          onChange={(e) => setPassword(e.target.value)}
-          value={password}
-          type='password' className='block w-full border rounded p-2 text-lg outline-none'
-          placeholder='Password' />
-        <nav className='flex justify-end space-x-2'>
-          <button className='border rounded p-2 text-sky-700' onClick={closeModal}>Cancel</button>
-          <button onClick={confirm} className='p-2 bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400' disabled={password.length === 0}>{children}</button>
-        </nav>
+      {modal && <Modal className='bg-white divide-y text-center rounded w-full overflow-hidden md:w-1/3 lg:w-1/4 xl:w-1/6' onBackgroundClick={closeModal}>
+        <PasswordBox
+          disabled={disabled}
+          title={title}
+          onConfirm={confirm}>
+          Confirm
+        </PasswordBox>
       </Modal>}
     </>
   )
@@ -435,4 +462,4 @@ const ConfirmModalButton: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, AskPasswordModalButton, ConfirmModalButton }
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, AskPasswordModalButton, ConfirmModalButton, PasswordBox }
