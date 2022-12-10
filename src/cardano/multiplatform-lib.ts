@@ -9,6 +9,19 @@ import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
 import { decryptWithPassword, harden } from './utils'
 
+const COIN_TYPE = 1815
+const PAYMENT_ROLE = 0
+const STAKING_ROLE = 2
+const PERSONAL_PURPOSE = 1852
+const MULTISIG_PURPOSE = 1854
+
+const PERSONAL_WALLET_PATH = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE)]
+const MULTISIG_WALLET_PATH = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE)]
+
+const personalStakingKeyHash = (publicKey: Bip32PublicKey): Ed25519KeyHash => publicKey.derive(STAKING_ROLE).derive(0).to_raw_key().hash()
+const personalAccountPath = (accountIndex: number) => PERSONAL_WALLET_PATH.concat(harden(accountIndex))
+const multisigAccountPath = (accountIndex: number) => MULTISIG_WALLET_PATH.concat(harden(accountIndex))
+
 const Fraction = require('fractional').Fraction
 type Fraction = { numerator: number, denominator: number }
 
@@ -402,13 +415,17 @@ class Cardano {
 
   public async generatePersonalAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
     const rootKey = await this.getRootKey(wallet, password)
-    wallet.personalAccounts.set(accountIndex, { publicKey: personalPublicKey(rootKey, accountIndex).as_bytes(), paymentKeyHashes: [] })
+    const accountPath = personalAccountPath(accountIndex)
+    const publicKey = accountPath.reduce((key, index) => key.derive(index), rootKey).to_public().as_bytes()
+    wallet.personalAccounts.set(accountIndex, { publicKey, paymentKeyHashes: [] })
     return Array.from({ length: 10 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
   }
 
   public async generateMultisigAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
     const rootKey = await this.getRootKey(wallet, password)
-    wallet.multisigAccounts.set(accountIndex, { publicKey: multisigPublicKey(rootKey, accountIndex).as_bytes(), addresses: [] })
+    const accountPath = multisigAccountPath(accountIndex)
+    const publicKey = accountPath.reduce((key, index) => key.derive(index), rootKey).to_public().as_bytes()
+    wallet.multisigAccounts.set(accountIndex, { publicKey, addresses: [] })
     return Array.from({ length: 10 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
   }
 
@@ -419,10 +436,12 @@ class Cardano {
     const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
     const index = account.paymentKeyHashes.length
     const paymentKeyHash = publicKey.derive(PAYMENT_ROLE).derive(index).to_raw_key().hash()
-    const paymentPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), PAYMENT_ROLE, index]
     const stakingKeyHash = personalStakingKeyHash(publicKey)
-    const stakingPath = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, 0]
     account.paymentKeyHashes.push(paymentKeyHash.to_bytes())
+
+    const accountPath = personalAccountPath(accountIndex)
+    const paymentPath = accountPath.concat([PAYMENT_ROLE, index])
+    const stakingPath = accountPath.concat([STAKING_ROLE, 0])
     return [
       { hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id },
       { hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id }
@@ -436,13 +455,15 @@ class Cardano {
     const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
     const index = account.addresses.length
     const paymentKeyHash = publicKey.derive(PAYMENT_ROLE).derive(index).to_raw_key().hash()
-    const paymentPath = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE), harden(accountIndex), PAYMENT_ROLE, index]
     const stakingKeyHash = publicKey.derive(STAKING_ROLE).derive(index).to_raw_key().hash()
-    const stakingPath = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE), harden(accountIndex), STAKING_ROLE, index]
     account.addresses.push({
       paymentKeyHash: paymentKeyHash.to_bytes(),
       stakingKeyHash: stakingKeyHash.to_bytes()
     })
+
+    const accountPath = multisigAccountPath(accountIndex)
+    const paymentPath = accountPath.concat([PAYMENT_ROLE, index])
+    const stakingPath = accountPath.concat([STAKING_ROLE, index])
     return [
       { hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id },
       { hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id }
@@ -475,30 +496,6 @@ class Cardano {
       return address
     })
   }
-}
-
-const personalStakingKeyHash = (publicKey: Bip32PublicKey): Ed25519KeyHash => publicKey.derive(STAKING_ROLE).derive(0).to_raw_key().hash()
-
-const COIN_TYPE = 1815
-const PAYMENT_ROLE = 0
-const STAKING_ROLE = 2
-const PERSONAL_PURPOSE = 1852
-const MULTISIG_PURPOSE = 1854
-
-function personalPublicKey(rootKey: Bip32PrivateKey, index: number): Bip32PublicKey {
-  return rootKey
-    .derive(harden(PERSONAL_PURPOSE))
-    .derive(harden(COIN_TYPE))
-    .derive(harden(index))
-    .to_public()
-}
-
-function multisigPublicKey(rootKey: Bip32PrivateKey, index: number): Bip32PublicKey {
-  return rootKey
-    .derive(harden(MULTISIG_PURPOSE))
-    .derive(harden(COIN_TYPE))
-    .derive(harden(index))
-    .to_public()
 }
 
 class Factory {
