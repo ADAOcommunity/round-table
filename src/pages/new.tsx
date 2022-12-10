@@ -148,12 +148,34 @@ const NewPersonalWallet: FC = () => {
   const [rootKey, setRootKey] = useState<Bip32PrivateKey | undefined>()
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
-  const isValid = password === repeatPassword && password.length > 0 && name.length > 0 && rootKey !== undefined && id !== undefined && cardano
-  const add = async () => {
-    if (!isValid) return
+  const [hash, setHash] = useState<Uint8Array | undefined>()
+  useEffect(() => {
+    let isMounted = true
 
-    const rootKeyBytes = rootKey.as_bytes()
-    const hash = new Uint8Array(await SHA256Digest(rootKeyBytes))
+    setHash(undefined)
+    const rootKeyBytes = rootKey?.as_bytes()
+    rootKeyBytes && SHA256Digest(rootKeyBytes).then((hash) => isMounted && setHash(new Uint8Array(hash)))
+
+    return () => {
+      isMounted = false
+    }
+  }, [rootKey])
+  const duplidation = useLiveQuery(async () => hash && db.personalWallets.get({ hash }), [hash])
+  const isValid: boolean = useMemo(() => {
+    return password === repeatPassword &&
+      password.length > 0 &&
+      name.length > 0 &&
+      !!rootKey &&
+      id !== undefined &&
+      !!cardano && !!hash
+  }, [cardano, hash, id, name.length, password, repeatPassword, rootKey])
+  const add = useCallback(async () => {
+    const rootKeyBytes = rootKey?.as_bytes()
+    if (!rootKeyBytes || id === undefined || !cardano || !hash) return
+    if (duplidation) {
+      notify('error', `This phrase is a duplicate of ${duplidation.name}`)
+      return
+    }
 
     encryptWithPassword(rootKeyBytes, password, id)
       .then(async (ciphertext) => {
@@ -173,7 +195,7 @@ const NewPersonalWallet: FC = () => {
         notify('error', 'Failed to save the key')
         console.error(error)
       })
-  }
+  }, [cardano, description, hash, id, name, notify, password, rootKey, router, duplidation])
 
   return (
     <Panel>
