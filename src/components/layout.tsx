@@ -465,7 +465,7 @@ const AskPasswordModalButton: FC<{
   return (
     <>
       <button onClick={() => setModal(true)} className={className}>{children}</button>
-      {modal && <Modal className='bg-white divide-y text-center rounded w-full overflow-hidden md:w-1/3 lg:w-1/4 xl:w-1/6' onBackgroundClick={closeModal}>
+      {modal && <Modal className='bg-white divide-y text-center rounded w-80 overflow-hidden' onBackgroundClick={closeModal}>
         <PasswordBox
           disabled={disabled}
           title={title}

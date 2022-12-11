@@ -219,7 +219,7 @@ type TxSignError = {
 }
 
 const CIP30Names: CIP30WalletName[] = ['nami', 'gero', 'eternl', 'flint']
-const SignTxButtonClassName = 'flex w-full items-center justify-center p-2 text-sky-700 space-x-1 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
+const SignTxButtonClassName = 'flex w-full items-center justify-between py-2 px-4 text-sky-700 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
 const SignTxButton: FC<{
   className?: string
   onSuccess: (signature: string) => void
@@ -272,21 +272,21 @@ const SignTxButton: FC<{
   return (
     <>
       <button onClick={openModal} className={className}>{children}</button>
-      {modal && <Modal className='bg-white divide-y text-center rounded w-full overflow-hidden md:w-1/2 lg:w-1/3 xl:w-1/5' onBackgroundClick={closeModal}>
+      {modal && <Modal className='bg-white divide-y text-center rounded w-80 overflow-hidden' onBackgroundClick={closeModal}>
         {!signingWallet && <>
           <header>
-            <h2 className='font-semibold p-4'>Choose a wallet</h2>
+            <h2 className='font-semibold p-4 bg-gray-100'>Choose a wallet</h2>
           </header>
           <nav className='divide-y text-sky-700'>
             {personalWallets?.map((wallet) => <button
               key={wallet.id}
               onClick={() => setSigningWallet(wallet)}
               className={SignTxButtonClassName}>
-              <WalletIcon className='w-4' />
+              <WalletIcon className='w-6' />
               <span>{wallet.name}</span>
             </button>)}
             <button onClick={() => setSigningWallet('import')} className={SignTxButtonClassName}>
-              <ArrowUpTrayIcon className='w-4' />
+              <ArrowUpTrayIcon className='w-6' />
               <span>Import</span>
             </button>
             {Array.from(CIP30Wallets, ([name, wallet]) => <CIP30SignTxButton
@@ -298,18 +298,18 @@ const SignTxButton: FC<{
               wallet={wallet}
               className={SignTxButtonClassName}>
               <CIP30WalletIcon wallet={wallet} className='w-4' />
-              <span>{name}</span>
+              <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
             </CIP30SignTxButton>)}
-            <button onClick={closeModal} className={SignTxButtonClassName}>Cancel</button>
+            <button onClick={closeModal} className='w-full text-center text-sky-700 p-2'>Cancel</button>
           </nav>
         </>}
         {signingWallet && <>
           <header>
             <button
               onClick={() => setSigningWallet(undefined)}
-              className={SignTxButtonClassName}>
+              className='flex w-full items-center justify-center space-x-1 text-sky-700 p-2 hover:bg-sky-100'>
               <ChevronLeftIcon className='w-4' />
-              <span>Choose others</span>
+              <span>Choose Others</span>
             </button>
           </header>
           {signingWallet !== 'import' && <PasswordBox
