@@ -176,10 +176,10 @@ describe('Create a new wallet', () => {
     cy.contains('Import User Data')
       .should('be.enabled')
 
+    cy.wait(5000)
+
     cy.contains('Import User Data')
       .click()
-
-    cy.wait(1500)
 
     cy.contains(walletName + 'added')
       .click()
