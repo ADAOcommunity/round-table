@@ -384,7 +384,8 @@ const PasswordInput: FC<{
   setPassword: (password: string) => void
   placeholder?: string
   onEnter?: (event: KeyboardEvent) => void
-}> = ({ password, setPassword, placeholder, onEnter }) => {
+  invalid?: boolean
+}> = ({ password, setPassword, placeholder, onEnter, invalid }) => {
   const [isVisible, setIsVisible] = useState(false)
   const inputType: HTMLInputTypeAttribute = useMemo(() => isVisible ? 'text' : 'password', [isVisible])
   const onChange: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
@@ -394,9 +395,10 @@ const PasswordInput: FC<{
   const pressEnter = useEnterPressListener((event) => {
     onEnter && onEnter(event)
   })
+  const className = useMemo(() => invalid ? 'text-red-500 ring-red-500' : 'ring-sky-500', [invalid])
 
   return (
-    <label className='flex w-full border rounded items center ring-sky-400 focus-within:ring-1'>
+    <label className={['flex w-full border rounded items center focus-within:ring-1', className].join(' ')}>
       <div className='p-2'>
         <KeyIcon className='w-4 text-yellow-400' />
       </div>
