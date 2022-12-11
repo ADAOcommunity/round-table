@@ -401,7 +401,7 @@ const PasswordInput: FC<{
         <KeyIcon className='w-4 text-yellow-400' />
       </div>
       <input
-        className='w-full outline-none'
+        className='w-full'
         value={password}
         placeholder={placeholder}
         type={inputType}

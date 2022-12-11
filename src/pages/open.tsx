@@ -39,7 +39,7 @@ const GetTransaction: NextPage = () => {
       </Hero>
       <Panel>
         <textarea
-          className='block w-full p-4 outline-none'
+          className='block w-full p-4'
           rows={8}
           value={text}
           onChange={(e) => setText(e.target.value)}

@@ -341,7 +341,7 @@ const ImportSignatureBox: FC<{
           onKeyDown={pressEnter}
           rows={6}
           placeholder='Input signature here and import'
-          className='block w-full p-2 outline-none text-sm ring-sky-400 ring-inset focus:ring-1'>
+          className='block w-full p-2 text-sm ring-sky-400 ring-inset focus:ring-1'>
         </textarea>
       </div>
       <button
@@ -930,7 +930,7 @@ const RecipientAddressInput: FC<{
       <label className='flex block border rounded overflow-hidden'>
         <span className='p-2 bg-gray-100 border-r'>To</span>
         <input
-          className={['p-2 block w-full outline-none disabled:bg-gray-100', isValid ? '' : 'text-red-500'].join(' ')}
+          className={['p-2 block w-full disabled:bg-gray-100', isValid ? '' : 'text-red-500'].join(' ')}
           disabled={disabled}
           value={address}
           onChange={(e) => setAddress(e.target.value)}
@@ -1369,7 +1369,7 @@ const NewTransaction: FC<{
               <span className='p-2 bg-gray-100 border-r'>Least Change ADA</span>
               <ADAInput
                 disabled={isChangeSettingDisabled}
-                className='p-2 grow outline-none disabled:bg-gray-100'
+                className='p-2 grow disabled:bg-gray-100'
                 lovelace={minLovelaceForChange}
                 setLovelace={setMinLovelaceForChange} />
             </label>
@@ -1392,7 +1392,7 @@ const NewTransaction: FC<{
           <p className='text-sm'>Cannot exceed 64 bytes each line.</p>
         </header>
         <TransactionMessageInput
-          className='p-4 block w-full outline-none'
+          className='p-4 block w-full'
           onChange={setMessage}
           messageLines={message} />
       </div>
@@ -1465,7 +1465,7 @@ const StakePoolPicker: FC<{
         <input
           onChange={(e) => setId(e.target.value)}
           type='search'
-          className='block p-2 grow outline-none'
+          className='block p-2 grow'
           placeholder='Search by Pool ID' />
         <span className='p-2'>
           <MagnifyingGlassIcon className='w-4' />

@@ -102,7 +102,7 @@ const RecoverHDWallet: FC<{
         {words.map((word, index) => <li className='flex divide-x border rounded overflow-hidden' key={index}>
           <div className='flex-none w-9 text-right px-2 py-1 tabular-nums bg-gray-100'>{index + 1}</div>
           <input
-            className={['grow w-full font-bold px-2 py-1 outline-none', wordset.has(word) ? 'text-sky-700' : 'text-red-500'].join(' ')}
+            className={['grow w-full font-bold px-2 py-1', wordset.has(word) ? 'text-sky-700' : 'text-red-500'].join(' ')}
             list='bip39-wordlist'
             value={word}
             onChange={(e) => setWord(index, e.target.value)} />
@@ -115,13 +115,13 @@ const RecoverHDWallet: FC<{
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
           <input
             type='password'
-            className='block border rounded p-1 outline-none'
+            className='block border rounded p-1'
             value={BIP32Passphrase}
             onChange={(e) => setBIP32Passphrase(e.target.value)}
             placeholder='BIP39 optional passphrase' />
           <input
             type='password'
-            className={['block border rounded p-1 outline-none', isBIP32PassphraseValid ? '' : 'text-red-500'].join(' ')}
+            className={['block border rounded p-1', isBIP32PassphraseValid ? '' : 'text-red-500'].join(' ')}
             value={repeatBIP32Passphrase}
             onChange={(e) => setRepeatBIP32Passphrase(e.target.value)}
             placeholder='Repeat passphrase' />
@@ -224,13 +224,13 @@ const NewPersonalWallet: FC = () => {
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
             <input
               type='password'
-              className='block border rounded p-1 outline-none'
+              className='block border rounded p-1'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder='Password used when signing transaction' />
             <input
               type='password'
-              className={['block border rounded p-1 outline-none', password === repeatPassword ? '' : 'text-red-500'].join(' ')}
+              className={['block border rounded p-1', password === repeatPassword ? '' : 'text-red-500'].join(' ')}
               value={repeatPassword}
               onChange={(e) => setRepeatPassword(e.target.value)}
               placeholder='Repeat password' />

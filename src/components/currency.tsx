@@ -94,7 +94,7 @@ const LabeledCurrencyInput: FC<{
   return (
     <label className='flex grow border rounded overflow-hidden'>
       <CurrencyInput
-        className={['p-2 block w-full outline-none', isValid ? '' : 'text-red-500'].join(' ')}
+        className={['p-2 block w-full', isValid ? '' : 'text-red-500'].join(' ')}
         decimals={decimal}
         value={value}
         onChange={changeHandle}
