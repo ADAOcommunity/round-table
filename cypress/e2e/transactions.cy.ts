@@ -5,7 +5,10 @@ const hexURL = 'http://localhost:3000/hex/84a4008182582042ae71a8ec4ae79ba735bab0
 function signTransaction() {
   const signatures = 'a100828258205d6be9fd2cfe1c3fa5240ec89ac856b6afa4382ecb1654577a7c73ac517a8bd15840e89c573384f3ca4d8d8d6734bced299e3c5dad67c6c61f3f123efe90359816d9c5aa5ee6e19c70012a635d915f87819508bcd6b7b320be9c27fc1deab68ade0682582057b511ece5ff2cb1f20a72dcb2b2ad4ee3003f65d645a88e66ed2f20c76d49175840d0f654e197d20c09837d04f098daa71f5f2aff83a19cad88a51e2f1a5bde039a1544728375d9fcb7316d0ddd5b210ed0a1bf07a9e85594afe66355b808523809'
 
-  cy.contains('Import Signatures').click()
+  cy.wait(1000)
+
+  cy.get('footer').contains('Sign').click()
+  cy.get('#modal-root').contains('Import').click()
 
   cy.contains('7e4e5f240faab11eb23683a7b73a534c5638d2c66be534be1dda4da5')
     .parent()
@@ -15,11 +18,12 @@ function signTransaction() {
     .parent()
     .should('not.have.class', 'text-green-500')
 
-  cy.get('textarea[placeholder="Input signature here and import"]')
+  cy.get('#modal-root')
+    .get('textarea[placeholder="Input signature here and import"]')
     .type(signatures)
     .should("have.value", signatures)
 
-  cy.get('div#modal-root').contains('Import').click()
+  cy.get('#modal-root').contains('Import').click()
 
   cy.contains('7e4e5f240faab11eb23683a7b73a534c5638d2c66be534be1dda4da5')
     .parent()

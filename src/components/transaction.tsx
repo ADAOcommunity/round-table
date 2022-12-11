@@ -269,8 +269,6 @@ const SignTxButton: FC<{
     closeModal()
   }, [closeModal, onSuccess])
 
-  if ((!personalWallets || personalWallets.length === 0) && CIP30Wallets.size === 0) return null
-
   return (
     <>
       <button onClick={openModal} className={className}>{children}</button>
