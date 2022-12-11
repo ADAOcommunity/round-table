@@ -1,8 +1,8 @@
-import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
+import { useMemo, useContext, useEffect, useState, useCallback, HTMLInputTypeAttribute } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
+import { CogIcon, EyeIcon, EyeSlashIcon, FolderOpenIcon, HomeIcon, KeyIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -372,6 +372,36 @@ const Modal: FC<{
   )
 }
 
+const PasswordInput: FC<{
+  password: string
+  setPassword: (password: string) => void
+  placeholder?: string
+}> = ({ password, setPassword, placeholder }) => {
+  const [isVisible, setIsVisible] = useState(false)
+  const inputType: HTMLInputTypeAttribute = useMemo(() => isVisible ? 'text' : 'password', [isVisible])
+  const onChange: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
+    setPassword(event.target.value)
+  }, [setPassword])
+  const toggle = useCallback(() => setIsVisible(!isVisible), [isVisible])
+
+  return (
+    <label className='flex w-full border rounded items center ring-sky-400 focus-within:ring-1'>
+      <div className='p-2'>
+        <KeyIcon className='w-4 text-yellow-400' />
+      </div>
+      <input
+        className='w-full outline-none'
+        placeholder={placeholder}
+        type={inputType}
+        onChange={onChange} />
+      <button onClick={toggle} className='block p-2'>
+        {isVisible && <EyeIcon className='w-4 text-sky-700' />}
+        {!isVisible && <EyeSlashIcon className='w-4 text-sky-700' />}
+      </button>
+    </label>
+  )
+}
+
 const PasswordBox: FC<{
   title: string
   children: ReactNode
@@ -384,15 +414,10 @@ const PasswordBox: FC<{
   }, [onConfirm, password])
 
   return (<>
-    <label className='block px-4 py-6 space-y-4'>
+    <div className='block px-4 py-6 space-y-4'>
       <div className='font-semibold'>{title}</div>
-      <input
-        type='password'
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder='Password'
-        className='block w-full border rounded p-1 text-center text-lg outline-none' />
-    </label>
+      <PasswordInput password={password} setPassword={setPassword} placeholder='Password' />
+    </div>
     <nav>
       <button
         disabled={disabled || password.length === 0}
