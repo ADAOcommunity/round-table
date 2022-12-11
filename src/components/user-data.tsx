@@ -1,15 +1,41 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import type { FC, ReactNode } from 'react'
-import { ChangeEventHandler, MouseEventHandler, useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useState, useMemo, useCallback } from 'react'
+import type { FC, ChangeEventHandler, MouseEventHandler, ReactNode } from 'react'
 import { ConfigContext } from '../cardano/config'
-import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import { db } from '../db'
-import type { MultisigWallet } from '../db'
+import type { MultisigWallet, PersonalWallet, KeyHashIndex } from '../db'
+import type { Network } from '../cardano/config'
+import { NotificationContext } from './notification'
 
 type UserData = {
-  network: string
-  version: string
+  network: Network
+  version: '2'
   multisigWallets: MultisigWallet[]
+  personalWallets: PersonalWallet[]
+  keyHashIndices: KeyHashIndex[]
+}
+
+const serializeUserData = (userData: UserData): string => {
+  return JSON.stringify(userData, (_key, value) => {
+    if (value instanceof Map) return {
+      dataType: 'Map',
+      data: Array.from(value.entries())
+    }
+    if (value instanceof Uint8Array) return {
+      dataType: 'Uint8Array',
+      encoding: 'base64',
+      data: Buffer.from(value).toString('base64')
+    }
+    return value
+  })
+}
+
+const deserializeUserData = (content: string): UserData => {
+  return JSON.parse(content, (_key, value) => {
+    if (value.dataType === 'Map') return new Map(value.data)
+    if (value.dataType === 'Uint8Array') return new Uint8Array(Buffer.from(value.data, 'base64'))
+    return value
+  })
 }
 
 const DownloadButton: FC<{
@@ -22,15 +48,9 @@ const DownloadButton: FC<{
   const [URI, setURI] = useState<string | undefined>()
 
   useEffect(() => {
-    let isMounted = true
-
-    if (blobParts && isMounted) {
+    if (blobParts) {
       const blob = new Blob(blobParts, options)
       setURI(window.URL.createObjectURL(blob))
-    }
-
-    return () => {
-      isMounted = false
     }
   }, [blobParts, options])
 
@@ -51,18 +71,30 @@ const ExportUserDataButton: FC = () => {
   const multisigWallets = useLiveQuery(async () =>
     db.multisigWallets.toArray()
   )
-  if (!multisigWallets) return null
+  const personalWallets = useLiveQuery(async () =>
+    db.personalWallets.toArray()
+  )
+  const keyHashIndices = useLiveQuery(async () =>
+    db.keyHashIndices.toArray()
+  )
+  const userData: UserData | undefined = useMemo(() => {
+    if (!multisigWallets || !personalWallets || !keyHashIndices) return
 
-  const userData: UserData = {
-    network: config.network,
-    version: '2',
-    multisigWallets
-  }
-  const filename = `roundtable-backup.${config.network}.json`
+    return {
+      network: config.network,
+      version: '2',
+      multisigWallets,
+      personalWallets,
+      keyHashIndices
+    }
+  }, [multisigWallets, personalWallets, keyHashIndices, config.network])
+  const filename = useMemo(() => `roundtable-backup.${config.network}.json`, [config.network])
+
+  if (!userData) return null
 
   return (
     <DownloadButton
-      blobParts={[JSON.stringify(userData)]}
+      blobParts={[serializeUserData(userData)]}
       options={{ type: 'application/json' }}
       className='p-2 rounded bg-sky-700 text-white'
       download={filename}>
@@ -72,19 +104,17 @@ const ExportUserDataButton: FC = () => {
 }
 
 const ImportUserData: FC = () => {
-  const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
+  const { notify } = useContext(NotificationContext)
   const [userDataJSON, setUserDataJSON] = useState('')
 
-  if (!cardano) return null;
-
-  const changeHandle: ChangeEventHandler<HTMLInputElement> = async (event) => {
+  const change: ChangeEventHandler<HTMLInputElement> = useCallback(async (event) => {
     event.preventDefault()
     const reader = new FileReader()
     reader.onload = async (e) => {
       const text = (e.target?.result)
       if (typeof text !== 'string') {
-        console.error('Invalid backup file')
+        notify('error', 'Invalid backup file')
         return
       }
       setUserDataJSON(text)
@@ -93,45 +123,40 @@ const ImportUserData: FC = () => {
     if (files) {
       reader.readAsText(files[0])
     }
-  }
+  }, [notify])
 
-  const clickHandle: MouseEventHandler<HTMLButtonElement> = () => {
+  const click: MouseEventHandler<HTMLButtonElement> = useCallback(() => {
     if (!userDataJSON) return;
-    const userData = JSON.parse(userDataJSON)
-    if (userData.network !== config.network) return;
-    importUserData(userData)
-  }
-
-  const importUserData = (userData: UserData) => {
-    const version = userData.version
-
-    if (version === '2') {
-      const multisigWallets: MultisigWallet[] = userData.multisigWallets
-      db.multisigWallets.bulkAdd(multisigWallets)
+    const userData = deserializeUserData(userDataJSON)
+    if (userData.network !== config.network) {
+      console.error(`Wrong network: ${userData.network}`)
+      return
     }
-  }
-
-  const isValid = (): boolean => {
-    if (!userDataJSON) return false
-    const userData = JSON.parse(userDataJSON)
-    if (!userData) return false
-    if (userData.network !== config.network) return false
-    return true
-  }
+    if (userData.version === '2') {
+      db.transaction('rw', db.multisigWallets, db.personalWallets, db.keyHashIndices, async () => {
+        await db.multisigWallets.bulkAdd(userData.multisigWallets)
+        await db.personalWallets.bulkAdd(userData.personalWallets)
+        return db.keyHashIndices.bulkAdd(userData.keyHashIndices)
+      }).catch((error) => {
+        console.error(error)
+        notify('error', 'Failed to import, check the error in console.')
+      })
+    }
+  }, [userDataJSON, notify])
 
   return (
     <div className='rounded border border-sky-700 overflow-hidden'>
       <input
         type='file'
-        onChange={changeHandle} />
+        onChange={change} />
       <button
         className='p-2 bg-sky-700 text-white disabled:text-gray-400 disabled:bg-gray-100'
-        onClick={clickHandle}
-        disabled={!isValid()}>
+        onClick={click}>
         Import User Data
       </button>
     </div>
   )
 }
 
-export { ExportUserDataButton, ImportUserData, DownloadButton }
+export type { UserData }
+export { ExportUserDataButton, ImportUserData, DownloadButton, serializeUserData, deserializeUserData }

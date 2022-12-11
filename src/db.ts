@@ -82,5 +82,5 @@ const updatePersonalWalletAndDeindex = (wallet: PersonalWallet, keyHashes: Uint8
   return db.personalWallets.put(wallet).then(() => db.keyHashIndices.where('hash').anyOf(keyHashes).delete())
 })
 
-export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount, KeyHashIndex }
+export type { MultisigWallet, MultisigWalletParams, PersonalWallet, Policy, BasicInfoParams, PersonalAccount, MultisigAccount, KeyHashIndex, Timestamp }
 export { db, createPersonalWallet, updatePersonalWallet, updatePersonalWalletAndDeindex, deletePersonalWallet }
