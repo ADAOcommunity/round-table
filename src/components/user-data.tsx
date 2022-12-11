@@ -142,7 +142,7 @@ const ImportUserData: FC = () => {
         notify('error', 'Failed to import, check the error in console.')
       })
     }
-  }, [userDataJSON, notify])
+  }, [userDataJSON, notify, config.network])
 
   return (
     <div className='rounded border border-sky-700 overflow-hidden'>
