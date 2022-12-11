@@ -4,7 +4,7 @@ import { ConfigContext, isMainnet } from '../cardano/config'
 import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
-import { Panel, Modal } from '../components/layout'
+import { Panel, Modal, useEnterPressListener } from '../components/layout'
 import { ExclamationCircleIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { Calendar, DateContext } from '../components/time'
 import { useRouter } from 'next/router'
@@ -191,6 +191,7 @@ const AddAddress: FC<{
 }> = ({ cardano, className, add, cancel }) => {
   const [address, setAddress] = useState('')
   const [config, _] = useContext(ConfigContext)
+  const pressEnter = useEnterPressListener(() => add(address))
   const result = useMemo(() => getResult(() => {
     const { Address } = cardano.lib
     if (!Address.is_valid_bech32(address)) throw new Error('Address has to be in Bech32 format.')
@@ -201,13 +202,6 @@ const AddAddress: FC<{
     return addressObject
   }), [address, cardano, config])
 
-  const enterPressHandle: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
-    if (!event.shiftKey && event.key === 'Enter') {
-      event.preventDefault()
-      add(address)
-    }
-  }
-
   return (
     <div className={className}>
       <label className='space-y-1'>
@@ -215,7 +209,7 @@ const AddAddress: FC<{
         <textarea
           className={['block w-full border p-2 rounded', result.isOk ? '' : 'text-red-500'].join(' ')}
           onChange={(e) => setAddress(e.target.value)}
-          onKeyDown={enterPressHandle}
+          onKeyDown={pressEnter}
           rows={4}
           value={address}
           placeholder="Add signer address and press enter">
