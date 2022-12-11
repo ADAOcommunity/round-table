@@ -47,7 +47,7 @@ describe('Personal wallet', () => {
 
     cy.wait(15000)
 
-    cy.contains('stake_test1uqhy9wspj5mhwz3jjw5sw7d8750mhqryg93xz562vkjwxpccdkfkl').should('be.visible')
+    cy.get('div').should('have.contain.text', 'stake_test1uqhy9wspj5mhwz3jjw5sw7d8750mhqryg93xz562vkjwxpccdkfkl')
 
     cy.contains('Receive').click()
 
@@ -185,6 +185,12 @@ describe('Personal wallet', () => {
       .should('have.class', 'text-green-500')
   })
 
+  it('should be able to be backed up', () => {
+    cy.visit('http://localhost:3000/config')
+    cy.contains('Export User Data')
+      .click()
+  })
+
   it('should be able to get removed', () => {
     cy.contains(walletName).click()
 
@@ -193,5 +199,26 @@ describe('Personal wallet', () => {
     cy.contains('Remove').click()
     cy.contains('Remove Wallet').parent().get('input').type(walletName)
     cy.contains('REMOVE').click()
+  })
+
+  it('should be able to be restored', () => {
+    cy.visit('http://localhost:3000/config')
+    const downloadsFolder = Cypress.config('downloadsFolder')
+    const downloadedFilename = downloadsFolder + '/roundtable-backup.preview.json'
+
+    cy.get('input[type=file]')
+      .selectFile(downloadedFilename)
+
+    cy.wait(5000)
+
+    cy.contains('Import User Data')
+      .should('be.enabled')
+      .click()
+
+    cy.contains(walletName).click()
+
+    cy.wait(15000)
+
+    cy.get('div').should('have.contain.text', 'stake_test1uqhy9wspj5mhwz3jjw5sw7d8750mhqryg93xz562vkjwxpccdkfkl')
   })
 })
