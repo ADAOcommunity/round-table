@@ -339,7 +339,7 @@ const ImportSignatureBox: FC<{
           onChange={(e) => setSignature(e.target.value)}
           rows={6}
           placeholder='Input signature here and import'
-          className='block w-full p-2 outline-none text-sm'>
+          className='block w-full p-2 outline-none text-sm ring-sky-400 ring-inset focus:ring-1'>
         </textarea>
       </div>
       <button
