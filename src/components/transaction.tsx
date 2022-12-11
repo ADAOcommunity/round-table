@@ -10,7 +10,7 @@ import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTra
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
-import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, PasswordBox } from './layout'
+import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, PasswordBox, useEnterPressListener } from './layout'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import Gun from 'gun'
@@ -330,6 +330,7 @@ const ImportSignatureBox: FC<{
   onConfirm: (signature: string) => void
 }> = ({ onConfirm }) => {
   const [signature, setSignature] = useState('')
+  const pressEnter = useEnterPressListener(() => onConfirm(signature))
 
   return (
     <>
@@ -337,6 +338,7 @@ const ImportSignatureBox: FC<{
         <textarea
           value={signature}
           onChange={(e) => setSignature(e.target.value)}
+          onKeyDown={pressEnter}
           rows={6}
           placeholder='Input signature here and import'
           className='block w-full p-2 outline-none text-sm ring-sky-400 ring-inset focus:ring-1'>
