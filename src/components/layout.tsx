@@ -429,7 +429,7 @@ const PasswordBox: FC<{
   }, [onConfirm, password])
 
   return (<>
-    <div className='block px-4 py-6 space-y-4'>
+    <div className='block px-4 py-6 space-y-6'>
       <div className='font-semibold'>{title}</div>
       <PasswordInput
         password={password}
