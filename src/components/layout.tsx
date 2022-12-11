@@ -1,5 +1,5 @@
-import { useMemo, useContext, useEffect, useState, useCallback, HTMLInputTypeAttribute } from 'react'
-import type { ChangeEventHandler, MouseEventHandler, FC, ReactNode } from 'react'
+import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
+import type { ChangeEventHandler, DependencyList, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode, HTMLInputTypeAttribute } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
 import { CogIcon, EyeIcon, EyeSlashIcon, FolderOpenIcon, HomeIcon, KeyIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
@@ -372,17 +372,28 @@ const Modal: FC<{
   )
 }
 
+const useEnterPressListener = (callback: (event: KeyboardEvent) => void): KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement> => useCallback((event) => {
+  if (!event.shiftKey && event.key === 'Enter') {
+    event.preventDefault()
+    callback(event)
+  }
+}, [callback])
+
 const PasswordInput: FC<{
   password: string
   setPassword: (password: string) => void
   placeholder?: string
-}> = ({ password, setPassword, placeholder }) => {
+  onEnter?: (event: KeyboardEvent) => void
+}> = ({ password, setPassword, placeholder, onEnter }) => {
   const [isVisible, setIsVisible] = useState(false)
   const inputType: HTMLInputTypeAttribute = useMemo(() => isVisible ? 'text' : 'password', [isVisible])
   const onChange: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
     setPassword(event.target.value)
   }, [setPassword])
   const toggle = useCallback(() => setIsVisible(!isVisible), [isVisible])
+  const pressEnter = useEnterPressListener((event) => {
+    onEnter && onEnter(event)
+  })
 
   return (
     <label className='flex w-full border rounded items center ring-sky-400 focus-within:ring-1'>
@@ -391,8 +402,10 @@ const PasswordInput: FC<{
       </div>
       <input
         className='w-full outline-none'
+        value={password}
         placeholder={placeholder}
         type={inputType}
+        onKeyDown={pressEnter}
         onChange={onChange} />
       <button onClick={toggle} className='block p-2'>
         {isVisible && <EyeIcon className='w-4 text-sky-700' />}
@@ -416,7 +429,11 @@ const PasswordBox: FC<{
   return (<>
     <div className='block px-4 py-6 space-y-4'>
       <div className='font-semibold'>{title}</div>
-      <PasswordInput password={password} setPassword={setPassword} placeholder='Password' />
+      <PasswordInput
+        password={password}
+        setPassword={setPassword}
+        onEnter={confirm}
+        placeholder='Password' />
     </div>
     <nav>
       <button
