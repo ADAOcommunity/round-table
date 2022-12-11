@@ -880,16 +880,15 @@ const AddAssetButton: FC<{
   value: Value
   onSelect: (id: string) => void
 }> = ({ budget, value, onSelect }) => {
-  const assets = Array
+  const assets = useMemo(() => Array
     .from(budget.assets)
-    .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0))
-  const isDisabled = assets.length <= 0
+    .filter(([id, quantity]) => !value.assets.has(id) && quantity > BigInt(0)), [budget, value])
 
   return (
     <div className='relative'>
       <button
         className='flex text-sky-700 py-2 space-x-1 peer items-center disabled:text-gray-400'
-        disabled={isDisabled}>
+        disabled={assets.length <= 0}>
         <PlusIcon className='w-4' />
         <span>Add Asset</span>
       </button>
