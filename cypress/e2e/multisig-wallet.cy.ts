@@ -37,18 +37,15 @@ describe('Create a new wallet', () => {
   it('Should add signers', () => {
     addresses.forEach((address) => {
       cy.contains('Add Signer').click()
+      cy.get('#modal-root').contains('Import').click()
 
-      cy.contains('New Signer')
-        .should('be.visible')
-
-      cy.get('textarea[placeholder="Add signer address and press enter"]')
+      cy.get('#modal-root')
+        .get('textarea[placeholder="Input receiving address"]')
         .type(address)
         .should("have.value", address)
 
-      cy.contains('Add Address')
-        .should('be.enabled')
-
-      cy.contains('Add Address')
+      cy.get('#modal-root')
+        .contains('Add')
         .click()
     })
 
@@ -57,19 +54,6 @@ describe('Create a new wallet', () => {
       .find('ul')
       .children()
       .should('have.length', 2)
-
-    cy.contains('Add Signer').click()
-
-    cy.contains('Add Address')
-      .should('be.disabled')
-
-    cy.get('textarea[placeholder="Add signer address and press enter"]')
-      .type("abcdefghijk")
-
-    cy.contains('Add Address')
-      .should('be.disabled')
-
-    cy.contains('Cancel').click()
   })
 
   it('Should limit required signers to amount of signers added to wallet', () => {

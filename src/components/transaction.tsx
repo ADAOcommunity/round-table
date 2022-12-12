@@ -301,7 +301,7 @@ const SignTxButton: FC<{
               <CIP30WalletIcon wallet={wallet} className='w-4' />
               <span>{name.charAt(0).toUpperCase() + name.slice(1)}</span>
             </CIP30SignTxButton>)}
-            <button onClick={closeModal} className='w-full text-center text-sky-700 p-2'>Cancel</button>
+            <button onClick={closeModal} className='w-full text-center text-sky-700 p-2 hover:bg-sky-100'>Cancel</button>
           </nav>
         </>}
         {signingWallet && <>
@@ -320,7 +320,7 @@ const SignTxButton: FC<{
             <PencilIcon className='w-4' />
             <span>Sign</span>
           </PasswordBox>}
-          {signingWallet === 'import' && <TextareaModalBox onConfirm={importSignature}>
+          {signingWallet === 'import' && <TextareaModalBox placeholder='Input signature here and import' onConfirm={importSignature}>
             <ArrowUpTrayIcon className='w-4' />
             <span>Import</span>
           </TextareaModalBox>}

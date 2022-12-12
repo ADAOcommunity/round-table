@@ -152,6 +152,17 @@ describe('Personal wallet', () => {
       .should('have.text', "m/1854'/1815'/0'/2/1")
   })
 
+  it('should be able to create multisig wallet', () => {
+    cy.contains('New Wallet').click()
+    cy.contains('Add Signer').click()
+    cy.get('#modal-root').contains(walletName).click()
+    cy.get('#modal-root')
+      .contains('addr_test1qzp420vrmccgp4prr2axyjzvjj0qec8d4wdfhamcr9rw0v2afzulsnxumxuw66c2883rj3hv6027uxcvt4qry92hjess4uch94')
+      .click()
+    cy.get('li')
+      .should('have.contain.text', 'addr_test1qzp420vrmccgp4prr2axyjzvjj0qec8d4wdfhamcr9rw0v2afzulsnxumxuw66c2883rj3hv6027uxcvt4qry92hjess4uch94')
+  })
+
   it('should be able to sign personal transactions', () => {
     cy.visit('http://localhost:3000/base64/hKYAgYJYIPrhts%2B6OZKM83FFizlaIjZeIG%2FV7j2hqj5EPXQWBbr1AAGCglg5AKdbKhCK0NX7pEVrac89ZN%2BdIztHu%2FU4K5sYpMMuQroBlTd3CjKTqQd5p%2FUfu4BkQWJhU0plpOMHGgAOzBaCWDkAyF8t8490ivOyLC4q%2FFUcOOhJ3eBqvJ4o6a%2FUZy5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wcaAGiQ2QIaAAK1EQMaAD0gUwSCggCCAFgcLkK6AZU3dwoyk6kHeaf1H7uAZEFiYVNKZaTjB4MCggBYHC5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wdYHAzLBKcAAKxvP29HJWhW8XJOGpPP0tSX4lgg85sIGgA7ztOg9fY%3D')
 

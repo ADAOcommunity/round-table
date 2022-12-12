@@ -411,7 +411,8 @@ const ConfirmModalButton: FC<{
 const TextareaModalBox: FC<{
   onConfirm: (value: string) => void
   children: ReactNode
-}> = ({ onConfirm, children }) => {
+  placeholder?: string
+}> = ({ onConfirm, children, placeholder }) => {
   const [value, setValue] = useState('')
   const pressEnter = useEnterPressListener(() => onConfirm(value))
   const onChange: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => {
@@ -426,7 +427,7 @@ const TextareaModalBox: FC<{
           onChange={onChange}
           onKeyDown={pressEnter}
           rows={6}
-          placeholder='Input signature here and import'
+          placeholder={placeholder}
           className='block w-full p-2 text-sm'>
         </textarea>
       </div>

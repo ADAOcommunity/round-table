@@ -81,8 +81,8 @@ const WordInput: FC<{
   }, [setWord, index])
   const valid = useMemo(() => wordset.has(word), [wordset, word])
   const className = useMemo(() => [
-    'flex divide-x border rounded overflow-hidden focus-within:ring-1',
-    valid ? 'ring-sky-500' : 'text-red-500'].join(' '), [valid])
+    'flex divide-x border rounded overflow-hidden ring-sky-500 focus-within:ring-1',
+    valid ? 'text-sky-700' : 'text-red-500'].join(' '), [valid])
 
   return (
     <li className={className} key={index}>

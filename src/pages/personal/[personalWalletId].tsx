@@ -13,24 +13,10 @@ import type { Cardano } from '../../cardano/multiplatform-lib'
 import { ConfigContext, isMainnet } from '../../cardano/config'
 import { DocumentDuplicateIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
-import { RemoveWallet, Summary } from '../../components/wallet'
+import { DerivationPath, RemoveWallet, Summary } from '../../components/wallet'
 import { getAvailableReward, isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
 import { NewTransaction } from '../../components/transaction'
-import { formatDerivationPath } from '../../cardano/utils'
 import { SingleCertificateBuilder, SingleInputBuilder, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
-
-const DerivationPath: FC<{
-  keyHash?: Uint8Array
-}> = ({ keyHash }) => {
-  const keyHashIndex = useLiveQuery(async () => keyHash && db.keyHashIndices.get(keyHash), [keyHash])
-  const derivationPath = useMemo(() => keyHashIndex?.derivationPath, [keyHashIndex])
-
-  if (!derivationPath) return null
-
-  return (
-    <>{formatDerivationPath(derivationPath)}</>
-  )
-}
 
 const AddressTable: FC<{
   addresses: string[]

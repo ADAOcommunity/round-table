@@ -1,16 +1,16 @@
 import { useCallback, useContext, useEffect, useState, useMemo } from 'react'
 import type { FC, ChangeEventHandler, FocusEventHandler, KeyboardEventHandler, ReactNode } from 'react'
 import { ConfigContext, isMainnet } from '../cardano/config'
-import { getResult, isAddressNetworkCorrect } from '../cardano/multiplatform-lib'
+import { isAddressNetworkCorrect, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
-import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
-import { Panel, Modal, useEnterPressListener } from '../components/layout'
-import { ExclamationCircleIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { estimateDateBySlot, estimateSlotByDate, formatDerivationPath } from '../cardano/utils'
+import { Panel, Modal, TextareaModalBox } from '../components/layout'
+import { ChevronLeftIcon, ChevronRightIcon, ExclamationCircleIcon, PencilSquareIcon, PlusIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { Calendar, DateContext } from '../components/time'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
-import type { MultisigWalletParams, Policy } from '../db'
+import type { MultisigWalletParams, Policy, PersonalWallet } from '../db'
 import { getMultisigWalletPath } from '../route'
 import { ExpiryBadge, SignatureBadge, StartBadge, Timelock } from './native-script'
 import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurrentDelegation, getPolicyId, useSummaryQuery } from '../cardano/query-api'
@@ -19,6 +19,20 @@ import { ADAAmount, AssetAmount } from './currency'
 import { StakePoolInfo } from './transaction'
 import type { Delegation } from '@cardano-graphql/client-ts/api'
 import { Loading } from './status'
+import { useLiveQuery } from 'dexie-react-hooks'
+
+const DerivationPath: FC<{
+  keyHash?: Uint8Array
+}> = ({ keyHash }) => {
+  const keyHashIndex = useLiveQuery(async () => keyHash && db.keyHashIndices.get(keyHash), [keyHash])
+  const derivationPath = useMemo(() => keyHashIndex?.derivationPath, [keyHashIndex])
+
+  if (!derivationPath) return null
+
+  return (
+    <>{formatDerivationPath(derivationPath)}</>
+  )
+}
 
 const NumberInput: FC<{
   step?: number
@@ -183,53 +197,133 @@ const AddTimelock: FC<{
   )
 }
 
+const AddressButton: FC<{
+  address: string
+  className?: string
+  onClick?: (address: string) => void
+}> = ({ address, className, onClick }) => {
+  const cardano = useCardanoMultiplatformLib()
+  const payment = useMemo(() => cardano?.parseAddress(address).payment_cred()?.to_keyhash()?.to_bytes(), [cardano, address])
+  const staking = useMemo(() => cardano?.parseAddress(address).staking_cred()?.to_keyhash()?.to_bytes(), [cardano, address])
+  const click = useCallback(() => onClick && onClick(address), [address, onClick])
+  return (
+    <button onClick={click} className={className}>
+      <div className='text-xs font-light break-all'>{address}</div>
+      <div className='flex items-center justify-between text-sm text-sky-700'>
+        <div><DerivationPath keyHash={payment} /></div>
+        <div><DerivationPath keyHash={staking} /></div>
+      </div>
+    </button>
+  )
+}
+
+const AddressButtonGroup: FC<{
+  addresses: string[]
+  className?: string
+  onClick: (address: string) => void
+}> = ({ addresses, className, onClick }) => {
+  const perPage = 4
+  const [page, setPage] = useState(1)
+  const totalPage = useMemo(() => Math.ceil(addresses.length / perPage), [addresses, perPage])
+  const showingAddresses = useMemo(() => {
+    const start = (page - 1) * perPage
+    const end = start + perPage
+    return addresses.slice(start, end)
+  }, [addresses, page, perPage])
+
+  return (
+    <div className={className}>
+      {showingAddresses.map((address) => <AddressButton key={address} className='p-2 space-y-1 hover:bg-sky-100' onClick={onClick} address={address} />)}
+      <div className='flex items-center justify-between text-sky-700 px-4'>
+        <button
+          onClick={() => setPage(page - 1)}
+          disabled={page <= 1}
+          className='p-2 disabled:text-gray-400'>
+          <ChevronLeftIcon className='w-6' />
+        </button>
+        <div>{page}/{totalPage}</div>
+        <button
+          onClick={() => setPage(page + 1)}
+          disabled={page >= totalPage}
+          className='p-2 disabled:text-gray-400'>
+          <ChevronRightIcon className='w-6' />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const AddAddressClassName = 'flex w-full items-center justify-between py-2 px-4 text-sky-700 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
 const AddAddress: FC<{
   cardano: Cardano
   className?: string
   add: (address: string) => void
   cancel: () => void
 }> = ({ cardano, className, add, cancel }) => {
-  const [address, setAddress] = useState('')
+  const { notify } = useContext(NotificationContext)
+  const personalWallets = useLiveQuery(async () => db.personalWallets.toArray())
+  const [signingWallet, setSigningWallet] = useState<PersonalWallet | 'import' | undefined>()
   const [config, _] = useContext(ConfigContext)
-  const pressEnter = useEnterPressListener(() => add(address))
-  const result = useMemo(() => getResult(() => {
+  const signingAddresses: string[] | undefined = useMemo(() => {
+    if (signingWallet && signingWallet !== 'import') {
+      return Array.from(signingWallet.multisigAccounts, ([_, account]) => cardano.getAddressesFromMultisigAccount(account, isMainnet(config))).flat()
+    }
+  }, [cardano, config, signingWallet])
+  const addAddress = useCallback((address: string) => {
     const { Address } = cardano.lib
-    if (!Address.is_valid_bech32(address)) throw new Error('Address has to be in Bech32 format.')
+    if (!Address.is_valid_bech32(address)) {
+      notify('error', 'The address must be in Bech32')
+      return
+    }
     const addressObject = Address.from_bech32(address)
-    if (!isAddressNetworkCorrect(config, addressObject)) throw new Error('Wrong network.')
-    if (!addressObject.as_base()?.payment_cred().to_keyhash()) throw new Error('No key hash of payment found.')
-    if (!addressObject.as_base()?.stake_cred().to_keyhash()) throw new Error('No key hash of staking found.')
-    return addressObject
-  }), [address, cardano, config])
+    if (!isAddressNetworkCorrect(config, addressObject)) {
+      notify('error', 'Wrong network')
+      return
+    }
+    if (!addressObject.as_base()?.payment_cred().to_keyhash()) {
+      notify('error', 'No key hash of payment')
+      return
+    }
+    if (!addressObject.as_base()?.stake_cred().to_keyhash()) {
+      notify('error', 'No key hash of staking')
+      return
+    }
+    add(address)
+  }, [add, cardano, config, notify])
 
   return (
     <div className={className}>
-      <label className='space-y-1'>
-        <div className="after:content-['*'] after:text-red-500">New Signer</div>
-        <textarea
-          className={['block w-full border p-2 rounded', result.isOk ? '' : 'text-red-500'].join(' ')}
-          onChange={(e) => setAddress(e.target.value)}
-          onKeyDown={pressEnter}
-          rows={4}
-          value={address}
-          placeholder="Add signer address and press enter">
-        </textarea>
-        {address && !result.isOk && <div className='text-red-500'>{result.message}</div>}
-      </label>
-      <nav className='flex justify-end space-x-2'>
-        <button
-          onClick={cancel}
-          className='border rounded p-2 text-sky-700'>
-          Cancel
+      {!signingWallet && <>
+        <h2 className='font-semibold p-4 bg-gray-100 text-center'>Choose a wallet</h2>
+        {personalWallets?.map((wallet) => <button
+          key={wallet.id}
+          onClick={() => setSigningWallet(wallet)}
+          className={AddAddressClassName}>
+          <WalletIcon className='w-6' />
+          <span>{wallet.name}</span>
+        </button>)}
+        <button onClick={() => setSigningWallet('import')} className={AddAddressClassName}>
+          <PencilSquareIcon className='w-6' />
+          <span>Import</span>
         </button>
+        <button onClick={cancel} className='w-full text-center text-sky-700 p-2 hover:bg-sky-100'>Cancel</button>
+      </>}
+      {signingWallet && <>
         <button
-          disabled={!result.isOk}
-          onClick={() => add(address)}
-          className='flex py-2 px-4 items-center space-x-1 rounded text-white bg-sky-700 disabled:border disabled:text-gray-400 disabled:bg-gray-100'>
-          <PlusIcon className='w-4' />
-          <span>Add Address</span>
+          onClick={() => setSigningWallet(undefined)}
+          className='flex w-full items-center justify-center space-x-1 text-sky-700 p-2 hover:bg-sky-100'>
+          <ChevronLeftIcon className='w-4' />
+          <span>Choose Others</span>
         </button>
-      </nav>
+        {signingAddresses && <>
+          {signingWallet !== 'import' && <h2 className='p-2 bg-gray-100 text-center'>{signingWallet.name}</h2>}
+          <AddressButtonGroup className='divide-y' addresses={signingAddresses} onClick={addAddress} />
+        </>}
+        {!signingAddresses && <TextareaModalBox placeholder='Input receiving address' onConfirm={addAddress}>
+          <PencilSquareIcon className='w-4' />
+          <span>Add</span>
+        </TextareaModalBox>}
+      </>}
     </div>
   )
 }
@@ -369,8 +463,8 @@ const EditPolicy: FC<{
           )
         })}
       </ul>}
-      {modal === 'address' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
-        <AddAddress className='space-y-2' cardano={cardano} add={addPolicy} cancel={closeModal} />
+      {modal === 'address' && <Modal className='w-80' onBackgroundClick={closeModal}>
+        <AddAddress className='bg-white rounded divide-y overflow-hidden' cardano={cardano} add={addPolicy} cancel={closeModal} />
       </Modal>}
       {modal === 'timelock' && <Modal className='bg-white p-4 rounded sm:w-full md:w-1/2 lg:w-1/3' onBackgroundClick={closeModal}>
         <AddTimelock className='space-y-2' add={addPolicy} cancel={closeModal} />
@@ -553,4 +647,4 @@ const Summary: FC<{
   )
 }
 
-export { EditMultisigWallet, SlotInput, RemoveWallet, Summary }
+export { EditMultisigWallet, SlotInput, RemoveWallet, Summary, DerivationPath }
