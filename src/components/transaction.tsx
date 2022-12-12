@@ -10,7 +10,7 @@ import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTra
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
-import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, useEnterPressListener } from './layout'
+import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, useEnterPressListener, TextareaModalBox } from './layout'
 import { PasswordBox } from './password'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -320,38 +320,12 @@ const SignTxButton: FC<{
             <PencilIcon className='w-4' />
             <span>Sign</span>
           </PasswordBox>}
-          {signingWallet === 'import' && <ImportSignatureBox onConfirm={importSignature} />}
+          {signingWallet === 'import' && <TextareaModalBox onConfirm={importSignature}>
+            <ArrowUpTrayIcon className='w-4' />
+            <span>Import</span>
+          </TextareaModalBox>}
         </>}
       </Modal>}
-    </>
-  )
-}
-
-const ImportSignatureBox: FC<{
-  onConfirm: (signature: string) => void
-}> = ({ onConfirm }) => {
-  const [signature, setSignature] = useState('')
-  const pressEnter = useEnterPressListener(() => onConfirm(signature))
-
-  return (
-    <>
-      <div>
-        <textarea
-          value={signature}
-          onChange={(e) => setSignature(e.target.value)}
-          onKeyDown={pressEnter}
-          rows={6}
-          placeholder='Input signature here and import'
-          className='block w-full p-2 text-sm ring-sky-400 ring-inset focus:ring-1'>
-        </textarea>
-      </div>
-      <button
-        onClick={() => onConfirm(signature)}
-        disabled={!signature}
-        className='flex space-x-1 items-center justify-center w-full p-2 bg-sky-700 text-white disabled:text-gray-500 disabled:bg-gray-100'>
-        <ArrowUpTrayIcon className='w-4' />
-        <span>Import</span>
-      </button>
     </>
   )
 }

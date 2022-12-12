@@ -1,8 +1,8 @@
 import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
-import type { ChangeEventHandler, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode, HTMLInputTypeAttribute } from 'react'
+import type { ChangeEventHandler, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, EyeIcon, EyeSlashIcon, FolderOpenIcon, HomeIcon, KeyIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
 import { NotificationCenter } from './notification'
@@ -408,4 +408,36 @@ const ConfirmModalButton: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, ConfirmModalButton, useEnterPressListener }
+const TextareaModalBox: FC<{
+  onConfirm: (value: string) => void
+  children: ReactNode
+}> = ({ onConfirm, children }) => {
+  const [value, setValue] = useState('')
+  const pressEnter = useEnterPressListener(() => onConfirm(value))
+  const onChange: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => {
+    setValue(event.target.value)
+  }, [])
+
+  return (
+    <>
+      <div>
+        <textarea
+          value={value}
+          onChange={onChange}
+          onKeyDown={pressEnter}
+          rows={6}
+          placeholder='Input signature here and import'
+          className='block w-full p-2 text-sm'>
+        </textarea>
+      </div>
+      <button
+        onClick={() => onConfirm(value)}
+        disabled={!value}
+        className='flex space-x-1 items-center justify-center w-full p-2 bg-sky-700 text-white disabled:text-gray-500 disabled:bg-gray-100'>
+        {children}
+      </button>
+    </>
+  )
+}
+
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, ConfirmModalButton, useEnterPressListener, TextareaModalBox }
