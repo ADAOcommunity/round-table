@@ -379,104 +379,6 @@ const useEnterPressListener = (callback: (event: KeyboardEvent) => void): Keyboa
   }
 }, [callback])
 
-const PasswordInput: FC<{
-  password: string
-  setPassword: (password: string) => void
-  placeholder?: string
-  onEnter?: (event: KeyboardEvent) => void
-  invalid?: boolean
-}> = ({ password, setPassword, placeholder, onEnter, invalid }) => {
-  const [isVisible, setIsVisible] = useState(false)
-  const inputType: HTMLInputTypeAttribute = useMemo(() => isVisible ? 'text' : 'password', [isVisible])
-  const onChange: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
-    setPassword(event.target.value)
-  }, [setPassword])
-  const toggle = useCallback(() => setIsVisible(!isVisible), [isVisible])
-  const pressEnter = useEnterPressListener((event) => {
-    onEnter && onEnter(event)
-  })
-  const className = useMemo(() => invalid ? 'text-red-500 ring-red-500' : 'ring-sky-500', [invalid])
-
-  return (
-    <label className={['flex w-full border rounded items center focus-within:ring-1', className].join(' ')}>
-      <div className='p-2'>
-        <KeyIcon className='w-4 text-yellow-400' />
-      </div>
-      <input
-        className='w-full'
-        value={password}
-        placeholder={placeholder}
-        type={inputType}
-        onKeyDown={pressEnter}
-        onChange={onChange} />
-      <button onClick={toggle} className='block p-2'>
-        {isVisible && <EyeIcon className='w-4 text-sky-700' />}
-        {!isVisible && <EyeSlashIcon className='w-4 text-sky-700' />}
-      </button>
-    </label>
-  )
-}
-
-const PasswordBox: FC<{
-  title: string
-  children: ReactNode
-  disabled?: boolean
-  onConfirm: (password: string) => void
-}> = ({ title, children, disabled, onConfirm }) => {
-  const [password, setPassword] = useState('')
-  const confirm = useCallback(() => {
-    onConfirm(password)
-  }, [onConfirm, password])
-
-  return (<>
-    <div className='block px-4 py-6 space-y-6'>
-      <div className='font-semibold'>{title}</div>
-      <PasswordInput
-        password={password}
-        setPassword={setPassword}
-        onEnter={confirm}
-        placeholder='Password' />
-    </div>
-    <nav>
-      <button
-        disabled={disabled || password.length === 0}
-        onClick={confirm}
-        className='flex w-full p-2 space-x-1 items-center justify-center text-white bg-sky-700 disabled:bg-gray-100 disabled:text-gray-500'>
-        {children}
-      </button>
-    </nav>
-  </>)
-}
-
-const AskPasswordModalButton: FC<{
-  className?: string
-  title: string
-  disabled?: boolean
-  children?: ReactNode
-  onConfirm: (password: string) => void
-}> = ({ className, title, disabled, children, onConfirm }) => {
-  const [modal, setModal] = useState(false)
-  const closeModal = useCallback(() => setModal(false), [])
-  const confirm = useCallback((password: string) => {
-    onConfirm(password)
-    closeModal()
-  }, [closeModal, onConfirm])
-
-  return (
-    <>
-      <button onClick={() => setModal(true)} className={className}>{children}</button>
-      {modal && <Modal className='bg-white divide-y text-center rounded w-80 overflow-hidden' onBackgroundClick={closeModal}>
-        <PasswordBox
-          disabled={disabled}
-          title={title}
-          onConfirm={confirm}>
-          Confirm
-        </PasswordBox>
-      </Modal>}
-    </>
-  )
-}
-
 const ConfirmModalButton: FC<{
   className?: string
   children?: ReactNode
@@ -506,4 +408,4 @@ const ConfirmModalButton: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, AskPasswordModalButton, ConfirmModalButton, PasswordBox, useEnterPressListener, PasswordInput }
+export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, ConfirmModalButton, useEnterPressListener }

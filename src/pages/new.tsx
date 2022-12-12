@@ -2,6 +2,7 @@ import type { NextPage } from 'next'
 import { useCardanoMultiplatformLib, getResult } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import { Hero, Layout, Modal, Panel } from '../components/layout'
+import { PasswordInput, StrongPasswordInput } from '../components/password'
 import { Loading } from '../components/status'
 import { EditMultisigWallet } from '../components/wallet'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
@@ -222,17 +223,11 @@ const NewPersonalWallet: FC = () => {
         <div className='space-y-1'>
           <div className="after:content-['*'] after:text-red-500">Signing Password</div>
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
-            <input
-              type='password'
-              className='block border rounded p-1'
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder='Password used when signing transaction' />
-            <input
-              type='password'
-              className={['block border rounded p-1', password === repeatPassword ? '' : 'text-red-500'].join(' ')}
-              value={repeatPassword}
-              onChange={(e) => setRepeatPassword(e.target.value)}
+            <StrongPasswordInput password={password} setPassword={setPassword} placeholder='Password' />
+            <PasswordInput
+              invalid={password !== repeatPassword}
+              password={repeatPassword}
+              setPassword={setRepeatPassword}
               placeholder='Repeat password' />
           </div>
         </div>

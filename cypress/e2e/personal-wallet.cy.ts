@@ -1,5 +1,5 @@
 const walletName = 'Main Wallet'
-const password = 'ic{K6Bio"pMS'
+const password = 'ic{K6Bio"pMS7'
 const walletDesc = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
 const recoveryPhrase: string[] = [
   'moral', 'equip', 'attract',
@@ -27,7 +27,7 @@ describe('Personal wallet', () => {
     cy.get('textarea[placeholder="Describe the wallet"]')
       .type(walletDesc)
       .should('have.value', walletDesc)
-    cy.get('input[placeholder="Password used when signing transaction"]')
+    cy.get('input[placeholder="Password"]')
       .type(password)
       .should('have.value', password)
     cy.get('input[placeholder="Repeat password"]')
