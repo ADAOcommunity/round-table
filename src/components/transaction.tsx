@@ -872,7 +872,7 @@ const AddAssetButton: FC<{
           <li key={id}>
             <button
               onClick={() => onSelect(id)}
-              className='block w-full h-full p-2 hover:bg-sky-700 hover:text-white'>
+              className='block w-full h-full p-2 hover:bg-sky-100'>
               <div className='flex space-x-2'>
                 <span>{decodeASCII(getAssetName(id))}</span>
                 <span className='grow text-right'>{quantity.toString()}</span>
