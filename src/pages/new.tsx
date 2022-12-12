@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { useCardanoMultiplatformLib, getResult } from '../cardano/multiplatform-lib'
 import type { Result } from '../cardano/multiplatform-lib'
 import { Hero, Layout, Modal, Panel } from '../components/layout'
-import { PasswordInput, StrongPasswordInput } from '../components/password'
+import { isPasswordStrong, PasswordInput, StrongPasswordInput } from '../components/password'
 import { Loading } from '../components/status'
 import { EditMultisigWallet } from '../components/wallet'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
@@ -160,7 +160,7 @@ const NewPersonalWallet: FC = () => {
   const duplidation = useLiveQuery(async () => hash && db.personalWallets.get({ hash }), [hash])
   const isValid: boolean = useMemo(() => {
     return password === repeatPassword &&
-      password.length > 0 &&
+      isPasswordStrong(password) &&
       name.length > 0 &&
       !!rootKey &&
       id !== undefined &&
