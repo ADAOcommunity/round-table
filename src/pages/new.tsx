@@ -114,20 +114,16 @@ const RecoverHDWallet: FC<{
       </datalist>
       <div>
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
-          <input
-            type='password'
-            className='block border rounded p-1'
-            value={BIP32Passphrase}
-            onChange={(e) => setBIP32Passphrase(e.target.value)}
-            placeholder='BIP39 optional passphrase' />
-          <input
-            type='password'
-            className={['block border rounded p-1', isBIP32PassphraseValid ? '' : 'text-red-500'].join(' ')}
-            value={repeatBIP32Passphrase}
-            onChange={(e) => setRepeatBIP32Passphrase(e.target.value)}
-            placeholder='Repeat passphrase' />
+          <PasswordInput
+            placeholder='BIP39 optional passphrase'
+            password={BIP32Passphrase}
+            setPassword={setBIP32Passphrase} />
+          <PasswordInput
+            invalid={!isBIP32PassphraseValid}
+            placeholder='Repeat passphrase'
+            password={repeatBIP32Passphrase}
+            setPassword={setRepeatBIP32Passphrase} />
         </div>
-        {!isBIP32PassphraseValid && <div className='text-red-500'>Passphrases do not match.</div>}
       </div>
       <footer>
         <button className='py-1 px-2 border rounded text-sm text-sky-700' onClick={() => setModal('new')}>Generate Recovery Phrase</button>
