@@ -875,10 +875,10 @@ const AddAssetButton: FC<{
               className='block w-full h-full p-2 hover:bg-sky-100'>
               <div className='flex space-x-2'>
                 <span>{decodeASCII(getAssetName(id))}</span>
-                <span className='grow text-right'>{quantity.toString()}</span>
+                <span>{quantity.toString()}</span>
               </div>
               <div className='flex space-x-1'>
-                <span className='text-xs'>{id.slice(0, 56)}</span>
+                <span className='text-xs font-light'>{id.slice(0, 56)}</span>
               </div>
             </button>
           </li>
