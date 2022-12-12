@@ -294,7 +294,7 @@ const AddAddress: FC<{
   return (
     <div className={className}>
       {!signingWallet && <>
-        <h2 className='font-semibold p-4 bg-gray-100 text-center'>Choose a wallet</h2>
+        <h2 className='font-semibold p-4 bg-gray-100 text-center'>Add Signer</h2>
         {personalWallets?.map((wallet) => <button
           key={wallet.id}
           onClick={() => setSigningWallet(wallet)}
