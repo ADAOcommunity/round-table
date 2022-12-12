@@ -214,7 +214,7 @@ const SavePersonalWallet: FC<{
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className='p-2 block border w-full rounded'
+            className='p-2 block border w-full rounded ring-sky-500 focus:ring-1'
             placeholder='Write Name' />
         </label>
         <div className='space-y-1'>
@@ -231,7 +231,7 @@ const SavePersonalWallet: FC<{
         <label className='block space-y-1'>
           <div>Description</div>
           <textarea
-            className='p-2 block border w-full rounded'
+            className='p-2 block border w-full rounded ring-sky-500 focus:ring-1'
             placeholder='Describe the wallet'
             rows={4}
             value={description}
