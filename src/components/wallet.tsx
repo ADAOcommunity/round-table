@@ -125,7 +125,7 @@ const SlotInput: FC<{
 
   return (
     <div className={className}>
-      <NumberInput className='block w-full p-2 border rounded' min={0} step={1000} value={slot} onCommit={setSlot} />
+      <NumberInput className='block w-full p-2 border rounded ring-sky-500 focus:ring-1' min={0} step={1000} value={slot} onCommit={setSlot} />
       <Calendar isRed={isLocked} selectedDate={date} onChange={changeDate} />
       <nav className='flex justify-end space-x-2'>
         <button
@@ -401,7 +401,7 @@ const EditPolicy: FC<{
   return (
     <div className={className}>
       <nav className='flex space-x-2 text-sm'>
-        {policies && policies.length > 0 && <div className='flex border rounded divide-x items-center'>
+        {policies && policies.length > 0 && <div className='flex border rounded divide-x items-center ring-sky-500 focus-within:ring-1'>
           <select className='bg-white text-sky-700 px-2 py-1' onChange={setPolicyType}>
             <option value="All">All</option>
             <option value="Any">Any</option>
