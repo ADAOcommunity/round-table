@@ -10,7 +10,7 @@ import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTra
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
-import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, useEnterPressListener, TextareaModalBox } from './layout'
+import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, TextareaModalBox } from './layout'
 import { PasswordBox } from './password'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
