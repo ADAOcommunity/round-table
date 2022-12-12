@@ -5,6 +5,8 @@ import { ProgressBar } from "./status"
 import { nanoid } from 'nanoid'
 
 type NotificationType = 'success' | 'error'
+type Message = string | Error
+const getMessage = (msg: Message): string => msg instanceof Error ? msg.message : String(msg)
 
 type Notification = {
   id: string
@@ -14,12 +16,12 @@ type Notification = {
 
 const NotificationContext = createContext<{
   notifications: Notification[]
-  notify: (type: NotificationType, message: string) => void
+  notify: (type: NotificationType, message: Message) => void
   dismissHandle: (id: string) => void
 }>({
   notifications: [],
-  notify: (_: NotificationType, __: string) => { },
-  dismissHandle: (_: string) => { }
+  notify: (_: NotificationType, __: Message) => {},
+  dismissHandle: (_: string) => {}
 })
 
 const NotificationIcon: FC<{
@@ -134,8 +136,8 @@ const NotificationCenter: FC<{
 const useNotification = () => {
   const [notifications, setNotificaitons] = useState<Notification[]>([])
 
-  const notify = (type: NotificationType, message: string) => {
-    setNotificaitons(notifications.concat({ id: nanoid(), type, message }))
+  const notify = (type: NotificationType, message: Message) => {
+    setNotificaitons(notifications.concat({ id: nanoid(), type, message: getMessage(message) }))
   }
 
   const dismissHandle = (id: string) => {

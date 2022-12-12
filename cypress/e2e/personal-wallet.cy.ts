@@ -21,6 +21,20 @@ describe('Personal wallet', () => {
     cy.visit('http://localhost:3000/')
     cy.contains('New Wallet').click()
     cy.contains('Personal').click()
+
+    recoveryPhrase.forEach((word, index) => {
+      cy.contains('Recovery Phrase')
+        .parent()
+        .contains((index + 1).toString())
+        .next('input')
+        .type(word)
+        .should('have.value', word)
+    })
+
+    cy.contains('Next').click()
+  })
+
+  it('should be able to save', () => {
     cy.get('input[placeholder="Write Name"]')
       .type(walletName)
       .should('have.value', walletName)
@@ -33,15 +47,6 @@ describe('Personal wallet', () => {
     cy.get('input[placeholder="Repeat password"]')
       .type(password)
       .should('have.value', password)
-
-    recoveryPhrase.forEach((word, index) => {
-      cy.contains('Recovery Phrase')
-        .parent()
-        .contains((index + 1).toString())
-        .next('input')
-        .type(word)
-        .should('have.value', word)
-    })
 
     cy.contains('Create').click()
 

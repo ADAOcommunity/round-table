@@ -21,10 +21,10 @@ const PasswordInput: FC<{
   const pressEnter = useEnterPressListener((event) => {
     onEnter && onEnter(event)
   })
-  const className = useMemo(() => invalid ? 'text-red-500 ring-red-500' : 'ring-sky-500', [invalid])
+  const className = useMemo(() => invalid ? 'text-red-500' : '', [invalid])
 
   return (
-    <label className={['flex w-full border rounded items center focus-within:ring-1', className].join(' ')}>
+    <label className={['flex w-full border rounded items center ring-sky-500 focus-within:ring-1', className].join(' ')}>
       <div className='p-2'>
         <KeyIcon className='w-4 text-yellow-400' />
       </div>
