@@ -901,7 +901,7 @@ const RecipientAddressInput: FC<{
 
   return (
     <div className={className}>
-      <label className='flex block border rounded overflow-hidden'>
+      <label className='flex block border rounded overflow-hidden ring-sky-500 focus-within:ring-1'>
         <span className='p-2 bg-gray-100 border-r'>To</span>
         <input
           className={['p-2 block w-full disabled:bg-gray-100', isValid ? '' : 'text-red-500'].join(' ')}
@@ -1339,7 +1339,7 @@ const NewTransaction: FC<{
             address={changeAddress}
             setAddress={setChangeAddress} />
           {!willSpendAll && recipients.length > 0 && <div className='space-y-1'>
-            <label className='flex block border rounded overflow-hidden'>
+            <label className='flex block border rounded overflow-hidden ring-sky-500 focus-within:ring-1'>
               <span className='p-2 bg-gray-100 border-r'>Least Change ADA</span>
               <ADAInput
                 disabled={isChangeSettingDisabled}
@@ -1366,7 +1366,7 @@ const NewTransaction: FC<{
           <p className='text-sm'>Cannot exceed 64 bytes each line.</p>
         </header>
         <TransactionMessageInput
-          className='p-4 block w-full'
+          className='p-4 block w-full ring-sky-500 ring-inset focus:ring-1'
           onChange={setMessage}
           messageLines={message} />
       </div>
@@ -1435,7 +1435,7 @@ const StakePoolPicker: FC<{
   return (
     <div className={className}>
       <h2 className='text-lg font-semibold'>Staking Pools</h2>
-      <div className='flex items-center border rounded overflow-hidden'>
+      <div className='flex items-center border rounded overflow-hidden ring-sky-500 focus-within:ring-1'>
         <input
           onChange={(e) => setId(e.target.value)}
           type='search'

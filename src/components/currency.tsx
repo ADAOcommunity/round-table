@@ -92,7 +92,7 @@ const LabeledCurrencyInput: FC<{
   const isValid = value > 0 && value <= max && (min ? value >= min : true)
 
   return (
-    <label className='flex grow border rounded overflow-hidden'>
+    <label className='flex grow border rounded overflow-hidden ring-sky-500 focus-within:ring-1'>
       <CurrencyInput
         className={['p-2 block w-full', isValid ? '' : 'text-red-500'].join(' ')}
         decimals={decimal}

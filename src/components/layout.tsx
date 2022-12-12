@@ -428,7 +428,7 @@ const TextareaModalBox: FC<{
           onKeyDown={pressEnter}
           rows={6}
           placeholder={placeholder}
-          className='block w-full p-2 text-sm'>
+          className='block w-full p-2 text-sm ring-sky-500 ring-inset focus:ring-1'>
         </textarea>
       </div>
       <button
