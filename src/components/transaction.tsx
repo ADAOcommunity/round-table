@@ -10,7 +10,8 @@ import { DocumentDuplicateIcon, MagnifyingGlassCircleIcon, ShareIcon, ArrowUpTra
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import type { Config } from '../cardano/config'
-import { CardanoScanLink, CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, TextareaModalBox } from './layout'
+import { CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, TextareaModalBox } from './layout'
+import { CardanoScanLink } from './address'
 import { PasswordBox } from './password'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
@@ -28,6 +29,7 @@ import { DateContext } from './time'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { PersonalWallet } from '../db'
+import { AddressableContent } from './address'
 
 const TransactionReviewButton: FC<{
   className?: string
@@ -56,7 +58,7 @@ const CertificateListing: FC<{
     return (
       <>
         <h2 className='font-semibold'>Stake Registration</h2>
-        <div>{rewardAddress}</div>
+        <AddressableContent content={rewardAddress} scanType='stakekey' />
       </>
     )
   }
@@ -68,7 +70,7 @@ const CertificateListing: FC<{
     return (
       <>
         <h2 className='font-semibold'>Stake Deregistration</h2>
-        <div>{rewardAddress}</div>
+        <AddressableContent content={rewardAddress} scanType='stakekey' />
       </>
     )
   }
@@ -81,13 +83,8 @@ const CertificateListing: FC<{
     return (
       <>
         <h2 className='font-semibold'>Stake Delegation</h2>
-        <div>{rewardAddress}</div>
-        <div className='flex space-x-1 items-center'>
-          <div>{poolId}</div>
-          <CardanoScanLink type='pool' id={poolId}>
-            <MagnifyingGlassCircleIcon className='w-4 text-sky-700' />
-          </CardanoScanLink>
-        </div>
+        <AddressableContent content={rewardAddress} scanType='stakekey' />
+        <AddressableContent content={poolId} scanType='pool' />
       </>
     )
   }
@@ -116,11 +113,9 @@ const RecipientViewer: FC<{
 
   return (
     <div className={className}>
-      <p className='flex space-x-1 break-all'>{address}</p>
-      <p>
-        <ADAAmount lovelace={value.lovelace} />
-      </p>
+      <AddressableContent content={address} scanType='address' />
       <ul>
+        <li><ADAAmount lovelace={value.lovelace} /></li>
         {Array.from(value.assets).map(([id, quantity]) =>
           <li key={id}>
             <AssetAmount
@@ -154,20 +149,6 @@ const TransactionInputViewer: FC<{
     <div className={className}>
       <div className='break-all'>{hash}#{index}</div>
     </div>
-  )
-}
-
-const AddressViewer: FC<{
-  address: Address
-}> = ({ address }) => {
-  const bech32 = useMemo(() => address.to_bech32(), [address])
-  return (
-    <span className='flex items-center'>
-      <span>{bech32}</span>
-      <CopyButton className='p-2 text-sm text-sky-700' content={bech32} ms={500}>
-        <DocumentDuplicateIcon className='w-4' />
-      </CopyButton>
-    </span>
   )
 }
 
@@ -729,43 +710,47 @@ const TransactionViewer: FC<{
         <div className='p-4 space-y-2'>
           <div className='space-y-1'>
             <h2 className='font-semibold'>Transaction ID</h2>
-            <div className='flex items-center space-x-1'>
-              <span>{txHash.to_hex()}</span>
-              <span>
-                <CardanoScanLink className='text-sky-700' type='transaction' id={toHex(txHash)}><MagnifyingGlassCircleIcon className='w-4' /></CardanoScanLink>
-              </span>
+            <div className='text-sm'>
+              <AddressableContent content={txHash.to_hex()} scanType='transaction' />
             </div>
-            {startSlot && <div className='flex items-center space-x-1'>
-              <span>Start slot:</span>
-              <Timelock slot={startSlot} type='TimelockStart' />
-            </div>}
-            {expirySlot && <div className='flex items-center space-x-1'>
-              <span>Expiry slot:</span>
-              <Timelock slot={expirySlot} type='TimelockExpiry' />
-            </div>}
           </div>
+          {(startSlot || expirySlot) && <div className='space-y-1'>
+            <h2 className='font-semibold'>Lifetime</h2>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
+              <div className='border rounded p-2 text-sm'>
+                {startSlot && <div className='flex items-center justify-between space-x-1'>
+                  <span>Start slot:</span>
+                  <Timelock slot={startSlot} type='TimelockStart' />
+                </div>}
+                {expirySlot && <div className='flex items-center justify-between space-x-1'>
+                  <span>Expiry slot:</span>
+                  <Timelock slot={expirySlot} type='TimelockExpiry' />
+                </div>}
+              </div>
+            </div>
+          </div>}
           <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
             <div className='space-y-1'>
               <div className='font-semibold'>Inputs</div>
-              <ul className='space-y-1'>
+              <ul className='space-y-1 text-sm'>
                 {txInputs.map((input, index) => <li key={index} className='p-2 border rounded'>
-                  <TransactionInputViewer input={input} registry={txInputsRegistry} />
+                  <TransactionInputViewer className='space-y-1' input={input} registry={txInputsRegistry} />
                 </li>)}
-                {Array.from(txWithdrawals, ([address, amount], index) => <li key={index} className='p-2 border rounded'>
-                  <div>{address}</div>
+                {Array.from(txWithdrawals, ([address, amount], index) => <li key={index} className='p-2 border rounded space-y-1'>
+                  <AddressableContent content={address} scanType='stakekey' />
                   <div><ADAAmount lovelace={amount} /></div>
                 </li>)}
               </ul>
             </div>
             <div className='space-y-1'>
               <div className='font-semibold'>Outputs</div>
-              <ul className='space-y-1'>
+              <ul className='space-y-1 text-sm'>
                 {txOutputs.map((txOutput, index) => <li key={index} className='p-2 border rounded'>
-                  <RecipientViewer recipient={txOutput} />
+                  <RecipientViewer className='space-y-1' recipient={txOutput} />
                 </li>)}
                 <li className='p-2 border rounded space-x-1'>
-                  <span>Fee:</span>
                   <ADAAmount lovelace={fee} />
+                  <span>Fee</span>
                 </li>
               </ul>
             </div>
@@ -774,17 +759,17 @@ const TransactionViewer: FC<{
             <div className='font-semibold'>Certificates</div>
             <CertificateList
               cardano={cardano}
-              ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2'
+              ulClassName='grid grid-cols-1 md:grid-cols-2 gap-2 text-sm'
               liClassName='p-2 border rounded break-all'
               certificates={certificates} />
           </div>}
           {txMessage && <div className='space-y-1'>
             <div className='font-semibold'>Message</div>
-            <div className='p-2 border rounded'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
+            <div className='p-2 border rounded text-sm break-all'>{txMessage.map((line, index) => <p key={index}>{line}</p>)}</div>
           </div>}
           {requiredPaymentKeys && requiredPaymentKeys.size > 0 && <div className='space-y-1'>
             <h2 className='font-semibold'>Required Payment Signatures</h2>
-            <ul className='space-y-1 rounded border p-2'>
+            <ul className='space-y-1 rounded border p-2 text-sm'>
               {Array.from(requiredPaymentKeys, (keyHashHex, index) => <li key={index}>
                 <SignatureViewer
                   className='flex space-x-1 items-center'
@@ -796,7 +781,7 @@ const TransactionViewer: FC<{
           </div>}
           {requiredStakingKeys && requiredStakingKeys.size > 0 && <div className='space-y-1'>
             <h2 className='font-semibold'>Required Staking Signatures</h2>
-            <ul className='space-y-1 rounded border p-2'>
+            <ul className='space-y-1 rounded border p-2 text-sm'>
               {Array.from(requiredStakingKeys, (keyHashHex, index) => <li key={index}>
                 <SignatureViewer
                   className='flex space-x-1 items-center'
@@ -808,7 +793,7 @@ const TransactionViewer: FC<{
           </div>}
           {nativeScripts && nativeScripts.length > 0 && <div className='space-y-1'>
             <h2 className='font-semibold'>Native Scripts</h2>
-            <ul className='space-y-1'>
+            <ul className='space-y-1 text-sm'>
               {nativeScripts.map((script, index) => <li key={index}>
                 <NativeScriptViewer
                   cardano={cardano}
@@ -1561,4 +1546,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { AddressViewer, CIP30SignTxButton, SubmitTxButton, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
+export { CIP30SignTxButton, SubmitTxButton, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }

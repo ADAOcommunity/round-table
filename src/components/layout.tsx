@@ -4,7 +4,6 @@ import ReactDOM from 'react-dom'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
-import type { Config } from '../cardano/config'
 import { NotificationCenter } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
@@ -290,26 +289,6 @@ const WalletList: FC = () => {
   )
 }
 
-const getCardanoScanHost = (config: Config): string => {
-  switch (config.network) {
-    case 'mainnet': return 'https://cardanoscan.io'
-    case 'testnet': return 'https://testnet.cardanoscan.io'
-    case 'preview': return 'https://preview.cardanoscan.io'
-  }
-}
-
-const CardanoScanLink: FC<{
-  className?: string
-  children: ReactNode
-  type: 'transaction' | 'pool'
-  id: string
-}> = ({ className, children, type, id }) => {
-  const [config, _] = useContext(ConfigContext)
-  const host = getCardanoScanHost(config)
-  const href = new URL([type, id].join('/'), host)
-  return <a className={className} href={href.toString()} target='_blank' rel='noreferrer'>{children}</a>;
-}
-
 const Hero: FC<{
   className?: string
   children: ReactNode
@@ -441,4 +420,4 @@ const TextareaModalBox: FC<{
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton, Portal, Modal, ConfirmModalButton, useEnterPressListener, TextareaModalBox }
+export { Layout, Panel, Toggle, Hero, BackButton, CopyButton, ShareCurrentURLButton, Portal, Modal, ConfirmModalButton, useEnterPressListener, TextareaModalBox }

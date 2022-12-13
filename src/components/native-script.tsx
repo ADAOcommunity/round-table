@@ -84,9 +84,11 @@ const SignatureViewer: FC<{
   return (
     <div className={[className, color].join(' ')}>
       <SignatureBadge />
-      <span>{name}</span>
-      {signature && <ShieldCheckIcon className='w-4' />}
-      {signature && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={500} content={signature}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
+      <div className='truncate'>{name}</div>
+      <nav className='flex space-x-1'>
+        {signature && <ShieldCheckIcon className='w-4' />}
+        {signature && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={1000} content={signature}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
+      </nav>
     </div>
   )
 }
