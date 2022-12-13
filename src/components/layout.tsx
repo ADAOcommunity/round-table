@@ -133,9 +133,11 @@ const PrimaryBar: FC = () => {
         className='p-4 hover:bg-sky-700'>
         <HomeIcon className='w-12' />
       </NavLink>
-      <OpenTransaction className='p-4 hover:bg-sky-700'>
-        <FolderOpenIcon className='w-12' />
-      </OpenTransaction>
+      <div id='open-tx'>
+        <OpenTransaction className='p-4 hover:bg-sky-700'>
+          <FolderOpenIcon className='w-12' />
+        </OpenTransaction>
+      </div>
       <NavLink
         href='/config'
         onPageClassName='bg-sky-700'

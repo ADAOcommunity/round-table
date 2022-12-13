@@ -43,11 +43,18 @@ describe('Sign a base64 transaction created by others', () => {
 
 describe('Sign a base64 transaction created by others by opening URL in Base64', () => {
   it('Should sign the transaction', () => {
-    cy.visit('http://localhost:3000/open')
-    cy.get('textarea[placeholder="URL or CBOR in Hex"]')
+    cy.visit('http://localhost:3000')
+    cy.get('#open-tx')
+      .get('button')
+      .click()
+    cy.get('#modal-root')
+      .get('textarea[placeholder="URL or CBOR in Hex"]')
       .type(base64URL)
       .should("have.value", base64URL)
-    cy.contains('Review Transaction').click()
+    cy.get('#modal-root')
+      .get('button')
+      .contains('Open')
+      .click()
 
     signTransaction()
   })
