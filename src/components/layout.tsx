@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom'
 import Link from 'next/link'
 import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
-import { NotificationCenter } from './notification'
+import { NotificationCenter, NotificationContext } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { MultisigWallet, PersonalWallet, Policy } from '../db'
@@ -14,7 +14,7 @@ import { getBalanceByPaymentAddresses, sumValues, usePaymentAddressesQuery } fro
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
-import { getMultisigWalletPath, getPersonalWalletPath } from '../route'
+import { getMultisigWalletPath, getPersonalWalletPath, getTransactionPath } from '../route'
 import { SpinnerIcon } from './status'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 
@@ -133,12 +133,9 @@ const PrimaryBar: FC = () => {
         className='p-4 hover:bg-sky-700'>
         <HomeIcon className='w-12' />
       </NavLink>
-      <NavLink
-        href='/open'
-        onPageClassName='bg-sky-700'
-        className='p-4 hover:bg-sky-700'>
+      <OpenTransaction className='p-4 hover:bg-sky-700'>
         <FolderOpenIcon className='w-12' />
-      </NavLink>
+      </OpenTransaction>
       <NavLink
         href='/config'
         onPageClassName='bg-sky-700'
@@ -416,6 +413,58 @@ const TextareaModalBox: FC<{
         className='flex space-x-1 items-center justify-center w-full p-2 bg-sky-700 text-white disabled:text-gray-500 disabled:bg-gray-100'>
         {children}
       </button>
+    </>
+  )
+}
+
+const parseText = (text: string): Uint8Array => {
+  try {
+    let url = new URL(text)
+    let [_, encoding, content] = url.pathname.split('/')
+
+    if (encoding === 'base64') return Buffer.from(decodeURIComponent(content), 'base64')
+    if (encoding === 'hex') return Buffer.from(content, 'hex')
+
+    throw new Error(`Unknow encoding: ${encoding}`)
+  } catch (e) {
+    return Buffer.from(text, 'hex')
+  }
+}
+
+const OpenTransaction: FC<{
+  className?: string
+  children: ReactNode
+}> = ({ className, children }) => {
+  const router = useRouter()
+  const cardano = useCardanoMultiplatformLib()
+  const { notify } = useContext(NotificationContext)
+  const [modal, setModal] = useState(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const openModal = useCallback(() => setModal(true), [])
+  const confirm = useCallback((content: string) => {
+    if (!cardano) return
+    try {
+      const bytes = parseText(content)
+      const tx = cardano.lib.Transaction.from_bytes(bytes)
+      router.push(getTransactionPath(tx))
+      closeModal()
+    } catch (error) {
+      notify('error', 'Invalid transaction')
+    }
+  }, [cardano, closeModal, router, notify])
+
+  return (
+    <>
+      <button onClick={openModal} className={className}>{children}</button>
+      {modal && <Modal className='w-80' onBackgroundClick={closeModal}>
+        <div className='bg-white rounded overflow-hidden'>
+          <h2 className='bg-gray-100 p-2 text-center font-semibold'>Open Transaction</h2>
+          <TextareaModalBox placeholder='URL or CBOR in Hex' onConfirm={confirm}>
+            <FolderOpenIcon className='w-4' />
+            <span>Open</span>
+          </TextareaModalBox>
+        </div>
+      </Modal>}
     </>
   )
 }
