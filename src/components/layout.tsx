@@ -329,7 +329,7 @@ const Layout: FC<{
       </div>
       <div id='modal-root'></div>
       <div className='flex flex-row-reverse'>
-        <NotificationCenter className='fixed space-y-2 w-1/4 p-4' />
+        <NotificationCenter className='fixed space-y-2 p-4 w-80' />
       </div>
     </div>
   )

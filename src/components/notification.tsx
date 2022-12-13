@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import { FC, useCallback } from 'react'
 import { CheckCircleIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { ProgressBar } from "./status"
@@ -35,6 +35,24 @@ const NotificationIcon: FC<{
   }
 }
 
+const getClassName = (type: NotificationType): string => {
+  const base = 'rounded shadow overflow-hidden relative'
+
+  switch (type) {
+    case 'success': return `${base} bg-green-100 text-green-500`
+    case 'error': return `${base} bg-red-100 text-red-500`
+  }
+}
+
+const getProgressBarClassName = (type: NotificationType): string => {
+  const base = `h-1`
+
+  switch (type) {
+    case 'success': return `${base} bg-green-500 text-green-500`
+    case 'error': return `${base} bg-red-500 text-red-500`
+  }
+}
+
 const Notification: FC<{
   notification: Notification
   dismissHandle: (id: string) => any
@@ -42,16 +60,13 @@ const Notification: FC<{
   const { id, type, message } = notification
   const [progress, setProgress] = useState(100)
   const [timer, setTimer] = useState(true)
-
+  const startTimerHandle = useCallback(() => setTimer(true), [])
   const intervalRef = useRef<NodeJS.Timer>()
-
-  const pauseTimerHandle = () => {
+  const pauseTimerHandle = useCallback(() => {
     const interval = intervalRef.current
     interval && clearInterval(interval)
     setTimer(false)
-  }
-
-  const startTimerHandle = () => setTimer(true)
+  }, [intervalRef])
 
   useEffect(() => {
     let isMounted = true
@@ -74,44 +89,20 @@ const Notification: FC<{
   }, [timer])
 
   useEffect(() => {
-    let isMounted = true
-
-    if (isMounted && progress <= 0) {
+    if (progress <= 0) {
       dismissHandle(id)
     }
-
-    return () => {
-      isMounted = false
-    }
-  })
-
-  const getClassName = (): string => {
-    const base = 'rounded shadow overflow-hidden relative'
-
-    switch (type) {
-      case 'success': return `${base} bg-green-100 text-green-500`
-      case 'error': return `${base} bg-red-100 text-red-500`
-    }
-  }
-
-  const getProgressBarClassName = (): string => {
-    const base = `h-1`
-
-    switch (type) {
-      case 'success': return `${base} bg-green-500 text-green-500`
-      case 'error': return `${base} bg-red-500 text-red-500`
-    }
-  }
+  }, [progress, dismissHandle, id])
 
   return (
-    <div className={getClassName()} onMouseEnter={pauseTimerHandle} onMouseLeave={startTimerHandle}>
+    <div className={getClassName(type)} onMouseEnter={pauseTimerHandle} onMouseLeave={startTimerHandle}>
       <div className='p-2 flex items-start space-x-2'>
         <div className='py-1'><NotificationIcon type={type} /></div>
         <div className='grow break-all'>{message}</div>
         <button className='py-1' onClick={() => dismissHandle(id)}><XMarkIcon className='h-4 w-4' /></button>
       </div>
       <div className='absolute bottom-0 left-0 right-0'>
-        <ProgressBar className={getProgressBarClassName()} value={progress} max={100} />
+        <ProgressBar className={getProgressBarClassName(type)} value={progress} max={100} />
       </div>
     </div>
   )
