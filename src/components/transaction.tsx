@@ -697,7 +697,7 @@ const TransactionViewer: FC<{
     <div className='space-y-2'>
       <Hero>
         <h1 className='font-semibold text-lg'>Review Transaction</h1>
-        <p>Share current page URL to other signers so they can sign. After you have signed the transaction, you may copy your signatures to others to import. If the auto sync switch is on, your signatures would be exchanged automatically.</p>
+        <p>If the transaction is correct, you can sign and submit it. If this transaction needs more than one signers, you can share them this URL to get it signed and share the signatures.</p>
         <nav>
           <ShareCurrentURLButton
             className='flex space-x-1 bg-white text-sky-700 py-1 px-2 rounded shadow w-32 justify-center items-center'>
