@@ -255,7 +255,7 @@ const WalletList: FC = () => {
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
-    pollInterval: 10000,
+    pollInterval: 20000,
     skip: addresses.length === 0
   })
   const balances: Map<string, Value> | undefined = useMemo(() => {
