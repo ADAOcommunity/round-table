@@ -824,9 +824,10 @@ const TransactionViewer: FC<{
           </CopyVkeysButton>
           <div className='flex grow justify-end items-center space-x-4'>
             <SubmitTxButton
-              className='py-2 px-4 font-semibold bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
+              className='flex p-2 items-center space-x-1 bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
               transaction={signedTransaction}>
-              Submit Transaction
+              <ArrowUpTrayIcon className='w-4' />
+              <span>Submit</span>
             </SubmitTxButton>
           </div>
         </footer>
