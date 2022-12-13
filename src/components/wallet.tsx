@@ -563,7 +563,7 @@ const RemoveWallet: FC<{
           <p>By removing the wallet you will just remove the record in your browser. The assets in it remain untouched. Type the wallet name below to confirm.</p>
         </div>
         <input
-          className='p-2 border rounded w-full'
+          className='p-2 border rounded w-full ring-sky-500 focus:ring-1'
           type='text'
           placeholder='Type the wallet name to confirm'
           value={name}
