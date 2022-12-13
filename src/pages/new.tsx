@@ -276,7 +276,10 @@ const NewWallet: NextPage = () => {
     <Layout>
       <Hero>
         <h1 className='font-semibold text-lg'>New Wallet</h1>
-        <p>Start to create an account protected by Multi-Sig native scripts from here by adding signer addresses or by setting timelocks. Only receiving addresses from one of our supported wallets should be used. Check the homepage for further information.</p>
+        <div>
+          <p>Multisig wallet is made of multiple signers or time ranges of validity.</p>
+          <p>Personal wallet is for normal use like other wallets, e.g. Nami/Eternal/etc. It also holds addresses for multisig wallet making.</p>
+        </div>
         <div className='flex'>
           <nav className='text-sm rounded border-white border divide-x overflow-hidden'>
             <button
