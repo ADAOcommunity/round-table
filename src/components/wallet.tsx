@@ -379,23 +379,23 @@ const EditPolicy: FC<{
   }, [policy, setPolicy])
 
   if (typeof policy === 'string') return (
-    <>
+    <div className='flex items-start space-x-1'>
       <SignatureBadge />
-      <span>{policy}</span>
-    </>
+      <div className='p-1 break-all'>{policy}</div>
+    </div>
   )
 
   if (policy.type === 'TimelockStart') return (
-    <div className='flex items-center space-x-1'>
+    <div className='flex items-start space-x-1'>
       <StartBadge />
-      <Timelock type={policy.type} slot={policy.slot} />
+      <div className='p-1 break-all'><Timelock type={policy.type} slot={policy.slot} /></div>
     </div>
   )
 
   if (policy.type === 'TimelockExpiry') return (
-    <div className='flex items-center space-x-1'>
+    <div className='flex items-start space-x-1'>
       <ExpiryBadge />
-      <Timelock type={policy.type} slot={policy.slot} />
+      <div className='p-1 break-all'><Timelock type={policy.type} slot={policy.slot} /></div>
     </div>
   )
 
@@ -448,7 +448,7 @@ const EditPolicy: FC<{
           }
           return (
             <li key={index} className={liClassName}>
-              <div className='flex items-center space-x-1 grow break-all'>
+              <div>
                 <EditPolicy
                   cardano={cardano}
                   className={className}
@@ -457,8 +457,8 @@ const EditPolicy: FC<{
                   policy={subPolicy}
                   setPolicy={setSubPolicy} />
               </div>
-              <button className='p-2' onClick={removeItem}>
-                <XMarkIcon className='w-4' />
+              <button className='p-1' onClick={removeItem}>
+                <XMarkIcon className='w-5' />
               </button>
             </li>
           )
@@ -526,8 +526,8 @@ const EditMultisigWallet: FC<{
           <EditPolicy
             cardano={cardano}
             className='space-y-2 w-full'
-            ulClassName='border rounded divide-y'
-            liClassName='flex justify-between items-start p-2'
+            ulClassName='border rounded divide-y text-sm'
+            liClassName='flex justify-between items-start p-1'
             policy={policy}
             setPolicy={setPolicy} />
         </div>
