@@ -1470,6 +1470,12 @@ const StakePoolInfo: FC<{
   const isRetired = stakePool.retirements && stakePool.retirements.length > 0
   const { SMASH } = config
   const [loading, setLoading] = useState(false)
+  const saturationRate = useMemo(() => Math.round(stakedAmount / maxStaked * 100), [stakedAmount, maxStaked])
+  const saturationBarClassName = useMemo(() => {
+    if (saturationRate <= 90) return 'bg-green-700 h-4'
+    if (saturationRate > 90 && saturationRate <= 95) return 'bg-yellow-700 h-4'
+    if (saturationRate > 95) return 'bg-red-700 h-4'
+  }, [saturationRate])
 
   useEffect(() => {
     let isMounted = true
@@ -1510,9 +1516,9 @@ const StakePoolInfo: FC<{
             <span className='font-semibold'>Saturation:</span>
             <div className='grow'>
               <div className='rounded bg-gray-700 overflow-hidden relative'>
-                <ProgressBar className='bg-green-700 h-4' value={stakedAmount} max={maxStaked} />
+                <ProgressBar className={saturationBarClassName} value={stakedAmount} max={maxStaked} />
                 <div className='absolute inset-0 text-xs text-center text-white'>
-                  {Math.round(stakedAmount / maxStaked * 100)}%
+                  {saturationRate}%
                 </div>
               </div>
             </div>
