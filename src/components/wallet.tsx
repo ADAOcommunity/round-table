@@ -448,7 +448,7 @@ const EditPolicy: FC<{
           }
           return (
             <li key={index} className={liClassName}>
-              <div>
+              <div className='grow'>
                 <EditPolicy
                   cardano={cardano}
                   className={className}
