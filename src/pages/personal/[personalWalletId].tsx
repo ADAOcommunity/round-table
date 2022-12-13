@@ -3,7 +3,7 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC, ChangeEventHandler } from 'react'
-import { ConfirmModalButton, CopyButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
+import { ConfirmModalButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { AskPasswordModalButton } from '../../components/password'
 import { Loading } from '../../components/status'
 import { db, deletePersonalWallet, updatePersonalWallet, updatePersonalWalletAndDeindex } from '../../db'
@@ -11,12 +11,13 @@ import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
 import { ConfigContext, isMainnet } from '../../cardano/config'
-import { DocumentDuplicateIcon, ExclamationTriangleIcon } from '@heroicons/react/24/solid'
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid'
 import { NotificationContext } from '../../components/notification'
 import { DerivationPath, RemoveWallet, Summary } from '../../components/wallet'
 import { getAvailableReward, isRegisteredOnChain, useUTxOSummaryQuery } from '../../cardano/query-api'
 import { NewTransaction } from '../../components/transaction'
 import { SingleCertificateBuilder, SingleInputBuilder, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
+import { AddressableContent } from '../../components/address'
 
 const AddressTable: FC<{
   addresses: string[]
@@ -33,13 +34,10 @@ const AddressTable: FC<{
           <th className='p-4'>Staking Derivation Path</th>
         </tr>
       </thead>
-      <tbody className='divide-y'>
+      <tbody className='divide-y text-sm'>
         {addresses.map((address) => <tr key={address}>
           <td className='px-4 py-2 items-center'>
-            <span>{address}</span>
-            <CopyButton className='p-2 text-sky-700' content={address} ms={500}>
-              <DocumentDuplicateIcon className='w-4' />
-            </CopyButton>
+            <AddressableContent content={address} scanType='address' />
           </td>
           <td className='px-4 py-2'><DerivationPath keyHash={cardano?.parseAddress(address).payment_cred()?.to_keyhash()?.to_bytes()} /></td>
           <td className='px-4 py-2'><DerivationPath keyHash={cardano?.parseAddress(address).staking_cred()?.to_keyhash()?.to_bytes()} /></td>
@@ -347,7 +345,7 @@ const ShowPersonalWallet: NextPage = () => {
       {tab === 'multisig' && <>
         <div className='p-4 text-yellow-700 bg-yellow-100 rounded shadow flex items-center space-x-1'>
           <ExclamationTriangleIcon className='w-4' />
-          <div>These addresses are only for multisig.</div>
+          <div>These addresses are only for multisig wallet making.</div>
           <strong className='font-semibold'>DO NOT USE THEM TO RECEIVE FUNDS.</strong>
         </div>
         <Multisig wallet={personalWallet} />

@@ -20,6 +20,7 @@ import { StakePoolInfo } from './transaction'
 import type { Delegation } from '@cardano-graphql/client-ts/api'
 import { Loading } from './status'
 import { useLiveQuery } from 'dexie-react-hooks'
+import { AddressableContent } from './address'
 
 const DerivationPath: FC<{
   keyHash?: Uint8Array
@@ -622,7 +623,7 @@ const Summary: FC<{
           </div>
           <div className='space-y-1'>
             <h2 className='font-semibold'>Delegation</h2>
-            <div>{rewardAddress}</div>
+            <AddressableContent content={rewardAddress} scanType='stakekey' />
             {delegation && <StakePoolInfo stakePool={delegation.stakePool} />}
             {!delegation && <div>N/A</div>}
           </div>

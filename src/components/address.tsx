@@ -33,8 +33,9 @@ const CardanoScanLink: FC<{
 
 const AddressableContent: FC<{
   content: string
+  buttonClassName?: string
   scanType?: CardanoScanType
-}> = ({ content, scanType }) => {
+}> = ({ content, scanType, buttonClassName }) => {
   return (
     <div className='break-all space-x-1'>
       <span>{content}</span>
@@ -44,10 +45,10 @@ const AddressableContent: FC<{
           copied={<ClipboardDocumentCheckIcon className='w-4 text-green-500' />}
           ms={1000}
           content={content}>
-          <ClipboardDocumentIcon className='w-4' />
+          <ClipboardDocumentIcon className={['w-4', buttonClassName].join(' ')} />
         </CopyButton>
         {scanType && <CardanoScanLink className='inline-block' id={content} scanType={scanType}>
-          <MagnifyingGlassCircleIcon className='w-4' />
+          <MagnifyingGlassCircleIcon className={['w-4', buttonClassName].join(' ')} />
         </CardanoScanLink>}
       </nav>
     </div>

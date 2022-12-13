@@ -8,16 +8,17 @@ import type { Policy, MultisigWalletParams } from '../../db'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import type { FC } from 'react'
 import { ConfigContext, isMainnet } from '../../cardano/config'
-import { CopyButton, Hero, Layout, Panel, Modal } from '../../components/layout'
+import { Hero, Layout, Panel, Modal } from '../../components/layout'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useUTxOSummaryQuery, isRegisteredOnChain, getAvailableReward } from '../../cardano/query-api'
-import { DocumentDuplicateIcon, ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
+import { ArrowDownTrayIcon, InformationCircleIcon } from '@heroicons/react/24/solid'
 import { EditMultisigWallet, RemoveWallet, Summary } from '../../components/wallet'
 import { NewTransaction } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
 import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
+import { AddressableContent } from '../../components/address'
 
 const Spend: FC<{
   address: string
@@ -176,19 +177,10 @@ const GetPolicy: NextPage = () => {
       {cardano && result && <div className='space-y-2'>
         <Hero>
           <h1 className='text-lg font-semibold'>{multisigWallet?.name ?? 'Unknown Account'}</h1>
-          <div>
-            <div className='flex items-center'>
-              <span>{result.address}</span>
-              <CopyButton className='p-2 text-sm text-white' content={result.address} ms={500}>
-                <DocumentDuplicateIcon className='w-4' />
-              </CopyButton>
-            </div>
-            <div className='flex items-center'>
-              <span>{result.rewardAddress}</span>
-              <CopyButton className='p-2 text-sm text-white' content={result.rewardAddress} ms={500}>
-                <DocumentDuplicateIcon className='w-4' />
-              </CopyButton>
-            </div>
+          <div className='text-sm'>
+            <AddressableContent buttonClassName='text-white' content={result.address} scanType='address' />
+          </div>
+          <div className='text-sm'>
             {multisigWallet && multisigWallet.description.length > 0 && <div>{multisigWallet.description}</div>}
           </div>
           <div className='flex'>
