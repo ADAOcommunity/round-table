@@ -1,6 +1,6 @@
-import { FC, useCallback } from 'react'
 import { CheckCircleIcon, XCircleIcon, XMarkIcon } from '@heroicons/react/24/solid'
-import { createContext, useContext, useEffect, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
+import type { FC } from 'react'
 import { ProgressBar } from "./status"
 import { nanoid } from 'nanoid'
 
