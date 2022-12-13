@@ -292,7 +292,7 @@ const Hero: FC<{
   className?: string
   children: ReactNode
 }> = ({ className, children }) => {
-  return <div className={['rounded p-4 bg-sky-700 text-white shadow space-y-4', className].join(' ')}>{children}</div>;
+  return <div className={['rounded p-4 bg-sky-700 text-white shadow space-y-2', className].join(' ')}>{children}</div>;
 }
 
 const Portal: FC<{
@@ -401,6 +401,7 @@ const TextareaModalBox: FC<{
     <>
       <div>
         <textarea
+          autoFocus={true}
           value={value}
           onChange={onChange}
           onKeyDown={pressEnter}

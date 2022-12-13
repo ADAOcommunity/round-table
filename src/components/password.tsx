@@ -11,7 +11,8 @@ const PasswordInput: FC<{
   invalid?: boolean
   onFocus?: () => void
   onBlur?: () => void
-}> = ({ password, setPassword, placeholder, onEnter, invalid, onFocus, onBlur }) => {
+  autoFocus?: boolean
+}> = ({ password, setPassword, placeholder, onEnter, invalid, onFocus, onBlur, autoFocus }) => {
   const [isVisible, setIsVisible] = useState(false)
   const inputType: HTMLInputTypeAttribute = useMemo(() => isVisible ? 'text' : 'password', [isVisible])
   const onChange: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
@@ -30,6 +31,7 @@ const PasswordInput: FC<{
       </div>
       <input
         className='w-full'
+        autoFocus={autoFocus}
         onFocus={onFocus}
         onBlur={onBlur}
         value={password}
@@ -153,6 +155,7 @@ const PasswordBox: FC<{
     <div className='block px-4 py-6 space-y-6'>
       <div className='font-semibold'>{title}</div>
       <PasswordInput
+        autoFocus={true}
         password={password}
         setPassword={setPassword}
         onEnter={confirm}
