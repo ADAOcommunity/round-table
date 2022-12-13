@@ -418,7 +418,7 @@ class Cardano {
     const accountPath = personalAccountPath(accountIndex)
     const publicKey = accountPath.reduce((key, index) => key.derive(index), rootKey).to_public().as_bytes()
     wallet.personalAccounts.set(accountIndex, { publicKey, paymentKeyHashes: [] })
-    return Array.from({ length: 10 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
+    return Array.from({ length: 6 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
   }
 
   public async generateMultisigAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
@@ -426,7 +426,7 @@ class Cardano {
     const accountPath = multisigAccountPath(accountIndex)
     const publicKey = accountPath.reduce((key, index) => key.derive(index), rootKey).to_public().as_bytes()
     wallet.multisigAccounts.set(accountIndex, { publicKey, addresses: [] })
-    return Array.from({ length: 10 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
+    return Array.from({ length: 6 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
   }
 
   public generatePersonalAddress(wallet: PersonalWallet, accountIndex: number): KeyHashIndex[] {

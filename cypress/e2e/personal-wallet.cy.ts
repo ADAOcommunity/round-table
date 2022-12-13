@@ -79,15 +79,14 @@ describe('Personal wallet', () => {
   })
 
   it('should be able to add personal address', () => {
-    cy.get('td').should('not.have.text', 'addr_test1qqufezchqmhg3xqq8flp6h9v4vkf8cw903uhscry7pqay83wg2aqr9fhwu9r9yafqau60aglhwqxgstzv9f55edyuvrsjv5cn9')
-    cy.get('td').should('not.have.text', "m/1852'/1815'/0'/0/10")
+    cy.get('td').should('not.have.text', "m/1852'/1815'/0'/0/6")
     cy.contains('Add Address').click()
-    cy.contains('addr_test1qqufezchqmhg3xqq8flp6h9v4vkf8cw903uhscry7pqay83wg2aqr9fhwu9r9yafqau60aglhwqxgstzv9f55edyuvrsjv5cn9')
+    cy.contains("m/1852'/1815'/0'/0/6")
       .closest('td')
       .next('td')
-      .should('have.text', "m/1852'/1815'/0'/0/10")
-      .next('td')
       .should('have.text', "m/1852'/1815'/0'/2/0")
+      .closest('tr')
+      .should('have.contain.text', 'addr_test1qrz22ravvdmee9389wvaqgdkfptwzjfv4adut35faeygzsfwg2aqr9fhwu9r9yafqau60aglhwqxgstzv9f55edyuvrsrc0m0h')
   })
 
   it('should be able to add personal accounts', () => {
