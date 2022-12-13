@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-12-03T03:59:22.586Z',
+        createdAt: '2022-12-13T00:14:34.665Z',
         host: 'https://graphql.preview.lidonation.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -20,7 +20,7 @@
             operationName: 'PaymentAddressByAddresses',
             variables: {
                 addresses: [
-                    'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
+                    'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
                 ],
             },
             query: 'query PaymentAddressByAddresses($addresses: [String]!) {\n  paymentAddresses(addresses: $addresses) {\n    address\n    summary {\n      assetBalances {\n        asset {\n          assetId\n          __typename\n        }\n        quantity\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
@@ -30,7 +30,7 @@
         status: 200,
         headers: {
             date: [
-                'Sat, 03 Dec 2022 03:59:23 GMT',
+                'Tue, 13 Dec 2022 00:14:35 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -51,7 +51,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"1fc-z36kyCg4MTSmDUbc5C6iToD3zSA"',
+                'W/"1fe-36BaMelXWdAQaYR61P6fr1X+pUo"',
             ],
             'strict-transport-security': [
                 'max-age=15724800; includeSubDomains',
@@ -64,7 +64,7 @@
             data: {
                 paymentAddresses: [
                     {
-                        address: 'addr_test1xp0q958nx63fw7uyy9e72e4s8lm25mpvpncpwc3m449d2qfv8zud6pr2g03jgerxmyv0w57e5ps85cgfh98ftsqeh3hqj0xp4c',
+                        address: 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
                         summary: {
                             assetBalances: [
                                 {
@@ -72,7 +72,7 @@
                                         assetId: 'ada',
                                         __typename: 'Asset',
                                     },
-                                    quantity: '10000000',
+                                    quantity: '1007819407',
                                     __typename: 'AssetBalance',
                                 },
                                 {

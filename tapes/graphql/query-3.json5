@@ -1,6 +1,6 @@
 {
     meta: {
-        createdAt: '2022-12-13T00:14:33.128Z',
+        createdAt: '2022-12-13T00:31:26.655Z',
         host: 'https://graphql.preview.lidonation.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
@@ -17,21 +17,21 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'UTxOSummary',
+            operationName: 'Summary',
             variables: {
                 addresses: [
                     'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
                 ],
                 rewardAddress: 'stake_test17pws6uu55gwrm6gvl79w7u79zktjap5jjhvq6yhnd8lkndgcsn5h4',
             },
-            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  activeStake_aggregate {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  blocks_aggregate {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery UTxOSummary($addresses: [String]!, $rewardAddress: StakeAddress!) {\n  utxos(where: {address: {_in: $addresses}}) {\n    address\n    txHash\n    index\n    value\n    tokens {\n      asset {\n        assetId\n        __typename\n      }\n      quantity\n      __typename\n    }\n    __typename\n  }\n  cardano {\n    currentEpoch {\n      protocolParams {\n        minFeeA\n        minFeeB\n        poolDeposit\n        keyDeposit\n        coinsPerUtxoByte\n        maxValSize\n        maxTxSize\n        priceMem\n        priceStep\n        collateralPercent\n        maxCollateralInputs\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  rewards_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  withdrawals_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  stakeRegistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  stakeDeregistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    address\n    stakePool {\n      ...StakePoolFields\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  activeStake_aggregate {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  blocks_aggregate {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nquery Summary($addresses: [String]!, $rewardAddress: StakeAddress!) {\n  paymentAddresses(addresses: $addresses) {\n    address\n    summary {\n      assetBalances {\n        asset {\n          assetId\n          __typename\n        }\n        quantity\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  rewards_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  withdrawals_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  stakeRegistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  stakeDeregistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    address\n    stakePool {\n      ...StakePoolFields\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Tue, 13 Dec 2022 00:14:34 GMT',
+                'Tue, 13 Dec 2022 00:31:28 GMT',
             ],
             'content-type': [
                 'application/json; charset=utf-8',
@@ -52,7 +52,7 @@
                 'max-age=20, public',
             ],
             etag: [
-                'W/"aae-do6KlTmHufKLXUZ5UaC25lp4/Y0"',
+                'W/"775-l4D+3cK1LW+07Km+p6UoDCTMfns"',
             ],
             'strict-transport-security': [
                 'max-age=15724800; includeSubDomains',
@@ -63,61 +63,33 @@
         },
         body: {
             data: {
-                utxos: [
+                paymentAddresses: [
                     {
                         address: 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
-                        txHash: '3ec64a8784bddc1b1849a349fe88c01918a58e4d32636420c17aafe156f16f9c',
-                        index: 0,
-                        value: '969750',
-                        tokens: [],
-                        __typename: 'TransactionOutput',
-                    },
-                    {
-                        address: 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
-                        txHash: '3ec64a8784bddc1b1849a349fe88c01918a58e4d32636420c17aafe156f16f9c',
-                        index: 1,
-                        value: '996849657',
-                        tokens: [],
-                        __typename: 'TransactionOutput',
-                    },
-                    {
-                        address: 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
-                        txHash: '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735',
-                        index: 0,
-                        value: '10000000',
-                        tokens: [
-                            {
-                                asset: {
-                                    assetId: '9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659',
-                                    __typename: 'Asset',
+                        summary: {
+                            assetBalances: [
+                                {
+                                    asset: {
+                                        assetId: 'ada',
+                                        __typename: 'Asset',
+                                    },
+                                    quantity: '1007819407',
+                                    __typename: 'AssetBalance',
                                 },
-                                quantity: '1',
-                                __typename: 'Token',
-                            },
-                        ],
-                        __typename: 'TransactionOutput',
+                                {
+                                    asset: {
+                                        assetId: '9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659',
+                                        __typename: 'Asset',
+                                    },
+                                    quantity: '1',
+                                    __typename: 'AssetBalance',
+                                },
+                            ],
+                            __typename: 'PaymentAddressSummary',
+                        },
+                        __typename: 'PaymentAddress',
                     },
                 ],
-                cardano: {
-                    currentEpoch: {
-                        protocolParams: {
-                            minFeeA: 44,
-                            minFeeB: 155381,
-                            poolDeposit: 500000000,
-                            keyDeposit: 2000000,
-                            coinsPerUtxoByte: 4310,
-                            maxValSize: '5000',
-                            maxTxSize: 16384,
-                            priceMem: 0.0577,
-                            priceStep: 0.0000721,
-                            collateralPercent: 150,
-                            maxCollateralInputs: 3,
-                            __typename: 'ProtocolParams',
-                        },
-                        __typename: 'Epoch',
-                    },
-                    __typename: 'Cardano',
-                },
                 rewards_aggregate: {
                     aggregate: {
                         sum: {
