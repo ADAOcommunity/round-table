@@ -27,7 +27,7 @@ const Home: NextPage = () => {
                 <tr>
                   <td>
                     <div className='flex items-center justify-center space-x-1 p-1'>
-                      <Image src='/nami.svg' width={16} height={16} /><span>Nami</span>
+                      <Image src='/nami.svg' width={16} height={16} alt='Nami' /><span>Nami</span>
                     </div>
                   </td>
                   <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
@@ -36,7 +36,7 @@ const Home: NextPage = () => {
                 <tr>
                   <td>
                     <div className='flex items-center justify-center space-x-1 p-1'>
-                      <Image src='/eternl.png' width={16} height={16} /><span>Eternl</span>
+                      <Image src='/eternl.png' width={16} height={16} alt='Eternl' /><span>Eternl</span>
                     </div>
                   </td>
                   <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
@@ -45,7 +45,7 @@ const Home: NextPage = () => {
                 <tr>
                   <td>
                     <div className='flex items-center justify-center space-x-1 p-1'>
-                      <Image src='https://gerowallet.io/assets/img/logo2.ico' width={16} height={16} /><span>Gero</span>
+                      <Image src='https://gerowallet.io/assets/img/logo2.ico' width={16} height={16} alt='Gero' /><span>Gero</span>
                     </div>
                   </td>
                   <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
@@ -54,7 +54,7 @@ const Home: NextPage = () => {
                 <tr>
                   <td>
                     <div className='flex items-center justify-center space-x-1 p-1'>
-                      <Image src={flintLogo} width={16} height={16} /><span>Flint</span>
+                      <Image src={flintLogo} width={16} height={16} alt='Flint' /><span>Flint</span>
                     </div>
                   </td>
                   <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
