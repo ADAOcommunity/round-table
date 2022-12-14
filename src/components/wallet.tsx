@@ -292,6 +292,10 @@ const AddAddress: FC<{
     add(address)
   }, [add, cardano, config, notify])
 
+  useEffect(() => {
+    if (personalWallets?.length === 0) setSigningWallet('import')
+  }, [personalWallets])
+
   return (
     <div className={className}>
       {!signingWallet && <>
