@@ -5,7 +5,7 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { FC, ChangeEventHandler } from 'react'
 import { ConfirmModalButton, Hero, Layout, Modal, Panel, Portal } from '../../components/layout'
 import { AskPasswordModalButton } from '../../components/password'
-import { Loading, SpinnerIcon } from '../../components/status'
+import { Loading, PartialLoading } from '../../components/status'
 import { db, deletePersonalWallet, updatePersonalWallet, updatePersonalWalletAndDeindex } from '../../db'
 import type { PersonalWallet } from '../../db'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
@@ -153,7 +153,7 @@ const Spend: FC<{
     return null
   }
   if (loading || !data) return (
-    <SpinnerIcon className='animate-spin w-4 text-sky-700' />
+    <PartialLoading />
   )
 
   const protocolParameters = data.cardano.currentEpoch.protocolParams

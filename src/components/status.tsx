@@ -1,11 +1,17 @@
 import type { FC } from 'react'
 
-const Loading = () => (
+const Loading: FC = () => (
   <div className='px-8 py-4 text-xl items-center space-x-2 bg-white text-sky-700 rounded flex'>
     <SpinnerIcon className='animate-spin w-5' />
     <span>Loading...</span>
   </div>
 )
+
+const PartialLoading: FC = () => {
+  return (
+    <SpinnerIcon className='animate-spin w-6 text-sky-700' />
+  )
+}
 
 const ProgressBar: FC<{
   className?: string
@@ -31,4 +37,4 @@ const SpinnerIcon: FC<{
   )
 }
 
-export { Loading, ProgressBar, SpinnerIcon }
+export { Loading, PartialLoading, ProgressBar, SpinnerIcon }

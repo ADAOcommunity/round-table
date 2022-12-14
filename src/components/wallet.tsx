@@ -18,7 +18,7 @@ import type { Value } from '../cardano/query-api'
 import { ADAAmount, AssetAmount } from './currency'
 import { StakePoolInfo } from './transaction'
 import type { Delegation } from '@cardano-graphql/client-ts/api'
-import { SpinnerIcon } from './status'
+import { PartialLoading } from './status'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { AddressableContent } from './address'
 
@@ -606,7 +606,7 @@ const Summary: FC<{
   }, [data])
 
   if (!result) return (
-    <SpinnerIcon className='animate-spin w-4 text-sky-700' />
+    <PartialLoading />
   )
 
   const { balance, reward, delegation } = result
