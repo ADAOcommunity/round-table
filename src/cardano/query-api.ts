@@ -72,18 +72,6 @@ fragment StakePoolFields on StakePool {
   pledge
   hash
   metadataHash
-  activeStake_aggregate {
-    aggregate {
-      sum {
-        amount
-      }
-    }
-  }
-  blocks_aggregate {
-    aggregate {
-      count
-    }
-  }
 }
 `
 
@@ -298,7 +286,6 @@ query StakePools($id: StakePoolID, $limit: Int!, $offset: Int!) {
   stakePools(
     limit: $limit
     offset: $offset
-    order_by: { pledge: desc, fixedCost: asc, margin: asc }
     where: {
       id: { _eq: $id }
     }

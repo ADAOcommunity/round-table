@@ -1,10 +1,9 @@
 {
     meta: {
-        createdAt: '2022-12-13T00:44:56.596Z',
-        host: 'https://graphql.preview.lidonation.com/graphql',
+        createdAt: '2022-12-14T13:14:03.294Z',
+        host: 'https://preview-gql.junglestakepool.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
-        resUncompressed: true,
     },
     req: {
         headers: {
@@ -17,99 +16,58 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'TransactionSummary',
+            operationName: 'StakePools',
             variables: {
-                hashes: [
-                    '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735',
-                ],
+                id: 'pool1ayc7a29ray6yv4hn7ge72hpjafg9vvpmtscnq9v8r0zh7azas9c',
+                limit: 1,
+                offset: 0,
             },
-            query: 'fragment OutputFields on TransactionOutput {\n  address\n  txHash\n  index\n  value\n  tokens {\n    asset {\n      assetId\n      __typename\n    }\n    quantity\n    __typename\n  }\n  __typename\n}\n\nquery TransactionSummary($hashes: [Hash32Hex]!) {\n  transactions(where: {hash: {_in: $hashes}}) {\n    hash\n    outputs {\n      ...OutputFields\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  __typename\n}\n\nfragment RetirementFields on StakePool {\n  retirements {\n    retiredInEpoch {\n      number\n      __typename\n    }\n    announcedIn {\n      hash\n      __typename\n    }\n    inEffectFrom\n    __typename\n  }\n  __typename\n}\n\nquery StakePools($id: StakePoolID, $limit: Int!, $offset: Int!) {\n  stakePools(limit: $limit, offset: $offset, where: {id: {_eq: $id}}) {\n    ...StakePoolFields\n    ...RetirementFields\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Tue, 13 Dec 2022 00:44:57 GMT',
+                'Wed, 14 Dec 2022 13:14:05 GMT',
             ],
-            'content-type': [
-                'application/json; charset=utf-8',
-            ],
-            'transfer-encoding': [
-                'chunked',
-            ],
-            connection: [
-                'close',
-            ],
-            vary: [
-                'Accept-Encoding, Origin',
+            server: [
+                'Apache/2.4.54 () OpenSSL/1.0.2k-fips',
             ],
             'x-powered-by': [
                 'Express',
             ],
+            vary: [
+                'Origin',
+            ],
+            'content-type': [
+                'application/json; charset=utf-8',
+            ],
             'cache-control': [
                 'max-age=20, public',
             ],
+            'content-length': [
+                '343',
+            ],
             etag: [
-                'W/"4ee-yAm4oUKueCY/zjole41pkqGauI8"',
+                'W/"157-JITwyky3sPHnHcYYr4OBJyFYoSI"',
             ],
-            'strict-transport-security': [
-                'max-age=15724800; includeSubDomains',
-            ],
-            'content-encoding': [
-                'gzip',
+            connection: [
+                'close',
             ],
         },
         body: {
             data: {
-                transactions: [
+                stakePools: [
                     {
-                        hash: '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735',
-                        outputs: [
-                            {
-                                address: 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
-                                txHash: '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735',
-                                index: 0,
-                                value: '10000000',
-                                tokens: [
-                                    {
-                                        asset: {
-                                            assetId: '9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659',
-                                            __typename: 'Asset',
-                                        },
-                                        quantity: '1',
-                                        __typename: 'Token',
-                                    },
-                                ],
-                                __typename: 'TransactionOutput',
-                            },
-                            {
-                                address: 'addr_test1qplyuheyp74tz84jx6p60de62dx9vwxjce472d97rhdymftllscj7rl5uphpv4utt7rglu4zqgac45pe2gax2wvuc2gsru6rms',
-                                txHash: '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735',
-                                index: 1,
-                                value: '1146460',
-                                tokens: [
-                                    {
-                                        asset: {
-                                            assetId: '9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659',
-                                            __typename: 'Asset',
-                                        },
-                                        quantity: '10',
-                                        __typename: 'Token',
-                                    },
-                                ],
-                                __typename: 'TransactionOutput',
-                            },
-                            {
-                                address: 'addr_test1qplyuheyp74tz84jx6p60de62dx9vwxjce472d97rhdymftllscj7rl5uphpv4utt7rglu4zqgac45pe2gax2wvuc2gsru6rms',
-                                txHash: '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735',
-                                index: 2,
-                                value: '8949377793',
-                                tokens: [],
-                                __typename: 'TransactionOutput',
-                            },
-                        ],
-                        __typename: 'Transaction',
+                        id: 'pool1ayc7a29ray6yv4hn7ge72hpjafg9vvpmtscnq9v8r0zh7azas9c',
+                        margin: 0.01,
+                        fixedCost: '340000000',
+                        pledge: '35000000000',
+                        hash: 'e931eea8a3e9344656f3f233e55c32ea5056303b5c313015871bc57f',
+                        metadataHash: '7296d38d3c67d769c38924679e132e7d9098e70891d7574cc5cf053574305629',
+                        __typename: 'StakePool',
+                        retirements: [],
                     },
                 ],
             },

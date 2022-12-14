@@ -1,10 +1,9 @@
 {
     meta: {
-        createdAt: '2022-12-13T00:14:34.665Z',
-        host: 'https://graphql.preview.lidonation.com/graphql',
+        createdAt: '2022-12-14T13:14:00.429Z',
+        host: 'https://preview-gql.junglestakepool.com/graphql',
         reqHumanReadable: true,
         resHumanReadable: true,
-        resUncompressed: true,
     },
     req: {
         headers: {
@@ -17,47 +16,45 @@
         url: '/',
         method: 'POST',
         body: {
-            operationName: 'PaymentAddressByAddresses',
+            operationName: 'Summary',
             variables: {
                 addresses: [
                     'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j',
                 ],
+                rewardAddress: 'stake_test17pws6uu55gwrm6gvl79w7u79zktjap5jjhvq6yhnd8lkndgcsn5h4',
             },
-            query: 'query PaymentAddressByAddresses($addresses: [String]!) {\n  paymentAddresses(addresses: $addresses) {\n    address\n    summary {\n      assetBalances {\n        asset {\n          assetId\n          __typename\n        }\n        quantity\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+            query: 'fragment StakePoolFields on StakePool {\n  id\n  margin\n  fixedCost\n  pledge\n  hash\n  metadataHash\n  __typename\n}\n\nquery Summary($addresses: [String]!, $rewardAddress: StakeAddress!) {\n  paymentAddresses(addresses: $addresses) {\n    address\n    summary {\n      assetBalances {\n        asset {\n          assetId\n          __typename\n        }\n        quantity\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  rewards_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  withdrawals_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      sum {\n        amount\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  stakeRegistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  stakeDeregistrations_aggregate(where: {address: {_eq: $rewardAddress}}) {\n    aggregate {\n      count\n      __typename\n    }\n    __typename\n  }\n  delegations(\n    limit: 1\n    order_by: {transaction: {block: {slotNo: desc}}}\n    where: {address: {_eq: $rewardAddress}}\n  ) {\n    address\n    stakePool {\n      ...StakePoolFields\n      __typename\n    }\n    __typename\n  }\n}',
         },
     },
     res: {
         status: 200,
         headers: {
             date: [
-                'Tue, 13 Dec 2022 00:14:35 GMT',
+                'Wed, 14 Dec 2022 13:14:01 GMT',
             ],
-            'content-type': [
-                'application/json; charset=utf-8',
-            ],
-            'transfer-encoding': [
-                'chunked',
-            ],
-            connection: [
-                'close',
-            ],
-            vary: [
-                'Accept-Encoding, Origin',
+            server: [
+                'Apache/2.4.54 () OpenSSL/1.0.2k-fips',
             ],
             'x-powered-by': [
                 'Express',
             ],
+            vary: [
+                'Origin',
+            ],
+            'content-type': [
+                'application/json; charset=utf-8',
+            ],
             'cache-control': [
                 'max-age=20, public',
             ],
+            'content-length': [
+                '1603',
+            ],
             etag: [
-                'W/"1fe-36BaMelXWdAQaYR61P6fr1X+pUo"',
+                'W/"643-OQu+0E+qvaa6ayEIMJpGAKW1gho"',
             ],
-            'strict-transport-security': [
-                'max-age=15724800; includeSubDomains',
-            ],
-            'content-encoding': [
-                'gzip',
+            connection: [
+                'close',
             ],
         },
         body: {
@@ -72,7 +69,7 @@
                                         assetId: 'ada',
                                         __typename: 'Asset',
                                     },
-                                    quantity: '1007819407',
+                                    quantity: '1009250494',
                                     __typename: 'AssetBalance',
                                 },
                                 {
@@ -87,6 +84,55 @@
                             __typename: 'PaymentAddressSummary',
                         },
                         __typename: 'PaymentAddress',
+                    },
+                ],
+                rewards_aggregate: {
+                    aggregate: {
+                        sum: {
+                            amount: '1709889',
+                            __typename: 'Reward_sum_fields',
+                        },
+                        __typename: 'Reward_aggregate_fields',
+                    },
+                    __typename: 'Reward_aggregate',
+                },
+                withdrawals_aggregate: {
+                    aggregate: {
+                        sum: {
+                            amount: '1612692',
+                            __typename: 'Withdrawal_sum_fields',
+                        },
+                        __typename: 'Withdrawal_aggregate_fields',
+                    },
+                    __typename: 'Withdrawal_aggregate',
+                },
+                stakeRegistrations_aggregate: {
+                    aggregate: {
+                        count: '1',
+                        __typename: 'StakeRegistration_aggregate_fields',
+                    },
+                    __typename: 'StakeRegistration_aggregate',
+                },
+                stakeDeregistrations_aggregate: {
+                    aggregate: {
+                        count: '0',
+                        __typename: 'StakeDeregistration_aggregate_fields',
+                    },
+                    __typename: 'StakeDeregistration_aggregate',
+                },
+                delegations: [
+                    {
+                        address: 'stake_test17pws6uu55gwrm6gvl79w7u79zktjap5jjhvq6yhnd8lkndgcsn5h4',
+                        stakePool: {
+                            id: 'pool1ayc7a29ray6yv4hn7ge72hpjafg9vvpmtscnq9v8r0zh7azas9c',
+                            margin: 0.01,
+                            fixedCost: '340000000',
+                            pledge: '35000000000',
+                            hash: 'e931eea8a3e9344656f3f233e55c32ea5056303b5c313015871bc57f',
+                            metadataHash: '7296d38d3c67d769c38924679e132e7d9098e70891d7574cc5cf053574305629',
+                            __typename: 'StakePool',
+                        },
+                        __typename: 'Delegation',
                     },
                 ],
             },
