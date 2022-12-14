@@ -13,7 +13,7 @@ const Home: NextPage = () => {
           <h1 className='text-lg font-semibold'>Round Table</h1>
           <p>Round Table is ADAO Community’s open-source wallet on Cardano blockchain. It aims at making multisig easy and intuitive for everyone. The project is designed and developed with decentralization in mind. All the libraries and tools were chosen in favor of decentralization. There is no server to keep your data. Your data is your own. It runs on your browser just like any other light wallets. You could also run it on your own PC easily.</p>
           <p>Round Table supports multisig wallets as well as personal wallets. Besides its personal wallets, these wallets are supported to make multisig wallets.</p>
-          <div className='border rounded w-80 shadow'>
+          <div className='border rounded w-80 overflow-hidden shadow'>
             <table className='table-fixed w-full'>
               <caption className='bg-gray-100 p-1 font-semibold'>Multisig Support</caption>
               <thead className='bg-gray-100 border-b'>
