@@ -35,8 +35,8 @@ const TransactionReviewButton: FC<{
   transaction: Transaction
 }> = ({ className, transaction }) => {
   return (
-    <Link href={getTransactionPath(transaction)}>
-      <a className={['text-white bg-sky-700', className].join(' ')}>Review Transaction</a>
+    <Link href={getTransactionPath(transaction)} className={['text-white bg-sky-700', className].join(' ')}>
+      Review Transaction
     </Link>
   )
 }
@@ -1506,10 +1506,8 @@ const StakePoolInfo: FC<{
       <header className='space-y-1 p-2'>
         <div className='text-sky-700'>
           {loading && <SpinnerIcon className='animate-spin w-4' />}
-          {!loading && metaData && <Link href={metaData.homepage}>
-            <a className='block truncate' target='_blank'>
-              [<strong>{metaData.ticker}</strong>] {metaData.name}
-            </a>
+          {!loading && metaData && <Link href={metaData.homepage} className='block truncate' target='_blank'>
+            [<strong>{metaData.ticker}</strong>] {metaData.name}
           </Link>}
         </div>
         {!loading && !metaData && <div className='text-gray-700'>{isRetired ? 'Retired' : 'Unknown'}</div>}

@@ -116,10 +116,8 @@ const NavLink: FC<{
   }, [href, router.route])
 
   return (
-    <Link href={href}>
-      <a className={[className, isOnPage ? onPageClassName : ''].join(' ')}>
-        {children}
-      </a>
+    <Link href={href} className={[className, isOnPage ? onPageClassName : ''].join(' ')}>
+      {children}
     </Link>
   )
 }
@@ -166,16 +164,14 @@ const WalletLink: FC<{
   children?: ReactNode
 }> = ({ name, href, lovelace, isOnPage, children }) => {
   return (
-    <Link href={href}>
-      <a className={['flex space-x-1 justify-between items-center p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
-        <div className='w-2/3'>
-          <div className='truncate'>{name}</div>
-          <div className='text-sm font-normal'>
-            {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
-          </div>
+    <Link href={href} className={['flex space-x-1 justify-between items-center p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
+      <div className='w-2/3'>
+        <div className='truncate'>{name}</div>
+        <div className='text-sm font-normal'>
+          {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
         </div>
-        <div>{children}</div>
-      </a>
+      </div>
+      <div>{children}</div>
     </Link>
   )
 }
