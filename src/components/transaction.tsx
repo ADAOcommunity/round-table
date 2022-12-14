@@ -249,6 +249,11 @@ const SignTxButton: FC<{
     onSuccess(signature)
     closeModal()
   }, [closeModal, onSuccess])
+  useEffect(() => {
+    if (personalWallets?.length === 0 && CIP30Wallets.size === 0 && modal) {
+      setSigningWallet('import')
+    }
+  }, [personalWallets, CIP30Wallets, modal])
 
   return (
     <>

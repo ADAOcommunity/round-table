@@ -8,7 +8,6 @@ function signTransaction() {
   cy.wait(1000)
 
   cy.get('footer').contains('Sign').click()
-  cy.get('#modal-root').contains('Import').click()
 
   cy.contains('7e4e5f240faab11eb23683a7b73a534c5638d2c66be534be1dda4da5')
     .parent()
@@ -35,6 +34,10 @@ function signTransaction() {
 }
 
 describe('Sign a base64 transaction created by others', () => {
+  before(() => {
+    window.indexedDB.deleteDatabase('round-table')
+  })
+
   it('Should sign the transaction', () => {
     cy.visit(base64URL)
     signTransaction()
@@ -42,6 +45,10 @@ describe('Sign a base64 transaction created by others', () => {
 })
 
 describe('Sign a base64 transaction created by others by opening URL in Base64', () => {
+  before(() => {
+    window.indexedDB.deleteDatabase('round-table')
+  })
+
   it('Should sign the transaction', () => {
     cy.visit('http://localhost:3000')
     cy.get('#open-tx')
@@ -61,6 +68,10 @@ describe('Sign a base64 transaction created by others by opening URL in Base64',
 })
 
 describe('Sign a hex transaction created by others', () => {
+  before(() => {
+    window.indexedDB.deleteDatabase('round-table')
+  })
+
   it('Should sign the transaction', () => {
     cy.visit(hexURL)
     signTransaction()
