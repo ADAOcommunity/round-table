@@ -38,7 +38,7 @@ const defaultSubmitURITestnet = [
   'https://sa-preview.apexpool.info/api/submit/tx',
   'https://preview-submit.panl.org'
 ]
-const defaultSMASHMainnet = 'https://smash.cardano-mainnet.iohk.io/api/v1'
+const defaultSMASHMainnet = 'https://mainnet-smash.panl.org'
 const defaultSMASHTestnet = 'https://preview-smash.panl.org'
 
 const defaultConfig: Config = {
