@@ -1,74 +1,15 @@
-import type { BigNum, NativeScript, NativeScripts, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { nanoid } from 'nanoid'
+import type { NativeScript, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
+import { useContext, useMemo } from 'react'
 import type { FC, ReactNode } from 'react'
 import { toIter } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { NoSymbolIcon, ClipboardDocumentCheckIcon, ClipboardDocumentIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { CopyButton } from './layout'
-import { estimateDateBySlot } from '../cardano/utils'
-import { useContext } from 'react'
+import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
 import { ConfigContext } from '../cardano/config'
+import { DateContext } from './time'
 
-function minSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
-  if (slots.length === 0) return
-  return slots.reduce((prev, cur) => {
-    if (!cur) return prev
-    if (!prev) return cur
-    if (cur.compare(prev) <= 0) return cur
-    return prev
-  })
-}
-
-function maxSlot(slots: Array<BigNum | undefined>): BigNum | undefined {
-  if (slots.length === 0) return
-  return slots.reduce((prev, cur) => {
-    if (!cur) return prev
-    if (!prev) return cur
-    if (cur.compare(prev) >= 0) return cur
-    return prev
-  })
-}
-
-function suggestStartSlot(nativeScript: NativeScript): BigNum | undefined {
-  let script;
-
-  script = nativeScript.as_timelock_start()
-  if (script) return script.slot()
-
-  script = nativeScript.as_script_all()?.native_scripts()
-  if (script) return maxSlot(Array.from(toIter(script)).map(suggestStartSlot))
-
-  script = nativeScript.as_script_any()?.native_scripts()
-  if (script) return maxSlot(Array.from(toIter(script)).map(suggestStartSlot))
-
-  script = nativeScript.as_script_n_of_k()?.native_scripts()
-  if (script) return maxSlot(Array.from(toIter(script)).map(suggestStartSlot))
-
-  return
-}
-
-function suggestExpirySlot(nativeScript: NativeScript): BigNum | undefined {
-  let script;
-
-  script = nativeScript.as_timelock_expiry()
-  if (script) return script.slot()
-
-  script = nativeScript.as_script_all()?.native_scripts()
-  if (script) return minSlot(Array.from(toIter(script)).map(suggestExpirySlot))
-
-  script = nativeScript.as_script_any()?.native_scripts()
-  if (script) return minSlot(Array.from(toIter(script)).map(suggestExpirySlot))
-
-  script = nativeScript.as_script_n_of_k()?.native_scripts()
-  if (script) return minSlot(Array.from(toIter(script)).map(suggestExpirySlot))
-
-  return
-}
-
-type VerifyingData = {
-  signatures: Map<string, Vkeywitness>
-  currentSlot: number
-}
+type VerifyingData = Map<string, Vkeywitness>
 
 const Badge: FC<{
   className?: string
@@ -109,6 +50,49 @@ const StartBadge: FC = () => {
   )
 }
 
+const Timelock: FC<{
+  slot: number
+  type: 'TimelockStart' | 'TimelockExpiry'
+}> = ({ slot, type }) => {
+  const [config, _] = useContext(ConfigContext)
+  const [now, _t] = useContext(DateContext)
+  const currentSlot = estimateSlotByDate(now, config.network)
+  const isValid: boolean = useMemo(() => {
+    switch (type) {
+      case 'TimelockStart': return currentSlot >= slot
+      case 'TimelockExpiry': return currentSlot < slot
+    }
+  }, [slot, currentSlot, type])
+  return (
+    <div className={['flex', 'space-x-1', 'items-center', isValid ? 'text-green-500' : 'text-red-500'].join(' ')}>
+      <span>{slot}</span>
+      <span>(est. {estimateDateBySlot(slot, config.network).toLocaleString()})</span>
+      {!isValid && <NoSymbolIcon className='w-4' />}
+      {isValid && <ShieldCheckIcon className='w-4' />}
+    </div>
+  )
+}
+
+const SignatureViewer: FC<{
+  name: string
+  className?: string
+  signature?: string
+  signedClassName?: string
+}> = ({ name, signature, className, signedClassName }) => {
+  const color = signature ? signedClassName : ''
+
+  return (
+    <div className={[className, color].join(' ')}>
+      <SignatureBadge />
+      <div className='truncate'>{name}</div>
+      <nav className='flex space-x-1'>
+        {signature && <ShieldCheckIcon className='w-4' />}
+        {signature && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={1000} content={signature}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
+      </nav>
+    </div>
+  )
+}
+
 const NativeScriptViewer: FC<{
   nativeScript: NativeScript
   cardano?: Cardano
@@ -118,94 +102,57 @@ const NativeScriptViewer: FC<{
   className?: string
   verifyingData?: VerifyingData
 }> = ({ cardano, className, headerClassName, ulClassName, liClassName, nativeScript, verifyingData }) => {
-  const [config, _] = useContext(ConfigContext)
-
-  function renderNativeScripts(nativeScripts: NativeScripts) {
-    return Array.from(toIter(nativeScripts)).map((nativeScript) =>
-      <NativeScriptViewer
-        key={nanoid()}
-        cardano={cardano}
-        verifyingData={verifyingData}
-        className={className}
-        nativeScript={nativeScript}
-        headerClassName={headerClassName}
-        ulClassName={ulClassName}
-        liClassName={liClassName} />
-    )
-  }
-
   let script;
 
   script = nativeScript.as_script_pubkey()
   if (script) {
     const keyHashHex = script.addr_keyhash().to_hex()
-    const signature = verifyingData?.signatures.get(keyHashHex)
+    const signature = verifyingData?.get(keyHashHex)
+    const signatureHex = cardano?.buildSignatureSetHex(signature)
     return (
-      <li className={liClassName}>
-        <div className={'flex space-x-1 items-center ' + (signature ? 'text-green-500' : '')}>
-          <SignatureBadge />
-          <span>{keyHashHex}</span>
-          {signature && <ShieldCheckIcon className='w-4' />}
-          {signature && cardano && <CopyButton copied={<ClipboardDocumentCheckIcon className='w-4' />} ms={500} getContent={() => cardano.buildSignatureSetHex([signature])}><ClipboardDocumentIcon className='w-4' /></CopyButton>}
-        </div>
-      </li>
+      <SignatureViewer name={keyHashHex} signature={signatureHex} className='flex space-x-1 items-center' signedClassName='text-green-500' />
     )
   }
 
   script = nativeScript.as_timelock_expiry()
   if (script) {
-    const currentSlot = verifyingData?.currentSlot
     const slot = parseInt(script.slot().to_str())
-    let color = ''
-    if (currentSlot && currentSlot >= slot) color = 'text-red-500'
-    if (currentSlot && currentSlot < slot) color = 'text-green-500'
     return (
-      <li className={liClassName}>
-        <div className={['flex space-x-1 items-center', color].join(' ')}>
-          <ExpiryBadge />
-          <span>{slot}</span>
-          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
-          {currentSlot && currentSlot >= slot && <>
-            <NoSymbolIcon className='w-4' />
-          </>}
-          {currentSlot && currentSlot < slot && <>
-            <ShieldCheckIcon className='w-4' />
-          </>}
-        </div>
-      </li>
+      <div className='flex items-center space-x-1'>
+        <ExpiryBadge />
+        <Timelock type='TimelockExpiry' slot={slot} />
+      </div>
     )
   }
 
   script = nativeScript.as_timelock_start()
   if (script) {
-    const currentSlot = verifyingData?.currentSlot
     const slot = parseInt(script.slot().to_str())
-    let color = ''
-    if (currentSlot && currentSlot <= slot) color = 'text-red-500'
-    if (currentSlot && currentSlot > slot) color = 'text-green-500'
     return (
-      <li className={liClassName}>
-        <div className={['flex space-x-1 items-center', color].join(' ')}>
-          <StartBadge />
-          <span>{slot}</span>
-          <span>(est. {estimateDateBySlot(slot, config.isMainnet).toLocaleString()})</span>
-          {currentSlot && currentSlot <= slot && <>
-            <NoSymbolIcon className='w-4' />
-          </>}
-          {currentSlot && currentSlot > slot && <>
-            <ShieldCheckIcon className='w-4' />
-          </>}
-        </div>
-      </li>
+      <div className='flex items-center space-x-1'>
+        <StartBadge />
+        <Timelock type='TimelockStart' slot={slot} />
+      </div>
     )
   }
 
   script = nativeScript.as_script_all()
   if (script) return (
     <div className={className}>
-      <header className={headerClassName}>Require all to spend</header>
+      <header className={headerClassName}>Require all</header>
       <ul className={ulClassName}>
-        {renderNativeScripts(script.native_scripts())}
+        {Array.from(toIter(script.native_scripts())).map((nativeScript, index) =>
+          <li key={index} className={liClassName}>
+            <NativeScriptViewer
+              cardano={cardano}
+              verifyingData={verifyingData}
+              className={className}
+              nativeScript={nativeScript}
+              headerClassName={headerClassName}
+              ulClassName={ulClassName}
+              liClassName={liClassName} />
+          </li>
+        )}
       </ul>
     </div>
   )
@@ -213,9 +160,20 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_script_any()
   if (script) return (
     <div className={className}>
-      <header className={headerClassName}>Require any to spend</header>
+      <header className={headerClassName}>Require any</header>
       <ul className={ulClassName}>
-        {renderNativeScripts(script.native_scripts())}
+        {Array.from(toIter(script.native_scripts())).map((nativeScript, index) =>
+          <li key={index} className={liClassName}>
+            <NativeScriptViewer
+              cardano={cardano}
+              verifyingData={verifyingData}
+              className={className}
+              nativeScript={nativeScript}
+              headerClassName={headerClassName}
+              ulClassName={ulClassName}
+              liClassName={liClassName} />
+          </li>
+        )}
       </ul>
     </div>
   )
@@ -223,15 +181,26 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_script_n_of_k()
   if (script) return (
     <div className={className}>
-      <header className={headerClassName}>Require least {script.n()} to spend</header>
+      <header className={headerClassName}>Require least {script.n()}</header>
       <ul className={ulClassName}>
-        {renderNativeScripts(script.native_scripts())}
+        {Array.from(toIter(script.native_scripts())).map((nativeScript, index) =>
+          <li key={index} className={liClassName}>
+            <NativeScriptViewer
+              cardano={cardano}
+              verifyingData={verifyingData}
+              className={className}
+              nativeScript={nativeScript}
+              headerClassName={headerClassName}
+              ulClassName={ulClassName}
+              liClassName={liClassName} />
+          </li>
+        )}
       </ul>
     </div>
   )
 
-  return null
+  throw new Error('Unsupported NativeScript')
 }
 
 export type { VerifyingData }
-export { suggestStartSlot, suggestExpirySlot, SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer }
+export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer, Timelock, SignatureViewer }

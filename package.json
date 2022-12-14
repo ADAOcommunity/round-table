@@ -11,10 +11,11 @@
     "cypress:headless": "cypress run"
   },
   "dependencies": {
-    "@apollo/client": "^3.5.10",
-    "@cardano-graphql/client-ts": "^7.0.0",
+    "@apollo/client": "^3.7.1",
+    "@cardano-graphql/client-ts": "^7.0.2",
     "@dcspark/cardano-multiplatform-lib-browser": "^3.1.0",
     "@heroicons/react": "^2.0.12",
+    "bip39": "^3.0.4",
     "buffer": "^6.0.3",
     "cardano-utxo-wasm": "^0.2.0",
     "dexie": "^3.2.1",
@@ -22,7 +23,6 @@
     "fractional": "^1.0.0",
     "graphql": "^16.6.0",
     "gun": "^0.2020.1238",
-    "nanoid": "^4.0.0",
     "next": "12.2.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",

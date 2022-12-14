@@ -1,25 +1,38 @@
-import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts'
-import type { Address, BaseAddress, BigNum, Ed25519KeyHash, NativeScript, NetworkInfo, ScriptHash, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness } from '@dcspark/cardano-multiplatform-lib-browser'
-import { nanoid } from 'nanoid'
+import type { ProtocolParams, TransactionOutput } from '@cardano-graphql/client-ts/api'
+import type { Address, BigNum, Bip32PrivateKey, Certificate, Ed25519KeyHash, NativeScript, RewardAddress, SingleInputBuilder, SingleOutputBuilderResult, Transaction, TransactionBuilder, TransactionHash, Value as CMLValue, Vkeywitness, PrivateKey, Bip32PublicKey, StakeCredential, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 import { useEffect, useState } from 'react'
+import { db } from '../db'
+import type { PersonalAccount, PersonalWallet, MultisigAccount, Policy, KeyHashIndex } from '../db'
+import { isMainnet } from './config'
 import type { Config } from './config'
 import type { Value } from './query-api'
 import { getAssetName, getPolicyId } from './query-api'
+import { decryptWithPassword, harden } from './utils'
+
+const COIN_TYPE = 1815
+const PAYMENT_ROLE = 0
+const STAKING_ROLE = 2
+const PERSONAL_PURPOSE = 1852
+const MULTISIG_PURPOSE = 1854
+
+const PERSONAL_WALLET_PATH = [harden(PERSONAL_PURPOSE), harden(COIN_TYPE)]
+const MULTISIG_WALLET_PATH = [harden(MULTISIG_PURPOSE), harden(COIN_TYPE)]
+
+const personalStakingKeyHash = (publicKey: Bip32PublicKey): Ed25519KeyHash => publicKey.derive(STAKING_ROLE).derive(0).to_raw_key().hash()
+const personalAccountPath = (accountIndex: number) => PERSONAL_WALLET_PATH.concat(harden(accountIndex))
+const multisigAccountPath = (accountIndex: number) => MULTISIG_WALLET_PATH.concat(harden(accountIndex))
 
 const Fraction = require('fractional').Fraction
 type Fraction = { numerator: number, denominator: number }
 
 type CardanoWASM = typeof import('@dcspark/cardano-multiplatform-lib-browser')
-type MultiSigType = 'all' | 'any' | 'atLeast'
 type Recipient = {
-  id: string
   address: string
   value: Value
 }
 
 const newRecipient = (): Recipient => {
   return {
-    id: nanoid(),
     address: '',
     value: {
       lovelace: BigInt(0),
@@ -30,7 +43,7 @@ const newRecipient = (): Recipient => {
 
 const isAddressNetworkCorrect = (config: Config, address: Address): boolean => {
   const networkId = address.network_id()
-  return config.isMainnet ? networkId === 1 : networkId === 0
+  return isMainnet(config) ? networkId === 1 : networkId === 0
 }
 
 const toAddressString = (address: Address): string => address.as_byron()?.to_base58() ?? address.to_bech32()
@@ -182,22 +195,25 @@ class Cardano {
     return metadatum && Array.from(toIter(metadatum), (metadata) => metadata.as_text())
   }
 
-  public signTransaction(transaction: Transaction, vkeyIter: IterableIterator<Vkeywitness>): Transaction {
+  public signTransaction(transaction: Transaction, vkeys: Vkeywitness[]): Transaction {
     const { Transaction, Vkeywitnesses } = this.lib
     const witnessSet = transaction.witness_set()
     const vkeyWitnessSet = Vkeywitnesses.new()
-    Array.from(vkeyIter, (vkey) => vkeyWitnessSet.add(vkey))
+    vkeys.forEach((vkey) => vkeyWitnessSet.add(vkey))
     witnessSet.set_vkeys(vkeyWitnessSet)
     return Transaction.new(transaction.body(), witnessSet, transaction.auxiliary_data())
   }
 
-  public buildSignatureSetHex(vkeys: Vkeywitness[]): string {
-    const { TransactionWitnessSet, Vkeywitnesses } = this.lib
-    const witnessSet = TransactionWitnessSet.new()
-    const vkeySet = Vkeywitnesses.new()
-    vkeys.forEach((vkey) => vkeySet.add(vkey))
-    witnessSet.set_vkeys(vkeySet)
-    return toHex(witnessSet)
+  public buildSignatureSetHex(vkeys: Array<Vkeywitness> | Vkeywitness | undefined): string | undefined {
+    if (!vkeys) return
+    const { TransactionWitnessSetBuilder } = this.lib
+    const builder = TransactionWitnessSetBuilder.new()
+    if (Array.isArray(vkeys)) {
+      vkeys.forEach((vkey) => builder.add_vkey(vkey))
+    } else {
+      builder.add_vkey(vkeys)
+    }
+    return toHex(builder.build())
   }
 
   public parseAddress(address: string): Address {
@@ -212,22 +228,6 @@ class Cardano {
   public isValidAddress(address: string): boolean {
     const { Address } = this.lib
     return Address.is_valid(address)
-  }
-
-  public getAddressKeyHash(address: Address): Result<Ed25519KeyHash> {
-    return getResult(() => {
-      const keyHash = address.as_base()?.payment_cred().to_keyhash()
-      if (!keyHash) throw new Error('failed to get keyhash from address')
-      return keyHash
-    })
-  }
-
-  public getAddressScriptHash(address: Address): Result<ScriptHash> {
-    return getResult(() => {
-      const scriptHash = address.as_base()?.payment_cred().to_scripthash()
-      if (!scriptHash) throw new Error('failed to get script hash from address')
-      return scriptHash
-    })
   }
 
   public createTxBuilder(protocolParameters: ProtocolParams): TransactionBuilder {
@@ -264,39 +264,237 @@ class Cardano {
     return TransactionBuilder.new(config)
   }
 
-  public getScriptAddress(script: NativeScript, isMainnet: boolean): Address {
-    const { NetworkInfo } = this.lib
-    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
-    return this.getScriptHashBaseAddress(script.hash(), networkInfo).to_address()
+  public getNativeScriptFromPolicy(policy: Policy, getKeyHash: (address: Address) => Ed25519KeyHash): NativeScript {
+    const { Address, BigNum, NativeScript, NativeScripts, ScriptAll, ScriptAny, ScriptNOfK, ScriptPubkey, TimelockStart, TimelockExpiry } = this.lib
+    if (typeof policy === 'string') {
+      const keyHash = getKeyHash(Address.from_bech32(policy))
+      return NativeScript.new_script_pubkey(ScriptPubkey.new(keyHash))
+    }
+    switch (policy.type) {
+      case 'TimelockStart': return NativeScript.new_timelock_start(TimelockStart.new(BigNum.from_str(policy.slot.toString())))
+      case 'TimelockExpiry': return NativeScript.new_timelock_expiry(TimelockExpiry.new(BigNum.from_str(policy.slot.toString())))
+    }
+    const nativeScripts = NativeScripts.new()
+    policy.policies.forEach((policy) => {
+      nativeScripts.add(this.getNativeScriptFromPolicy(policy, getKeyHash))
+    })
+    switch (policy.type) {
+      case 'All': return NativeScript.new_script_all(ScriptAll.new(nativeScripts))
+      case 'Any': return NativeScript.new_script_any(ScriptAny.new(nativeScripts))
+      case 'NofK': return NativeScript.new_script_n_of_k(ScriptNOfK.new(policy.number, nativeScripts))
+    }
   }
 
-  public getScriptType(script: NativeScript): MultiSigType {
+  public getPaymentNativeScriptFromPolicy(policy: Policy): NativeScript {
+    return this.getNativeScriptFromPolicy(policy, (address) => {
+      const keyHash = address.as_base()?.payment_cred().to_keyhash()
+      if (!keyHash) throw new Error('No key hash of payment')
+      return keyHash
+    })
+  }
+
+  public getStakingNativeScriptFromPolicy(policy: Policy): NativeScript {
+    return this.getNativeScriptFromPolicy(policy, (address) => {
+      const keyHash = address.as_base()?.stake_cred().to_keyhash()
+      if (!keyHash) throw new Error('No key hash of staking')
+      return keyHash
+    })
+  }
+
+  public getPolicyAddress(policy: Policy, isMainnet: boolean): Address {
+    const { Address, BaseAddress, StakeCredential } = this.lib
+    if (typeof policy === 'string') return Address.from_bech32(policy)
+    const paymentScript = this.getPaymentNativeScriptFromPolicy(policy)
+    const stakingScript = this.getStakingNativeScriptFromPolicy(policy)
+    const networkId = this.getNetworkId(isMainnet)
+    const payment = StakeCredential.from_scripthash(paymentScript.hash())
+    const staking = StakeCredential.from_scripthash(stakingScript.hash())
+    return BaseAddress.new(networkId, payment, staking).to_address()
+  }
+
+  public getPolicyRewardAddress(policy: Policy, isMainnet: boolean): RewardAddress {
+    const { RewardAddress, StakeCredential } = this.lib
+    const networkId = this.getNetworkId(isMainnet)
+    if (typeof policy === 'string') {
+      const credential = this.parseAddress(policy).staking_cred()
+      if (!credential) throw new Error('Staking credential is missing')
+      return RewardAddress.new(networkId, credential)
+    }
+    const script = this.getStakingNativeScriptFromPolicy(policy)
+    return RewardAddress.new(networkId, StakeCredential.from_scripthash(script.hash()))
+  }
+
+  public getRequiredSignatures(script: NativeScript): number {
     const { NativeScriptKind } = this.lib
+    const totalNumber = script.get_required_signers().len()
     switch (script.kind()) {
-      case NativeScriptKind.ScriptAll: return 'all'
-      case NativeScriptKind.ScriptAny: return 'any'
-      case NativeScriptKind.ScriptNOfK: return 'atLeast'
+      case NativeScriptKind.ScriptAll: return totalNumber
+      case NativeScriptKind.ScriptAny: return 1
+      case NativeScriptKind.ScriptNOfK:
+        const nofK = script.as_script_n_of_k()
+        if (!nofK) throw new Error('cannot convert to ScriptNofK')
+        return nofK.n()
       default: throw new Error(`Unsupported Script Type: ${script.kind()}`)
     }
   }
 
-  public getRequiredSignatures(script: NativeScript): number {
-    const totalNumber = script.get_required_signers().len()
-    switch (this.getScriptType(script)) {
-      case 'all': return totalNumber
-      case 'any': return 1
-      case `atLeast`:
-        const nofK = script.as_script_n_of_k()
-        if (!nofK) throw new Error('cannot convert to ScriptNofK')
-        return nofK.n()
-    }
+  public createRegistrationCertificate(rewardAddress: string): Certificate | undefined {
+    const { Address, Certificate, StakeRegistration } = this.lib
+    const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()
+    if (!credential) return
+    return Certificate.new_stake_registration(StakeRegistration.new(credential))
   }
 
-  private getScriptHashBaseAddress(scriptHash: ScriptHash, networkInfo: NetworkInfo): BaseAddress {
-    const { BaseAddress, StakeCredential } = this.lib
-    const networkId = networkInfo.network_id()
-    const credential = StakeCredential.from_scripthash(scriptHash)
-    return BaseAddress.new(networkId, credential, credential)
+  public createDeregistrationCertificate(rewardAddress: string): Certificate | undefined {
+    const { Address, Certificate, StakeDeregistration } = this.lib
+    const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()
+    if (!credential) return
+    return Certificate.new_stake_deregistration(StakeDeregistration.new(credential))
+  }
+
+  public createDelegationCertificate(rewardAddress: string, poolId: string): Certificate | undefined {
+    const { Address, Certificate, StakeDelegation, Ed25519KeyHash } = this.lib
+    const credential = Address.from_bech32(rewardAddress).as_reward()?.payment_cred()
+    const poolKeyHash = Ed25519KeyHash.from_bech32(poolId)
+    if (!credential) return
+    return Certificate.new_stake_delegation(StakeDelegation.new(credential, poolKeyHash))
+  }
+
+  public createWithdrawalBuilder(rewardAddress: string, amount: bigint): SingleWithdrawalBuilder | undefined {
+    const { Address, BigNum, SingleWithdrawalBuilder } = this.lib
+    const address = Address.from_bech32(rewardAddress).as_reward()
+    if (!address) return
+    return SingleWithdrawalBuilder.new(address, BigNum.from_str(amount.toString()))
+  }
+
+  public getNetworkId(isMainnet: boolean): number {
+    const { NetworkInfo } = this.lib
+    const networkInfo = isMainnet ? NetworkInfo.mainnet() : NetworkInfo.testnet()
+    return networkInfo.network_id()
+  }
+
+  public readRewardAddressFromPublicKey(bytes: Uint8Array, isMainnet: boolean): RewardAddress {
+    const { RewardAddress, Bip32PublicKey, StakeCredential } = this.lib
+    const networkId = this.getNetworkId(isMainnet)
+    const publicKey = Bip32PublicKey.from_bytes(bytes)
+    const credential = StakeCredential.from_keyhash(personalStakingKeyHash(publicKey))
+    return RewardAddress.new(networkId, credential)
+  }
+
+  public sign(signingKey: PrivateKey, txHash: Uint8Array): Vkeywitness {
+    const { Vkey, Vkeywitness } = this.lib
+    const signature = signingKey.sign(txHash)
+    const verifyingKey = Vkey.new(signingKey.to_public())
+    return Vkeywitness.new(verifyingKey, signature)
+  }
+
+  public async getRootKey(wallet: PersonalWallet, password: string): Promise<Bip32PrivateKey> {
+    return decryptWithPassword(wallet.rootKey, password, wallet.id)
+      .then((plaintext) => this.lib.Bip32PrivateKey.from_bytes(new Uint8Array(plaintext)))
+  }
+
+  public async signWithPersonalWallet(requiredKeyHashHexes: string[], txHash: Uint8Array, wallet: PersonalWallet, password: string): Promise<Vkeywitness[]> {
+    const rootKey = await this.getRootKey(wallet, password)
+    const collection: Vkeywitness[] = []
+    const requiredKeyHashes: Uint8Array[] = requiredKeyHashHexes.map((hex) => Buffer.from(hex, 'hex'))
+
+    const keyHashIndices = await db.keyHashIndices.where('hash').anyOf(requiredKeyHashes).and(({ walletId }) => walletId === wallet.id).toArray()
+
+    keyHashIndices.forEach(({ hash, derivationPath }) => {
+      const signingKey = derivationPath.reduce((key, index) => key.derive(index), rootKey).to_raw_key()
+      const publicKeyHash = signingKey.to_public().hash()
+      if (publicKeyHash.to_hex() !== toHex(hash)) {
+        console.error('Publich key hashes do not match')
+        return
+      }
+      collection.push(this.sign(signingKey, txHash))
+    })
+
+    return collection
+  }
+
+  public async generatePersonalAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
+    const rootKey = await this.getRootKey(wallet, password)
+    const accountPath = personalAccountPath(accountIndex)
+    const publicKey = accountPath.reduce((key, index) => key.derive(index), rootKey).to_public().as_bytes()
+    wallet.personalAccounts.set(accountIndex, { publicKey, paymentKeyHashes: [] })
+    return Array.from({ length: 6 }, () => this.generatePersonalAddress(wallet, accountIndex)).flat()
+  }
+
+  public async generateMultisigAccount(wallet: PersonalWallet, password: string, accountIndex: number): Promise<KeyHashIndex[]> {
+    const rootKey = await this.getRootKey(wallet, password)
+    const accountPath = multisigAccountPath(accountIndex)
+    const publicKey = accountPath.reduce((key, index) => key.derive(index), rootKey).to_public().as_bytes()
+    wallet.multisigAccounts.set(accountIndex, { publicKey, addresses: [] })
+    return Array.from({ length: 6 }, () => this.generateMultisigAddress(wallet, accountIndex)).flat()
+  }
+
+  public generatePersonalAddress(wallet: PersonalWallet, accountIndex: number): KeyHashIndex[] {
+    const account = wallet.personalAccounts.get(accountIndex)
+    if (!account) throw new Error('No account found with this index')
+    const { Bip32PublicKey } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const index = account.paymentKeyHashes.length
+    const paymentKeyHash = publicKey.derive(PAYMENT_ROLE).derive(index).to_raw_key().hash()
+    const stakingKeyHash = personalStakingKeyHash(publicKey)
+    account.paymentKeyHashes.push(paymentKeyHash.to_bytes())
+
+    const accountPath = personalAccountPath(accountIndex)
+    const paymentPath = accountPath.concat([PAYMENT_ROLE, index])
+    const stakingPath = accountPath.concat([STAKING_ROLE, 0])
+    return [
+      { hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id },
+      { hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id }
+    ]
+  }
+
+  public generateMultisigAddress(wallet: PersonalWallet, accountIndex: number): KeyHashIndex[] {
+    const account = wallet.multisigAccounts.get(accountIndex)
+    if (!account) throw new Error('No account found with this index')
+    const { Bip32PublicKey } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const index = account.addresses.length
+    const paymentKeyHash = publicKey.derive(PAYMENT_ROLE).derive(index).to_raw_key().hash()
+    const stakingKeyHash = publicKey.derive(STAKING_ROLE).derive(index).to_raw_key().hash()
+    account.addresses.push({
+      paymentKeyHash: paymentKeyHash.to_bytes(),
+      stakingKeyHash: stakingKeyHash.to_bytes()
+    })
+
+    const accountPath = multisigAccountPath(accountIndex)
+    const paymentPath = accountPath.concat([PAYMENT_ROLE, index])
+    const stakingPath = accountPath.concat([STAKING_ROLE, index])
+    return [
+      { hash: paymentKeyHash.to_bytes(), derivationPath: paymentPath, walletId: wallet.id },
+      { hash: stakingKeyHash.to_bytes(), derivationPath: stakingPath, walletId: wallet.id }
+    ]
+  }
+
+  public readStakeCredentialFromKeyHash(bytes: Uint8Array): StakeCredential {
+    const { Ed25519KeyHash, StakeCredential } = this.lib
+    return StakeCredential.from_keyhash(Ed25519KeyHash.from_bytes(bytes))
+  }
+
+  public getAddressesFromPersonalAccount(account: PersonalAccount, isMainnet: boolean): string[] {
+    const { BaseAddress, Bip32PublicKey, StakeCredential } = this.lib
+    const publicKey = Bip32PublicKey.from_bytes(account.publicKey)
+    const stakingKeyHash = personalStakingKeyHash(publicKey)
+    const staking = StakeCredential.from_keyhash(stakingKeyHash)
+    return account.paymentKeyHashes.map((paymentKeyHash) => {
+      const payment = this.readStakeCredentialFromKeyHash(paymentKeyHash)
+      const address = BaseAddress.new(this.getNetworkId(isMainnet), payment, staking).to_address().to_bech32()
+      return address
+    })
+  }
+
+  public getAddressesFromMultisigAccount(account: MultisigAccount, isMainnet: boolean): string[] {
+    const { BaseAddress } = this.lib
+    return account.addresses.map(({ paymentKeyHash, stakingKeyHash }) => {
+      const payment = this.readStakeCredentialFromKeyHash(paymentKeyHash)
+      const staking = this.readStakeCredentialFromKeyHash(stakingKeyHash)
+      const address = BaseAddress.new(this.getNetworkId(isMainnet), payment, staking).to_address().to_bech32()
+      return address
+    })
   }
 }
 
@@ -334,5 +532,5 @@ const useCardanoMultiplatformLib = () => {
   return cardano
 }
 
-export type { Cardano, CardanoIterable, Result, MultiSigType, Recipient }
+export type { Cardano, CardanoIterable, Result, Recipient }
 export { encodeCardanoData, getResult, toIter, toHex, useCardanoMultiplatformLib, verifySignature, Loader, newRecipient, isAddressNetworkCorrect, toAddressString }

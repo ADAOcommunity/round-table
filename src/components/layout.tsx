@@ -1,20 +1,22 @@
-import type { FC, ReactNode } from 'react'
+import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
+import type { ChangeEventHandler, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode } from 'react'
+import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/solid'
-import { ChangeEventHandler, useContext, useEffect, useState } from 'react'
-import { ConfigContext } from '../cardano/config'
-import { NotificationCenter } from './notification'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
+import { ConfigContext, isMainnet } from '../cardano/config'
+import { NotificationCenter, NotificationContext } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, Treasury } from '../db'
+import { db } from '../db'
+import type { MultisigWallet, PersonalWallet, Policy } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
-import { getTreasuriesPath } from '../route'
-import { encodeCardanoData, useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
-import type { Cardano } from '../cardano/multiplatform-lib'
-import { getBalanceByPaymentAddresses, usePaymentAddressesQuery } from '../cardano/query-api'
+import { getBalanceByPaymentAddresses, sumValues, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
+import { getMultisigWalletPath, getPersonalWalletPath, getTransactionPath } from '../route'
+import { SpinnerIcon } from './status'
+import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 
 const Toggle: FC<{
   isOn: boolean
@@ -35,7 +37,7 @@ const Panel: FC<{
   className?: string
 }> = ({ children, className }) => {
   return (
-    <div className={'border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden ' + className}>
+    <div className={['border-t-4 border-sky-700 bg-white rounded shadow overflow-hidden', className].join(' ')}>
       {children}
     </div>
   )
@@ -46,15 +48,16 @@ const CopyButton: FC<{
   children: ReactNode
   copied?: ReactNode
   disabled?: boolean
-  getContent: () => string
+  content?: string
   ms?: number
-}> = ({ children, copied, className, disabled, getContent, ms }) => {
+}> = ({ children, copied, className, disabled, content, ms }) => {
   const [isCopied, setIsCopied] = useState(false)
 
-  const clickHandle = () => {
-    navigator.clipboard.writeText(getContent())
+  const click = useCallback(() => {
+    if (!content) return
+    navigator.clipboard.writeText(content)
     setIsCopied(true)
-  }
+  }, [content])
 
   useEffect(() => {
     let isMounted = true
@@ -70,7 +73,7 @@ const CopyButton: FC<{
   }, [isCopied, ms])
 
   return (
-    <button className={className} disabled={disabled || isCopied} onClick={clickHandle}>
+    <button className={className} disabled={disabled || isCopied || !content} onClick={click}>
       {isCopied ? (copied ?? 'Copied!') : children}
     </button>
   )
@@ -80,8 +83,11 @@ const ShareCurrentURLButton: FC<{
   className?: string
   children: ReactNode
 }> = ({ children, className }) => {
+  const [currentURL, setCurrentURL] = useState<string | undefined>()
+  useEffect(() => setCurrentURL(document.location.href), [])
+
   return (
-    <CopyButton className={className} getContent={() => document.location.href} ms={500}>
+    <CopyButton className={className} content={currentURL} ms={500}>
       {children}
     </CopyButton>
   )
@@ -101,21 +107,13 @@ const NavLink: FC<{
   href: string
   onPageClassName: string
 }> = ({ children, className, href, onPageClassName }) => {
-  const [isOnPage, setIsOnPage] = useState(false)
-  const parentPaths = href.split('/')
-
-  useEffect(() => {
-    let isMounted = true
-
-    const currentPaths = document.location.pathname.split('/')
-    const isOnPage = parentPaths.every((name, index) => name === currentPaths[index])
-
-    if (isMounted) setIsOnPage(isOnPage)
-
-    return () => {
-      isMounted = false
-    }
-  }, [parentPaths])
+  const router = useRouter()
+  const isOnPage = useMemo(() => {
+    const route = router.route
+    const parentPaths = href.split('/')
+    const currentPaths = route.split('/')
+    return href === route || parentPaths.every((name, index) => name === currentPaths[index])
+  }, [href, router.route])
 
   return (
     <Link href={href}>
@@ -129,17 +127,17 @@ const NavLink: FC<{
 const PrimaryBar: FC = () => {
   return (
     <aside className='flex flex-col w-20 bg-sky-900 items-center text-white'>
-      <Link href='/'>
-        <a className='p-4 hover:bg-sky-700'>
-          <HomeIcon className='w-12' />
-        </a>
-      </Link>
       <NavLink
-        href='/open'
+        href='/'
         onPageClassName='bg-sky-700'
         className='p-4 hover:bg-sky-700'>
-        <FolderOpenIcon className='w-12' />
+        <HomeIcon className='w-12' />
       </NavLink>
+      <div id='open-tx'>
+        <OpenTransaction className='p-4 hover:bg-sky-700'>
+          <FolderOpenIcon className='w-12' />
+        </OpenTransaction>
+      </div>
       <NavLink
         href='/config'
         onPageClassName='bg-sky-700'
@@ -160,90 +158,156 @@ const PrimaryBar: FC = () => {
   )
 }
 
-const TreasuryListing: FC<{
-  treasury: Treasury
-  balance?: Value
-}> = ({ treasury, balance }) => {
-  const { name, script } = treasury
-  const base64CBOR = encodeCardanoData(script, 'base64')
-  const lovelace = balance?.lovelace
+const WalletLink: FC<{
+  name: string
+  href: string
+  lovelace?: bigint
+  isOnPage: boolean
+  children?: ReactNode
+}> = ({ name, href, lovelace, isOnPage, children }) => {
   return (
-    <NavLink
-      href={getTreasuriesPath(encodeURIComponent(base64CBOR))}
-      onPageClassName='bg-sky-700 font-semibold'
-      className='block w-full p-4 hover:bg-sky-700'>
-      <div className='truncate'>{name}</div>
-      <div className='text-sm font-normal'>{lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <ArrowPathIcon className='w-4 animate-spin transform rotate-180' />}</div>
-    </NavLink>
+    <Link href={href}>
+      <a className={['flex space-x-1 justify-between items-center p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
+        <div className='w-2/3'>
+          <div className='truncate'>{name}</div>
+          <div className='text-sm font-normal'>
+            {lovelace !== undefined ? <ADAAmount lovelace={lovelace} /> : <SpinnerIcon className='animate-spin w-4' />}
+          </div>
+        </div>
+        <div>{children}</div>
+      </a>
+    </Link>
   )
 }
 
-const TreasuryList: FC<{
-  cardano: Cardano
-  treasuries: Treasury[]
-}> = ({ cardano, treasuries }) => {
+const PersonalWalletListing: FC<{
+  wallet: PersonalWallet
+  balances?: Map<string, Value>
+}> = ({ wallet, balances }) => {
+  const cardano = useCardanoMultiplatformLib()
   const [config, _] = useContext(ConfigContext)
-  const addresses = cardano && treasuries && treasuries.map((treasury) => {
-    const script = cardano.lib.NativeScript.from_bytes(treasury.script)
-    return cardano.getScriptAddress(script, config.isMainnet).to_bech32()
-  })
+  const router = useRouter()
+  const isOnPage: boolean = useMemo(() => router.query.personalWalletId === wallet.id.toString(), [router.query.personalWalletId, wallet.id])
+  const addresses: string[] | undefined = useMemo(() => {
+    if (!cardano) return
+    return Array.from(wallet.personalAccounts.values())
+      .flatMap((account) => cardano.getAddressesFromPersonalAccount(account, isMainnet(config)))
+  }, [cardano, wallet.personalAccounts, config])
+  const balance: Value | undefined = useMemo(() => {
+    if (!addresses || !balances) return
+    const values: Value[] = []
+    addresses.forEach((address) => {
+      const value = balances.get(address)
+      if (value) values.push(value)
+    })
+    return sumValues(values)
+  }, [addresses, balances])
+
+  return (
+    <WalletLink href={getPersonalWalletPath(wallet.id)} name={wallet.name} isOnPage={isOnPage} lovelace={balance?.lovelace}>
+      <WalletIcon className='w-8' />
+    </WalletLink>
+  )
+}
+
+const MultisigWalletListing: FC<{
+  wallet: MultisigWallet
+  balance?: Value
+}> = ({ wallet, balance }) => {
+  const [config, _] = useContext(ConfigContext)
+  const cardano = useCardanoMultiplatformLib()
+  const router = useRouter()
+  const lovelace = balance?.lovelace
+  const isOnPage: boolean = useMemo(() => {
+    const policyContent = router.query.policy
+    if (typeof policyContent === 'string') {
+      const policy: Policy = JSON.parse(policyContent)
+      const id = cardano?.getPolicyAddress(policy, isMainnet(config)).to_bech32()
+      if (id) return id === wallet.id
+    }
+    return false
+  }, [cardano, config, router.query.policy, wallet.id])
+
+  return (
+    <WalletLink href={getMultisigWalletPath(wallet.policy)} name={wallet.name} isOnPage={isOnPage} lovelace={lovelace}>
+      <UserGroupIcon className='w-8' />
+    </WalletLink>
+  )
+}
+
+const WalletList: FC = () => {
+  const [config, _] = useContext(ConfigContext)
+  const cardano = useCardanoMultiplatformLib()
+  const multisigWallets = useLiveQuery(async () => db.multisigWallets.toArray())
+  const personalWallets = useLiveQuery(async () => db.personalWallets.toArray())
+  const addresses: string[] = useMemo(() => {
+    const result = new Set<string>()
+    if (!cardano) return []
+    multisigWallets?.forEach(({ id }) => result.add(id))
+    personalWallets?.forEach(({ personalAccounts }) => {
+      personalAccounts.forEach((account) =>
+        cardano.getAddressesFromPersonalAccount(account, isMainnet(config)).forEach((address) => result.add(address)))
+    })
+    return Array.from(result)
+  }, [multisigWallets, personalWallets, config, cardano])
   const { data } = usePaymentAddressesQuery({
     variables: { addresses },
     fetchPolicy: 'cache-first',
-    pollInterval: 10000
+    pollInterval: 20000,
+    skip: addresses.length === 0
   })
-  const balanceMap = new Map<string, Value>()
-  data?.paymentAddresses.forEach((paymentAddress) => {
-    const address = paymentAddress.address
-    const balance = getBalanceByPaymentAddresses([paymentAddress])
-    balanceMap.set(address, balance)
-  })
-  const balances = (addresses ?? []).map((address) => balanceMap.get(address))
+  const balances: Map<string, Value> | undefined = useMemo(() => {
+    if (!data) return
 
-  return (
-    <nav className='block w-full'>
-      {treasuries.map((treasury, index) => <TreasuryListing key={index} treasury={treasury} balance={balances[index]} />)}
-    </nav>
-  )
-}
+    const balanceMap = new Map<string, Value>()
+    data.paymentAddresses.forEach((paymentAddress) => {
+      const address = paymentAddress.address
+      const balance = getBalanceByPaymentAddresses([paymentAddress])
+      balanceMap.set(address, balance)
+    })
 
-const SecondaryBar: FC = () => {
-  const treasuries = useLiveQuery(async () => db.treasuries.toArray())
-  const cardano = useCardanoMultiplatformLib()
+    return balanceMap
+  }, [data])
 
   return (
     <aside className='flex flex-col w-60 bg-sky-800 items-center text-white overflow-y-auto'>
-      <nav className='w-full bg-sky-900 font-semibold'>
+      <nav className='w-full font-semibold'>
         <NavLink
-          href='/treasuries/new'
+          href='/new'
           onPageClassName='bg-sky-700'
           className='flex w-full p-4 items-center space-x-1 justify-center hover:bg-sky-700'>
           <PlusIcon className='w-4' />
-          <span>New Treasury</span>
+          <span>New Wallet</span>
         </NavLink>
       </nav>
-      {cardano && treasuries && <TreasuryList cardano={cardano} treasuries={treasuries} />}
+      <nav className='block w-full'>
+        {personalWallets?.map((wallet) => <PersonalWalletListing key={wallet.id} wallet={wallet} balances={balances} />)}
+        {multisigWallets?.map((wallet) => <MultisigWalletListing key={wallet.id} wallet={wallet} balance={balances?.get(wallet.id)} />)}
+      </nav>
     </aside>
   )
-}
-
-const CardanoScanLink: FC<{
-  className?: string
-  children: ReactNode
-  type: 'transaction'
-  id: string
-}> = ({ className, children, type, id }) => {
-  const [config, _] = useContext(ConfigContext)
-  const host = config.isMainnet ? 'https://cardanoscan.io' : 'https://testnet.cardanoscan.io'
-  const href = [host, type, id].join('/')
-  return <a className={className} href={href} target='_blank' rel='noreferrer'>{children}</a>;
 }
 
 const Hero: FC<{
   className?: string
   children: ReactNode
 }> = ({ className, children }) => {
-  return <div className={'rounded p-4 bg-sky-700 text-white shadow space-y-4 ' + className}>{children}</div>;
+  return <div className={['rounded p-4 bg-sky-700 text-white shadow space-y-2', className].join(' ')}>{children}</div>;
+}
+
+const Portal: FC<{
+  id: string
+  children: ReactNode
+}> = ({ id, children }) => {
+  const [root, setRoot] = useState<HTMLElement | null>()
+
+  useEffect(() => {
+    setRoot(document.getElementById(id))
+  }, [id])
+
+  if (!root) return null
+
+  return ReactDOM.createPortal(children, root)
 }
 
 const Layout: FC<{
@@ -254,19 +318,158 @@ const Layout: FC<{
   return (
     <div className='flex h-screen'>
       <PrimaryBar />
-      <SecondaryBar />
+      <WalletList />
       <div className='w-full bg-sky-100 overflow-y-auto'>
-        {!config.isMainnet && <div className='p-1 bg-red-900 text-white text-center'>You are using testnet</div>}
+        {!isMainnet(config) && <div className='p-1 bg-red-900 text-white text-center'>You are using {config.network} network</div>}
         <div className='p-2 h-screen space-y-2'>
           <ChainProgress />
           {children}
         </div>
       </div>
+      <div id='modal-root'></div>
       <div className='flex flex-row-reverse'>
-        <NotificationCenter className='fixed space-y-2 w-1/4 p-4' />
+        <NotificationCenter className='fixed space-y-2 p-4 w-80' />
       </div>
     </div>
   )
 }
 
-export { Layout, Panel, Toggle, Hero, BackButton, CardanoScanLink, CopyButton, ShareCurrentURLButton }
+const Modal: FC<{
+  className?: string
+  children: ReactNode
+  onBackgroundClick?: MouseEventHandler<HTMLDivElement>
+}> = ({ className, children, onBackgroundClick }) => {
+  return (
+    <Portal id='modal-root'>
+      <div onClick={onBackgroundClick} className='absolute bg-black bg-opacity-50 inset-0 flex justify-center items-center'>
+        <div onClick={(e) => e.stopPropagation()} className={className}>
+          {children}
+        </div>
+      </div>
+    </Portal>
+  )
+}
+
+const useEnterPressListener = (callback: (event: KeyboardEvent) => void): KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement> => useCallback((event) => {
+  if (!event.shiftKey && event.key === 'Enter') {
+    event.preventDefault()
+    callback(event)
+  }
+}, [callback])
+
+const ConfirmModalButton: FC<{
+  className?: string
+  children?: ReactNode
+  disabled?: boolean
+  message?: string
+  onConfirm: () => void
+}> = ({ className, children, onConfirm, message, disabled }) => {
+  const [modal, setModal] = useState(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const confirm = useCallback(() => {
+    onConfirm()
+    closeModal()
+  }, [closeModal, onConfirm])
+
+  return (
+    <>
+      <button onClick={() => setModal(true)} className={className} disabled={disabled}>{children}</button>
+      {modal && <Modal className='bg-white p-4 rounded space-y-4 text-sm w-full md:w-1/3 lg:w-1/4' onBackgroundClick={closeModal}>
+        <h2 className='text-center text-lg font-semibold'>Please Confirm</h2>
+        <div className='text-center text-lg'>{message}</div>
+        <nav className='flex justify-end space-x-2'>
+          <button className='border rounded p-2 text-sky-700' onClick={closeModal}>Cancel</button>
+          <button onClick={confirm} className={className} disabled={disabled}>{children}</button>
+        </nav>
+      </Modal>}
+    </>
+  )
+}
+
+const TextareaModalBox: FC<{
+  onConfirm: (value: string) => void
+  children: ReactNode
+  placeholder?: string
+}> = ({ onConfirm, children, placeholder }) => {
+  const [value, setValue] = useState('')
+  const pressEnter = useEnterPressListener(() => onConfirm(value))
+  const onChange: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => {
+    setValue(event.target.value)
+  }, [])
+
+  return (
+    <>
+      <div>
+        <textarea
+          autoFocus={true}
+          value={value}
+          onChange={onChange}
+          onKeyDown={pressEnter}
+          rows={6}
+          placeholder={placeholder}
+          className='block w-full p-2 text-sm ring-sky-500 ring-inset focus:ring-1'>
+        </textarea>
+      </div>
+      <button
+        onClick={() => onConfirm(value)}
+        disabled={!value}
+        className='flex space-x-1 items-center justify-center w-full p-2 bg-sky-700 text-white disabled:text-gray-500 disabled:bg-gray-100'>
+        {children}
+      </button>
+    </>
+  )
+}
+
+const parseText = (text: string): Uint8Array => {
+  try {
+    let url = new URL(text)
+    let [_, encoding, content] = url.pathname.split('/')
+
+    if (encoding === 'base64') return Buffer.from(decodeURIComponent(content), 'base64')
+    if (encoding === 'hex') return Buffer.from(content, 'hex')
+
+    throw new Error(`Unknow encoding: ${encoding}`)
+  } catch (e) {
+    return Buffer.from(text, 'hex')
+  }
+}
+
+const OpenTransaction: FC<{
+  className?: string
+  children: ReactNode
+}> = ({ className, children }) => {
+  const router = useRouter()
+  const cardano = useCardanoMultiplatformLib()
+  const { notify } = useContext(NotificationContext)
+  const [modal, setModal] = useState(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const openModal = useCallback(() => setModal(true), [])
+  const confirm = useCallback((content: string) => {
+    if (!cardano) return
+    try {
+      const bytes = parseText(content)
+      const tx = cardano.lib.Transaction.from_bytes(bytes)
+      router.push(getTransactionPath(tx))
+      closeModal()
+    } catch (error) {
+      notify('error', 'Invalid transaction')
+    }
+  }, [cardano, closeModal, router, notify])
+
+  return (
+    <>
+      <button onClick={openModal} className={className}>{children}</button>
+      {modal && <Modal className='w-80' onBackgroundClick={closeModal}>
+        <div className='bg-white rounded overflow-hidden'>
+          <h2 className='bg-gray-100 p-2 text-center font-semibold'>Open Transaction</h2>
+          <TextareaModalBox placeholder='URL or CBOR in Hex' onConfirm={confirm}>
+            <FolderOpenIcon className='w-4' />
+            <span>Open</span>
+          </TextareaModalBox>
+        </div>
+      </Modal>}
+    </>
+  )
+}
+
+export { Layout, Panel, Toggle, Hero, BackButton, CopyButton, ShareCurrentURLButton, Portal, Modal, ConfirmModalButton, useEnterPressListener, TextareaModalBox }

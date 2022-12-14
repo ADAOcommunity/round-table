@@ -1,10 +1,10 @@
 import type { FC } from 'react'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
-import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength } from '../cardano/utils'
+import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength } from '../cardano/utils'
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
-const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => { }])
+const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => {}])
 
 const ChainProgress: FC<{
   className?: string
@@ -14,14 +14,15 @@ const ChainProgress: FC<{
   const [_date, setDate] = useContext(DateContext)
   const [text, setText] = useState('')
   const [style, setStyle] = useState<{ width: string }>({ width: '0' })
-  const { isMainnet } = config
+  const { network } = config
 
   useEffect(() => {
     const id = setInterval(() => {
       const date = new Date()
-      const slot = estimateSlotByDate(date, isMainnet)
-      const slotInEpoch = getSlotInEpochBySlot(slot, isMainnet)
-      const epoch = getEpochBySlot(slot, isMainnet)
+      const slot = estimateSlotByDate(date, network)
+      const slotInEpoch = getSlotInEpochBySlot(slot, network)
+      const epoch = getEpochBySlot(slot, network)
+      const SlotLength = slotLength(network)
       const progress = slotInEpoch / SlotLength * 100
 
       setStyle({ width: `${progress}%` })
@@ -32,7 +33,7 @@ const ChainProgress: FC<{
     return () => {
       clearInterval(id)
     }
-  }, [setDate, isMainnet])
+  }, [setDate, network])
 
   return (
     <div className={className}>
@@ -54,14 +55,14 @@ function monthIter(year: number, month: number): IterableIterator<Date> {
       if (value.getMonth() === month) return { done: false, value }
       return { done: true, value: null }
     },
-    [Symbol.iterator]: function() { return this }
+    [Symbol.iterator]: function () { return this }
   }
 }
 
 const Calendar: FC<{
   selectedDate: Date
-  onChange: (_: Date) => void
-  isRed: (_: Date) => boolean
+  onChange: (date: Date) => void
+  isRed?: (date: Date, selectedDate: Date) => boolean
 }> = ({ selectedDate, onChange, isRed }) => {
   const [date, setDate] = useState<Date>(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
   const year = date.getFullYear()
@@ -115,21 +116,21 @@ const Calendar: FC<{
             </tr>
           </thead>
           <tbody>
-            {weeks.map((dates, index) => <tr key={index}>
+            {weeks.map((dates) => <tr key={dates.map(date => date.getTime()).join('-')}>
               {Array.from({ length: 7 }, (_, i) => i).map((day) => {
                 const date = dates[day]
                 if (!date) return (
                   <td key={day}></td>
                 )
-                const tdClassName = isRed(date) ? 'bg-red-100 text-red-700' : ''
+                const tdClassName = isRed && isRed(date, selectedDate) ? 'bg-red-100 text-red-700' : ''
                 let buttonClassName = 'block w-full p-2 rounded hover:text-white '
-                if (isRed(date)) {
+                if (isRed && isRed(date, selectedDate)) {
                   buttonClassName = buttonClassName + 'hover:bg-red-700 '
                 } else {
                   buttonClassName = buttonClassName + 'text-sky-700 hover:bg-sky-700 '
                 }
                 if (isOnSelectedDate(date)) {
-                  buttonClassName = buttonClassName + 'text-white ' + (isRed(date) ? 'bg-red-700' : 'bg-sky-700')
+                  buttonClassName = buttonClassName + 'text-white ' + (isRed && isRed(date, selectedDate) ? 'bg-red-700' : 'bg-sky-700')
                 }
                 return (
                   <td key={day} className={tdClassName}>

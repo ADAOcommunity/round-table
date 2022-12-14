@@ -12,7 +12,7 @@ const Configure: NextPage = () => {
       <Panel className='p-4 space-y-2'>
         <p className='space-x-2'>
           <span>Network:</span>
-          <span>{config.isMainnet ? 'Mainnet' : 'Testnet'}</span>
+          <span>{config.network}</span>
         </p>
         <p className='space-x-2'>
           <span>Query API:</span>

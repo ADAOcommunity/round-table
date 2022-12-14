@@ -1,7 +1,8 @@
+import { ChangeEventHandler, useCallback, useContext } from "react"
 import type { FC } from 'react'
-import { ChangeEventHandler, useContext } from "react"
 import NumberFormat from "react-number-format"
-import { Config, ConfigContext } from "../cardano/config"
+import { ConfigContext, isMainnet } from "../cardano/config"
+import type { Config } from "../cardano/config"
 
 const toDecimal = (value: bigint, decimals: number): string => {
   const text = value.toString()
@@ -19,19 +20,20 @@ const removeTrailingZero = (value: string): string =>
     .replace(/\.0+$/, '')
 
 const CurrencyInput: FC<{
+  disabled?: boolean
   value: bigint
   onChange: (_: bigint) => void
   decimals: number
   className?: string
   placeholder?: string
-}> = ({ value, onChange, decimals, ...props }) => {
+}> = ({ disabled, value, onChange, decimals, ...props }) => {
   const inputValue = toDecimal(value, decimals)
 
-  const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
+  const changeHandle: ChangeEventHandler<HTMLInputElement> = useCallback((event) => {
     const [i, f] = event.target.value.split('.', 2)
     const number = BigInt(i + (f || '0').slice(0, decimals).padEnd(decimals, '0'))
     onChange(number)
-  }
+  }, [decimals, onChange])
 
   return (
     <NumberFormat
@@ -45,11 +47,12 @@ const CurrencyInput: FC<{
       decimalScale={decimals}
       fixedDecimalScale={true}
       onChange={changeHandle}
+      disabled={disabled}
       {...props} />
   )
 }
 
-const getADASymbol = (config: Config) => config.isMainnet ? '₳' : 't₳'
+const getADASymbol = (config: Config) => isMainnet(config) ? '₳' : 't₳'
 
 const AssetAmount: FC<{
   quantity: bigint
@@ -82,16 +85,16 @@ const LabeledCurrencyInput: FC<{
   placeholder?: string
 }> = (props) => {
   const { decimal, value, onChange, min, max, maxButton, symbol, placeholder } = props
-  const changeHandle = (value: bigint) => {
+  const changeHandle = useCallback((value: bigint) => {
     const min = value > max ? max : value
     onChange(min)
-  }
+  }, [max, onChange])
   const isValid = value > 0 && value <= max && (min ? value >= min : true)
 
   return (
-    <label className='flex grow border rounded overflow-hidden'>
+    <label className='flex grow border rounded overflow-hidden ring-sky-500 focus-within:ring-1'>
       <CurrencyInput
-        className={['p-2 block w-full outline-none', isValid ? '' : 'text-red-500'].join(' ')}
+        className={['p-2 block w-full', isValid ? '' : 'text-red-500'].join(' ')}
         decimals={decimal}
         value={value}
         onChange={changeHandle}
@@ -112,4 +115,15 @@ const LabeledCurrencyInput: FC<{
   )
 }
 
-export { getADASymbol, removeTrailingZero, toDecimal, ADAAmount, AssetAmount, CurrencyInput, LabeledCurrencyInput }
+const ADAInput: FC<{
+  className?: string
+  disabled?: boolean
+  lovelace: bigint
+  setLovelace: (_: bigint) => void
+}> = ({ className, disabled, lovelace, setLovelace }) => {
+  return (
+    <CurrencyInput className={className} value={lovelace} onChange={setLovelace} decimals={6} disabled={disabled} />
+  )
+}
+
+export { getADASymbol, removeTrailingZero, toDecimal, ADAAmount, ADAInput, AssetAmount, CurrencyInput, LabeledCurrencyInput }

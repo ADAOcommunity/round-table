@@ -3,7 +3,7 @@ name: Cypress Tests
 on: [push]
 
 env:
-  NEXT_PUBLIC_TESTNET: y
+  NEXT_PUBLIC_NETWORK: preview
 
 jobs:
   cypress-run:

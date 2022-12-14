@@ -1,10 +1,115 @@
-const SlotLength = 432000
-const shelleyStart = (isMainnet: boolean): number => isMainnet ? 4924800 : 4924800 + 129600 - SlotLength
-const networkOffset = (isMainnet: boolean): number => isMainnet ? 1596491091 : 1599294016 + 129600 - SlotLength
-const estimateDateBySlot = (slot: number, isMainnet: boolean): Date => new Date((slot - shelleyStart(isMainnet) + networkOffset(isMainnet)) * 1000)
-const estimateSlotByDate = (date: Date, isMainnet: boolean): number => Math.floor(date.getTime() / 1000) + shelleyStart(isMainnet) - networkOffset(isMainnet)
-const slotSinceShelley = (slot: number, isMainnet: boolean): number => slot - shelleyStart(isMainnet)
-const getEpochBySlot = (slot: number, isMainnet: boolean) => Math.floor(slotSinceShelley(slot, isMainnet) / SlotLength) + (isMainnet ? 208 : 80) + 1
-const getSlotInEpochBySlot = (slot: number, isMainnet: boolean) => slotSinceShelley(slot, isMainnet) % SlotLength
+import type { Network } from './config'
 
-export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, SlotLength }
+const slotLength = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 432000
+    case 'testnet': return 432000
+    case 'preview': return 86400
+  }
+}
+
+const shelleyStart = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 4924800
+    case 'testnet': return 4924800 + 129600 - slotLength(network)
+    case 'preview': return 0
+  }
+}
+
+const networkOffset = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 1596491091
+    case 'testnet': return 1599294016 + 129600 - slotLength(network)
+    case 'preview': return 1666656000
+  }
+}
+
+const estimateDateBySlot = (slot: number, network: Network): Date => new Date((slot - shelleyStart(network) + networkOffset(network)) * 1000)
+const estimateSlotByDate = (date: Date, network: Network): number => Math.floor(date.getTime() / 1000) + shelleyStart(network) - networkOffset(network)
+const slotSinceShelley = (slot: number, network: Network): number => slot - shelleyStart(network)
+
+const epochBeforeShelly = (network: Network): number => {
+  switch (network) {
+    case 'mainnet': return 208 + 1
+    case 'testnet': return 80 + 1
+    case 'preview': return 0
+  }
+}
+
+const getEpochBySlot = (slot: number, network: Network) => Math.floor(slotSinceShelley(slot, network) / slotLength(network)) + epochBeforeShelly(network)
+const getSlotInEpochBySlot = (slot: number, network: Network) => slotSinceShelley(slot, network) % slotLength(network)
+
+const deriveKeyFromPassword = async (password: string, salt: ArrayBuffer): Promise<CryptoKey> =>
+  crypto.subtle.importKey(
+    'raw',
+    Buffer.from(password, 'utf-8'),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey']
+  ).then((material) =>
+    crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      material,
+      { 'name': 'AES-GCM', 'length': 256 },
+      true,
+      ['encrypt', 'decrypt']
+    )
+  )
+
+
+const MAX_IV_NUM = 2 ** 32 - 1
+
+const getIvFromNumber = (num: number): ArrayBuffer => {
+  if (num > MAX_IV_NUM) throw new Error(`IV number overflow: ${num}`)
+  const array = new Uint32Array(4)
+  array[3] = num
+  return array
+}
+
+const encryptWithPassword = async (plaintext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => {
+  const iv = getIvFromNumber(id)
+  const salt = await SHA256Digest(iv)
+  return deriveKeyFromPassword(password, salt)
+    .then((key) => {
+      return crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        plaintext,
+      )
+    })
+}
+
+const decryptWithPassword = async (ciphertext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => {
+  const iv = getIvFromNumber(id)
+  const salt = await SHA256Digest(iv)
+  return deriveKeyFromPassword(password, salt)
+    .then((key) => crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext))
+}
+
+const SHA256Digest = async (data: ArrayBuffer): Promise<ArrayBuffer> => crypto.subtle.digest('SHA-256', data)
+
+const harden = (num: number): number => 0x80000000 + num
+
+const parseDerivationPath = (path: string): number[] => path
+  .split('/')
+  .map((item, index) => {
+    if (index === 0 && item !== 'm') throw new Error('Not "m" founded')
+    return item
+  })
+  .slice(1)
+  .map((index) => {
+    if (index.endsWith("'")) return harden(parseInt(index.substring(0, index.length - 1)))
+    return parseInt(index)
+  })
+
+const formatDerivationPath = (indices: number[]): string => ['m'].concat(indices.map((index) => {
+  if (index >= harden(0)) return `${index - harden(0)}'`
+  return index.toString()
+})).join('/')
+
+export { estimateDateBySlot, estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength, encryptWithPassword, decryptWithPassword, SHA256Digest, harden, parseDerivationPath, formatDerivationPath }

@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { getAssetName, getPolicyId, useGetUTxOsToSpendQuery, usePaymentAddressesQuery } from './query-api'
+import { getAssetName, getPolicyId, useUTxOSummaryQuery, usePaymentAddressesQuery, sumValues, useSummaryQuery, useTransactionSummaryQuery, useStakePoolsQuery } from './query-api'
+import type { Value } from './query-api'
 import talkback from 'talkback/es6'
 import { ApolloProvider } from '@apollo/client'
 import type { FC, ReactNode } from 'react'
@@ -15,6 +16,17 @@ const createApolloClient = (uri: string) => new ApolloClient({
   cache: new InMemoryCache()
 })
 
+test('sumValues', () => {
+  const valueA: Value = { lovelace: BigInt(100), assets: new Map() }
+  const valueB: Value = { lovelace: BigInt(1000), assets: new Map([['token1', BigInt(10)]]) }
+  const valueC: Value = { lovelace: BigInt(50), assets: new Map([['token1', BigInt(1)], ['token2', BigInt(100)]]) }
+  const total = sumValues([valueA, valueB, valueC])
+  expect(total.lovelace).toBe(BigInt(1150))
+  expect(total.assets.size).toBe(2)
+  expect(total.assets.get('token1')).toBe(BigInt(11))
+  expect(total.assets.get('token2')).toBe(BigInt(100))
+})
+
 test('getAssetName', () => {
   expect(getAssetName(assetId)).toBe(assetName)
 })
@@ -28,7 +40,7 @@ describe('GraphQL API', () => {
   const wrapper: FC<{ children: ReactNode }> = ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>;
 
   const talkbackServer = talkback({
-    host: 'https://graphql-api.testnet.dandelion.link',
+    host: 'https://graphql.preview.lidonation.com/graphql',
     port: 8080,
     tapeNameGenerator: (tapeNumber) => ['graphql', `query-${tapeNumber}`].join('/')
   })
@@ -36,35 +48,51 @@ describe('GraphQL API', () => {
   beforeAll(() => talkbackServer.start())
   afterAll(() => talkbackServer.close())
 
-  test('useGetUTxOsToSpendQuery', async () => {
-    const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result } = renderHook(() => useGetUTxOsToSpendQuery({ variables: { addresses: [address] } }), { wrapper })
-
-    expect(result.current.loading).toBe(true)
+  test('useUTxOSummaryQuery', async () => {
+    const address = 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j'
+    const rewardAddress = 'stake_test17pws6uu55gwrm6gvl79w7u79zktjap5jjhvq6yhnd8lkndgcsn5h4'
+    const { result } = renderHook(() => useUTxOSummaryQuery({ variables: { addresses: [address], rewardAddress } }), { wrapper })
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
 
-    expect(result.current.data).toBeTruthy()
+    const { data } = result.current
 
-    if (result.current.data) {
-      const utxos = result.current.data.utxos
-      expect(utxos.length).toBe(2)
+    expect(data).toBeTruthy()
+
+    if (data) {
+      const utxos = data.utxos
+      expect(utxos.length).toBe(3)
 
       const utxo1 = utxos[0]
       expect(utxo1.address).toBe(address)
-      expect(utxo1.txHash).toBe('b2ff4a748f249c1535a8bfb0259d4c83576cdf710e514a1014af85e01e58a5bd')
-      expect(utxo1.value).toBe('1413762')
-      expect(utxo1.tokens.length).toBe(2)
+      expect(utxo1.txHash).toBe('3ec64a8784bddc1b1849a349fe88c01918a58e4d32636420c17aafe156f16f9c')
+      expect(utxo1.value).toBe('969750')
+      expect(utxo1.tokens.length).toBe(0)
       expect(utxo1.index).toBe(0)
 
       const utxo2 = utxos[1]
       expect(utxo2.address).toBe(address)
-      expect(utxo2.txHash).toBe('8800af315253480dbd61c2eed1c4a6014d0cfddfbbb2686dae34af8b3bdc15bd')
-      expect(utxo2.value).toBe('1000000')
+      expect(utxo2.txHash).toBe('3ec64a8784bddc1b1849a349fe88c01918a58e4d32636420c17aafe156f16f9c')
+      expect(utxo2.value).toBe('996849657')
       expect(utxo2.tokens.length).toBe(0)
-      expect(utxo2.index).toBe(0)
+      expect(utxo2.index).toBe(1)
 
-      const params = result.current.data.cardano.currentEpoch.protocolParams
+      const utxo3 = utxos[2]
+      expect(utxo3.address).toBe(address)
+      expect(utxo3.txHash).toBe('829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735')
+      expect(utxo3.value).toBe('10000000')
+      expect(utxo3.tokens.length).toBe(1)
+      expect(utxo3.index).toBe(0)
+
+      const { cardano, delegations, stakeRegistrations_aggregate, stakeDeregistrations_aggregate, withdrawals_aggregate, rewards_aggregate } = data
+
+      expect(delegations).toHaveLength(1)
+      expect(stakeRegistrations_aggregate.aggregate?.count).toBe('1')
+      expect(stakeDeregistrations_aggregate.aggregate?.count).toBe('0')
+      expect(withdrawals_aggregate.aggregate?.sum.amount).toBeFalsy()
+      expect(rewards_aggregate.aggregate?.sum.amount).toBe('1114190')
+
+      const params = cardano.currentEpoch.protocolParams
       if (params) {
         expect(params.minFeeA).toBe(44)
         expect(params.minFeeB).toBe(155381)
@@ -81,23 +109,95 @@ describe('GraphQL API', () => {
     }
   })
 
-  test('usePaymentAddressesQuery', async () => {
-    const address = 'addr_test1qqtsc3a28ypaya0nwymxx0v2n2yj59tar4d9dfzrv304fs99yppznn3rkcelva8hl56f2td3v526w7fdra3vlj2kva6qn2hna4'
-    const { result } = renderHook(() => usePaymentAddressesQuery({ variables: { addresses: [address] } }), { wrapper })
-
-    expect(result.current.loading).toBe(true)
+  test('useSummaryQuery', async () => {
+    const address = 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j'
+    const rewardAddress = 'stake_test17pws6uu55gwrm6gvl79w7u79zktjap5jjhvq6yhnd8lkndgcsn5h4'
+    const { result } = renderHook(() => useSummaryQuery({ variables: { addresses: [address], rewardAddress } }), { wrapper })
 
     await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
 
-    if (result.current.data) {
-      const paymentAddresses = result.current.data.paymentAddresses
+    const { data } = result.current
+
+    expect(result.current.data).toBeTruthy()
+
+    if (data) {
+      const paymentAddresses = data.paymentAddresses
       expect(paymentAddresses.length).toBe(1)
       const summary = paymentAddresses[0].summary
       if (summary) {
-        expect(summary.assetBalances.length).toBe(3)
+        expect(summary.assetBalances.length).toBe(2)
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
-        expect(summary.assetBalances[0]?.quantity).toBe('2413762')
+        expect(summary.assetBalances[0]?.quantity).toBe('1007819407')
+        expect(summary.assetBalances[1]?.asset.assetId).toBe('9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659')
+        expect(summary.assetBalances[1]?.quantity).toBe('1')
       }
+
+      const { delegations, stakeRegistrations_aggregate, stakeDeregistrations_aggregate, withdrawals_aggregate, rewards_aggregate } = data
+
+      expect(delegations).toHaveLength(1)
+      expect(stakeRegistrations_aggregate.aggregate?.count).toBe('1')
+      expect(stakeDeregistrations_aggregate.aggregate?.count).toBe('0')
+      expect(withdrawals_aggregate.aggregate?.sum.amount).toBeFalsy()
+      expect(rewards_aggregate.aggregate?.sum.amount).toBe('1114190')
+    }
+  })
+
+  test('usePaymentAddressesQuery', async () => {
+    const address = 'addr_test1xzuh59uc243wuhpkcnfdha3flvmx5guf8thkctv8l75u2zzap4eefgsu8h5selu2aaeu29vh96rf99wcp5f0x60ldx6s2ad79j'
+    const { result } = renderHook(() => usePaymentAddressesQuery({ variables: { addresses: [address] } }), { wrapper })
+
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
+
+    const { data } = result.current
+
+    if (data) {
+      const paymentAddresses = data.paymentAddresses
+      expect(paymentAddresses.length).toBe(1)
+      const summary = paymentAddresses[0].summary
+      if (summary) {
+        expect(summary.assetBalances.length).toBe(2)
+        expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
+        expect(summary.assetBalances[0]?.quantity).toBe('1007819407')
+        expect(summary.assetBalances[1]?.asset.assetId).toBe('9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659')
+        expect(summary.assetBalances[1]?.quantity).toBe('1')
+      }
+    }
+  })
+
+  test('useTransactionSummaryQuery', async () => {
+    const txHash = '829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735'
+    const { result } = renderHook(() => useTransactionSummaryQuery({ variables: { hashes: [txHash] } }), { wrapper })
+
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
+
+    const { data } = result.current
+
+    if (data) {
+      const { transactions } = data
+      expect(transactions).toHaveLength(1)
+      expect(transactions[0].hash).toEqual(txHash)
+      expect(transactions[0].outputs).toHaveLength(3)
+      expect(transactions[0].outputs[0]?.index).toBe(0)
+      expect(transactions[0].outputs[0]?.value).toBe('10000000')
+      expect(transactions[0].outputs[0]?.tokens).toHaveLength(1)
+      expect(transactions[0].outputs[1]?.index).toBe(1)
+      expect(transactions[0].outputs[2]?.index).toBe(2)
+    }
+  })
+
+  test('useStakePoolsQuery', async () => {
+    const poolId = 'pool1ayc7a29ray6yv4hn7ge72hpjafg9vvpmtscnq9v8r0zh7azas9c'
+    const { result } = renderHook(() => useStakePoolsQuery({ variables: { id: poolId, limit: 1, offset: 0 } }), { wrapper })
+
+    await waitFor(() => expect(result.current.loading).toBe(false), { timeout: 10000 })
+
+    const { data } = result.current
+
+    if (data) {
+      const { stakePools } = data
+      expect(stakePools).toHaveLength(1)
+      expect(stakePools[0].id).toBe(poolId)
+      expect(stakePools[0].hash).toBe('e931eea8a3e9344656f3f233e55c32ea5056303b5c313015871bc57f')
     }
   })
 })
