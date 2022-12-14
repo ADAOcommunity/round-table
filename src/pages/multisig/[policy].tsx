@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { useCardanoMultiplatformLib } from '../../cardano/multiplatform-lib'
 import type { Cardano } from '../../cardano/multiplatform-lib'
-import { Loading } from '../../components/status'
+import { Loading, SpinnerIcon } from '../../components/status'
 import { db } from '../../db'
 import type { Policy, MultisigWalletParams } from '../../db'
 import { useCallback, useContext, useMemo, useState } from 'react'
@@ -48,7 +48,7 @@ const Spend: FC<{
     return null
   }
   if (loading || !data) return (
-    <Modal><Loading /></Modal>
+    <SpinnerIcon className='animate-spin w-4 text-sky-700' />
   )
 
   const protocolParameters = data.cardano.currentEpoch.protocolParams

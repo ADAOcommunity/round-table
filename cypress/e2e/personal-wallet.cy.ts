@@ -56,7 +56,7 @@ describe('Personal wallet', () => {
 
     cy.contains('Create').click()
 
-    cy.wait(15000)
+    cy.wait(10000)
 
     cy.get('div').should('have.contain.text', 'stake_test1uqhy9wspj5mhwz3jjw5sw7d8750mhqryg93xz562vkjwxpccdkfkl')
 
