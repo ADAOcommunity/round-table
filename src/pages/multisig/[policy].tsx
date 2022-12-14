@@ -86,7 +86,7 @@ const NativeScriptPanel: FC<{
         <h2 className='font-semibold'>{title}</h2>
         <NativeScriptViewer
           cardano={cardano}
-          className='p-2 border rounded space-y-2'
+          className='p-2 border rounded space-y-2 text-sm'
           headerClassName='font-semibold'
           ulClassName='space-y-1'
           nativeScript={nativeScript} />
