@@ -11,6 +11,7 @@ const recoveryPhrase: string[] = [
   'type', 'tell', 'trend',
   'skin', 'weapon', 'blush'
 ]
+const waitTime = 10000
 
 describe('Personal wallet', () => {
   before(() => {
@@ -56,7 +57,7 @@ describe('Personal wallet', () => {
 
     cy.contains('Create').click()
 
-    cy.wait(10000)
+    cy.wait(waitTime)
 
     cy.get('div').should('have.contain.text', 'stake_test1uqhy9wspj5mhwz3jjw5sw7d8750mhqryg93xz562vkjwxpccdkfkl')
 
@@ -171,7 +172,7 @@ describe('Personal wallet', () => {
   it('should be able to sign personal transactions', () => {
     cy.visit('http://localhost:3000/base64/hKYAgYJYIPrhts%2B6OZKM83FFizlaIjZeIG%2FV7j2hqj5EPXQWBbr1AAGCglg5AKdbKhCK0NX7pEVrac89ZN%2BdIztHu%2FU4K5sYpMMuQroBlTd3CjKTqQd5p%2FUfu4BkQWJhU0plpOMHGgAOzBaCWDkAyF8t8490ivOyLC4q%2FFUcOOhJ3eBqvJ4o6a%2FUZy5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wcaAGiQ2QIaAAK1EQMaAD0gUwSCggCCAFgcLkK6AZU3dwoyk6kHeaf1H7uAZEFiYVNKZaTjB4MCggBYHC5CugGVN3cKMpOpB3mn9R%2B7gGRBYmFTSmWk4wdYHAzLBKcAAKxvP29HJWhW8XJOGpPP0tSX4lgg85sIGgA7ztOg9fY%3D')
 
-    cy.wait(15000)
+    cy.wait(waitTime)
 
     cy.get('footer').contains('Sign').click()
     cy.get('#modal-root').contains(walletName).click()
@@ -190,7 +191,7 @@ describe('Personal wallet', () => {
   it('should be able to sign multisig transactions', () => {
     cy.visit('http://localhost:3000/base64/hKcAgYJYID8suzDDldXtmJgQSIlDudo6DK9M97u29zCZT%2Bx0dO%2B4AAGCglg5MN2pvVjCEyxN2SovQlroQPC5835EpAYIsN4ETgivQOTCSRD%2FEahABE6qc3O1WDh%2BYaz1IdR8bTLHGgAOzBaCWDkw3am9WMITLE3ZKi9CWuhA8LnzfkSkBgiw3gROCK9A5MJJEP8RqEAETqpzc7VYOH5hrPUh1HxtMscaAGh37QIaAALN%2FQMaAD0jmQSCggCCAVgcr0DkwkkQ%2FxGoQAROqnNztVg4fmGs9SHUfG0yx4MCggFYHK9A5MJJEP8RqEAETqpzc7VYOH5hrPUh1HxtMsdYHDhnoJcpoflUdi7qA1qC4tnToU8fp5GgIu8NokIHWCAyfuLnoW9WFfctNWtc1yQGV9OPdh3ZeR2SxgDHo4kHMggaADvSGaEBgoIBgYIAWBxdSLn4TNzZuO1rCjniOUbs09XuGwxdQDIVV5ZhggGBggBYHINVPYPeMIDUIxq6YkhMlJ4M4O2rmpv3eBlG57H1oRkCoqFjbXNngXgbTXVsdGlzaWcgRGVsZWdhdGlvbiBUZXN0aW5n')
 
-    cy.wait(15000)
+    cy.wait(waitTime)
 
     cy.get('footer').contains('Sign').click()
     cy.get('#modal-root').contains(walletName).click()
@@ -215,7 +216,7 @@ describe('Personal wallet', () => {
   it('should be able to get removed', () => {
     cy.contains(walletName).click()
 
-    cy.wait(15000)
+    cy.wait(waitTime)
 
     cy.contains('Remove').click()
     cy.contains('Remove Wallet').parent().get('input').type(walletName)
@@ -230,7 +231,7 @@ describe('Personal wallet', () => {
     cy.get('input[type=file]')
       .selectFile(downloadedFilename)
 
-    cy.wait(5000)
+    cy.wait(waitTime)
 
     cy.contains('Import User Data')
       .should('be.enabled')
@@ -238,7 +239,7 @@ describe('Personal wallet', () => {
 
     cy.contains(walletName).click()
 
-    cy.wait(15000)
+    cy.wait(waitTime)
 
     cy.get('div').should('have.contain.text', 'stake_test1uqhy9wspj5mhwz3jjw5sw7d8750mhqryg93xz562vkjwxpccdkfkl')
   })

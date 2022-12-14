@@ -97,8 +97,6 @@ describe('Create a new wallet', () => {
     cy.contains('Save')
       .click()
 
-    cy.wait(15000)
-
     cy.contains(walletName).click()
 
     cy.url().should('eq', 'http://localhost:3000/multisig/%7B%22type%22%3A%22NofK%22%2C%22policies%22%3A%5B%22addr_test1qrmtl76z2yvzw2zas03xze674r2yc6wefw0pm9v5x4ma6zs45zncsuzyfftj8x2ecg69z5f7x2f3uyz6c38uaeftsrdqms6z7t%22%2C%22addr_test1qrsaj9wppjzqq9aa8yyg4qjs0vn32zjr36ysw7zzy9y3xztl9fadz30naflhmq653up3tkz275gh5npdejwjj23l0rdquxfsdj%22%5D%2C%22number%22%3A2%7D')
