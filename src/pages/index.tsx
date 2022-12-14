@@ -49,7 +49,7 @@ const Home: NextPage = () => {
                     </div>
                   </td>
                   <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
-                  <td><div className='flex justify-center'>Untested</div></td>
+                  <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
                 </tr>
                 <tr>
                   <td>
