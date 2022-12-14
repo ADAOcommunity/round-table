@@ -139,7 +139,7 @@ const RecoverHDWallet: FC<{
           {Array.from(wordset, (word, index) => <option key={index} value={word} />)}
         </datalist>
         <div>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
             <PasswordInput
               placeholder='BIP39 optional passphrase'
               password={BIP32Passphrase}
@@ -219,7 +219,7 @@ const SavePersonalWallet: FC<{
         </label>
         <div className='space-y-1'>
           <div className="after:content-['*'] after:text-red-500">Signing Password</div>
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
             <StrongPasswordInput password={password} setPassword={setPassword} placeholder='Password' />
             <PasswordInput
               invalid={password !== repeatPassword}
