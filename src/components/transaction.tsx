@@ -1470,17 +1470,9 @@ const StakePoolInfo: FC<{
 }> = ({ delegate, stakePool }) => {
   const [metaData, setMetaData] = useState<StakePoolMetaData | undefined>()
   const [config, _] = useContext(ConfigContext)
-  const stakedAmount = parseInt(stakePool.activeStake_aggregate?.aggregate?.sum.amount ?? '0')
-  const maxStaked = 64e12
   const isRetired = stakePool.retirements && stakePool.retirements.length > 0
   const { SMASH } = config
   const [loading, setLoading] = useState(false)
-  const saturationRate = useMemo(() => Math.round(stakedAmount / maxStaked * 100), [stakedAmount, maxStaked])
-  const saturationBarClassName = useMemo(() => {
-    if (saturationRate <= 90) return 'bg-green-700 h-4'
-    if (saturationRate > 90 && saturationRate <= 95) return 'bg-yellow-700 h-4'
-    if (saturationRate > 95) return 'bg-red-700 h-4'
-  }, [saturationRate])
 
   useEffect(() => {
     let isMounted = true
@@ -1516,17 +1508,6 @@ const StakePoolInfo: FC<{
       <div className='p-2 text-sm space-y-1'>
         <div>
           <div className='flex space-x-1 items-center justify-between'>
-            <span className='font-semibold'>Saturation:</span>
-            <div className='grow'>
-              <div className='rounded bg-gray-700 overflow-hidden relative'>
-                <ProgressBar className={saturationBarClassName} value={stakedAmount} max={maxStaked} />
-                <div className='absolute inset-0 text-xs text-center text-white'>
-                  {saturationRate}%
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className='flex space-x-1 items-center justify-between'>
             <span className='font-semibold'>Margin:</span>
             <span>{stakePool.margin * 100}%</span>
           </div>
@@ -1537,10 +1518,6 @@ const StakePoolInfo: FC<{
           <div className='flex space-x-1 items-center justify-between'>
             <span className='font-semibold'>Pledge:</span>
             <ADAAmount lovelace={BigInt(stakePool.pledge)} />
-          </div>
-          <div className='flex space-x-1 items-center justify-between'>
-            <span className='font-semibold'>Produced Blocks:</span>
-            <span>{stakePool.blocks_aggregate.aggregate?.count}</span>
           </div>
         </div>
         {delegate && <nav>

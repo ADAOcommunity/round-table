@@ -40,7 +40,7 @@ describe('GraphQL API', () => {
   const wrapper: FC<{ children: ReactNode }> = ({ children }) => <ApolloProvider client={client}>{children}</ApolloProvider>;
 
   const talkbackServer = talkback({
-    host: 'https://graphql.preview.lidonation.com/graphql',
+    host: 'https://preview-gql.junglestakepool.com/graphql',
     port: 8080,
     tapeNameGenerator: (tapeNumber) => ['graphql', `query-${tapeNumber}`].join('/')
   })
@@ -61,7 +61,7 @@ describe('GraphQL API', () => {
 
     if (data) {
       const utxos = data.utxos
-      expect(utxos.length).toBe(3)
+      expect(utxos.length).toBe(4)
 
       const utxo1 = utxos[0]
       expect(utxo1.address).toBe(address)
@@ -72,16 +72,16 @@ describe('GraphQL API', () => {
 
       const utxo2 = utxos[1]
       expect(utxo2.address).toBe(address)
-      expect(utxo2.txHash).toBe('3ec64a8784bddc1b1849a349fe88c01918a58e4d32636420c17aafe156f16f9c')
-      expect(utxo2.value).toBe('996849657')
-      expect(utxo2.tokens.length).toBe(0)
-      expect(utxo2.index).toBe(1)
+      expect(utxo2.txHash).toBe('829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735')
+      expect(utxo2.value).toBe('10000000')
+      expect(utxo2.tokens.length).toBe(1)
+      expect(utxo2.index).toBe(0)
 
       const utxo3 = utxos[2]
       expect(utxo3.address).toBe(address)
-      expect(utxo3.txHash).toBe('829c0c98a4037f214abe197276ef8b53be3e313b139e73a87f7a8d0ff70ff735')
-      expect(utxo3.value).toBe('10000000')
-      expect(utxo3.tokens.length).toBe(1)
+      expect(utxo3.txHash).toBe('42e1b09014989a06633ca999c6a5bb20724af4773e725567d138cecca24fc800')
+      expect(utxo3.value).toBe('1000000')
+      expect(utxo3.tokens.length).toBe(0)
       expect(utxo3.index).toBe(0)
 
       const { cardano, delegations, stakeRegistrations_aggregate, stakeDeregistrations_aggregate, withdrawals_aggregate, rewards_aggregate } = data
@@ -89,8 +89,8 @@ describe('GraphQL API', () => {
       expect(delegations).toHaveLength(1)
       expect(stakeRegistrations_aggregate.aggregate?.count).toBe('1')
       expect(stakeDeregistrations_aggregate.aggregate?.count).toBe('0')
-      expect(withdrawals_aggregate.aggregate?.sum.amount).toBeFalsy()
-      expect(rewards_aggregate.aggregate?.sum.amount).toBe('1114190')
+      expect(withdrawals_aggregate.aggregate?.sum.amount).toBe('1612692')
+      expect(rewards_aggregate.aggregate?.sum.amount).toBe('1709889')
 
       const params = cardano.currentEpoch.protocolParams
       if (params) {
@@ -127,7 +127,7 @@ describe('GraphQL API', () => {
       if (summary) {
         expect(summary.assetBalances.length).toBe(2)
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
-        expect(summary.assetBalances[0]?.quantity).toBe('1007819407')
+        expect(summary.assetBalances[0]?.quantity).toBe('1009250494')
         expect(summary.assetBalances[1]?.asset.assetId).toBe('9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659')
         expect(summary.assetBalances[1]?.quantity).toBe('1')
       }
@@ -137,8 +137,8 @@ describe('GraphQL API', () => {
       expect(delegations).toHaveLength(1)
       expect(stakeRegistrations_aggregate.aggregate?.count).toBe('1')
       expect(stakeDeregistrations_aggregate.aggregate?.count).toBe('0')
-      expect(withdrawals_aggregate.aggregate?.sum.amount).toBeFalsy()
-      expect(rewards_aggregate.aggregate?.sum.amount).toBe('1114190')
+      expect(withdrawals_aggregate.aggregate?.sum.amount).toBe('1612692')
+      expect(rewards_aggregate.aggregate?.sum.amount).toBe('1709889')
     }
   })
 
@@ -157,7 +157,7 @@ describe('GraphQL API', () => {
       if (summary) {
         expect(summary.assetBalances.length).toBe(2)
         expect(summary.assetBalances[0]?.asset.assetId).toBe('ada')
-        expect(summary.assetBalances[0]?.quantity).toBe('1007819407')
+        expect(summary.assetBalances[0]?.quantity).toBe('1009250494')
         expect(summary.assetBalances[1]?.asset.assetId).toBe('9a556a69ba07adfbbce86cd9af8fd73f60fcf43c73f8deb51d2176b4504855464659')
         expect(summary.assetBalances[1]?.quantity).toBe('1')
       }
@@ -177,11 +177,11 @@ describe('GraphQL API', () => {
       expect(transactions).toHaveLength(1)
       expect(transactions[0].hash).toEqual(txHash)
       expect(transactions[0].outputs).toHaveLength(3)
-      expect(transactions[0].outputs[0]?.index).toBe(0)
-      expect(transactions[0].outputs[0]?.value).toBe('10000000')
-      expect(transactions[0].outputs[0]?.tokens).toHaveLength(1)
+      expect(transactions[0].outputs[0]?.index).toBe(2)
+      expect(transactions[0].outputs[0]?.value).toBe('8949377793')
+      expect(transactions[0].outputs[0]?.tokens).toHaveLength(0)
       expect(transactions[0].outputs[1]?.index).toBe(1)
-      expect(transactions[0].outputs[2]?.index).toBe(2)
+      expect(transactions[0].outputs[2]?.index).toBe(0)
     }
   })
 
