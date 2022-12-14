@@ -16,8 +16,9 @@ describe('Create a new wallet', () => {
 
   it('Should show new wallet form', () => {
     cy.visit('http://localhost:3000/')
-
-    cy.contains('New Wallet')
+    cy.get('aside')
+      .get('a')
+      .contains('New Wallet')
       .click()
 
     cy.url()
@@ -37,7 +38,6 @@ describe('Create a new wallet', () => {
   it('Should add signers', () => {
     addresses.forEach((address) => {
       cy.contains('Add Signer').click()
-      cy.get('#modal-root').contains('Import').click()
 
       cy.get('#modal-root')
         .get('textarea[placeholder="Input receiving address"]')

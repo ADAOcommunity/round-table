@@ -19,8 +19,14 @@ describe('Personal wallet', () => {
 
   it('should be able to recover with recovery phrase', () => {
     cy.visit('http://localhost:3000/')
-    cy.contains('New Wallet').click()
-    cy.contains('Personal').click()
+    cy.get('aside')
+      .get('a')
+      .contains('New Wallet')
+      .click()
+    cy.get('div')
+      .find('nav button')
+      .contains('Personal')
+      .click()
 
     recoveryPhrase.forEach((word, index) => {
       cy.contains('Recovery Phrase')
