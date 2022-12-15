@@ -7,7 +7,7 @@ import { NoSymbolIcon, ClipboardDocumentCheckIcon, ClipboardDocumentIcon, LockCl
 import { CopyButton } from './layout'
 import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
 import { ConfigContext } from '../cardano/config'
-import { DateContext } from './time'
+import { useLiveDate } from './time'
 
 type VerifyingData = Map<string, Vkeywitness>
 
@@ -55,8 +55,8 @@ const Timelock: FC<{
   type: 'TimelockStart' | 'TimelockExpiry'
 }> = ({ slot, type }) => {
   const [config, _] = useContext(ConfigContext)
-  const [now, _t] = useContext(DateContext)
-  const currentSlot = estimateSlotByDate(now, config.network)
+  const now = useLiveDate()
+  const currentSlot = useMemo(() => estimateSlotByDate(now, config.network), [now, config.network])
   const isValid: boolean = useMemo(() => {
     switch (type) {
       case 'TimelockStart': return currentSlot >= slot

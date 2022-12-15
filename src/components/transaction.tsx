@@ -22,13 +22,12 @@ import { NativeScriptViewer, SignatureViewer, Timelock } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
-import { estimateSlotByDate } from '../cardano/utils'
 import { SlotInput } from './wallet'
-import { DateContext } from './time'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { PersonalWallet } from '../db'
 import { AddressableContent } from './address'
+import { useLiveSlot } from './time'
 
 const TransactionReviewButton: FC<{
   className?: string
@@ -1018,9 +1017,7 @@ const NewTransaction: FC<{
   isRegistered: boolean
   currentDelegation?: StakePool
 }> = ({ cardano, protocolParameters, buildInputResult, buildCertResult, buildWithdrawalResult, rewardAddress, availableReward, utxos, defaultChangeAddress, isRegistered, currentDelegation }) => {
-  const [config, _c] = useContext(ConfigContext)
-  const [now, _t] = useContext(DateContext)
-  const currentSlot = estimateSlotByDate(now, config.network)
+  const currentSlot = useLiveSlot()
   const [startSlot, setStartSlot] = useState<number | undefined>(currentSlot)
   const [expirySlot, setExpirySlot] = useState<number | undefined>(currentSlot + 24 * 60 * 60)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
