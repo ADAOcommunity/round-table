@@ -6,9 +6,26 @@ import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, Chevron
 
 const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => {}])
 
+const useLiveDate = () => {
+  const [date, setDate] = useState(new Date())
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDate(new Date())
+    }, 1000)
+
+    return () => {
+      clearInterval(id)
+    }
+  }, [setDate])
+
+  return date
+}
+
 const ChainProgress: FC<{
   className?: string
 }> = ({ className }) => {
+  const liveDate = useLiveDate()
   const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
   const [config, _] = useContext(ConfigContext)
   const [_date, setDate] = useContext(DateContext)
@@ -17,23 +34,17 @@ const ChainProgress: FC<{
   const { network } = config
 
   useEffect(() => {
-    const id = setInterval(() => {
-      const date = new Date()
-      const slot = estimateSlotByDate(date, network)
-      const slotInEpoch = getSlotInEpochBySlot(slot, network)
-      const epoch = getEpochBySlot(slot, network)
-      const SlotLength = slotLength(network)
-      const progress = slotInEpoch / SlotLength * 100
+    const date = liveDate
+    const slot = estimateSlotByDate(date, network)
+    const slotInEpoch = getSlotInEpochBySlot(slot, network)
+    const epoch = getEpochBySlot(slot, network)
+    const SlotLength = slotLength(network)
+    const progress = slotInEpoch / SlotLength * 100
 
-      setStyle({ width: `${progress}%` })
-      setText(`Epoch ${epoch}: ${slotInEpoch}/${SlotLength} (${progress.toFixed(0)}%)`)
-      setDate(date)
-    }, 1000)
-
-    return () => {
-      clearInterval(id)
-    }
-  }, [setDate, network])
+    setStyle({ width: `${progress}%` })
+    setText(`Epoch ${epoch}: ${slotInEpoch}/${SlotLength} (${progress.toFixed(0)}%)`)
+    setDate(date)
+  }, [setDate, network, liveDate])
 
   return (
     <div className={className}>
@@ -146,4 +157,4 @@ const Calendar: FC<{
   )
 }
 
-export { ChainProgress, Calendar, DateContext }
+export { ChainProgress, Calendar, DateContext, useLiveDate }
