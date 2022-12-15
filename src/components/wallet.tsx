@@ -6,7 +6,7 @@ import type { Cardano } from '../cardano/multiplatform-lib'
 import { estimateDateBySlot, estimateSlotByDate, formatDerivationPath } from '../cardano/utils'
 import { Panel, Modal, TextareaModalBox } from '../components/layout'
 import { ChevronLeftIcon, ChevronRightIcon, ExclamationCircleIcon, PencilSquareIcon, PlusIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
-import { Calendar, DateContext } from '../components/time'
+import { Calendar, useLiveDate } from '../components/time'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
@@ -46,13 +46,7 @@ const NumberInput: FC<{
   const [localValue, setLocalValue] = useState(value.toString())
 
   useEffect(() => {
-    let isMounted = true
-
-    isMounted && setLocalValue(value.toString())
-
-    return () => {
-      isMounted = false
-    }
+    setLocalValue(value.toString())
   }, [value])
 
   const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -150,7 +144,7 @@ const AddTimelock: FC<{
   cancel: () => void
 }> = ({ className, add, cancel }) => {
   const [type, setType] = useState<'TimelockStart' | 'TimelockExpiry'>('TimelockStart')
-  const [now, _t] = useContext(DateContext)
+  const now = useLiveDate()
   const confirmSlot = useCallback((slot: number) => add({ type, slot }), [add, type])
   const isLocked = useCallback((date: Date) => {
     if (type === 'TimelockExpiry') return date <= now

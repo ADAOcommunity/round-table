@@ -22,13 +22,12 @@ import { NativeScriptViewer, SignatureViewer, Timelock } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
-import { estimateSlotByDate } from '../cardano/utils'
 import { SlotInput } from './wallet'
-import { DateContext } from './time'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { PersonalWallet } from '../db'
 import { AddressableContent } from './address'
+import { useLiveSlot } from './time'
 
 const TransactionReviewButton: FC<{
   className?: string
@@ -443,13 +442,7 @@ const WalletInfo: FC<{
   const [wallet, setWallet] = useState<CIP30Wallet | undefined>(undefined)
 
   useEffect(() => {
-    let isMounted = true
-
-    isMounted && setWallet(getCIP30Wallet(name))
-
-    return () => {
-      isMounted = false
-    }
+    setWallet(getCIP30Wallet(name))
   }, [name])
 
   return (
@@ -480,14 +473,8 @@ const SignatureSync: FC<{
   const network = config.network
 
   useEffect(() => {
-    let isMounted = true
-
     const gun = new Gun({ peers })
-    isMounted && setGUN(gun)
-
-    return () => {
-      isMounted = false
-    }
+    setGUN(gun)
   }, [peers])
 
   useEffect(() => {
@@ -1030,9 +1017,7 @@ const NewTransaction: FC<{
   isRegistered: boolean
   currentDelegation?: StakePool
 }> = ({ cardano, protocolParameters, buildInputResult, buildCertResult, buildWithdrawalResult, rewardAddress, availableReward, utxos, defaultChangeAddress, isRegistered, currentDelegation }) => {
-  const [config, _c] = useContext(ConfigContext)
-  const [now, _t] = useContext(DateContext)
-  const currentSlot = estimateSlotByDate(now, config.network)
+  const currentSlot = useLiveSlot()
   const [startSlot, setStartSlot] = useState<number | undefined>(currentSlot)
   const [expirySlot, setExpirySlot] = useState<number | undefined>(currentSlot + 24 * 60 * 60)
   const [recipients, setRecipients] = useState<Recipient[]>([newRecipient()])
@@ -1109,8 +1094,6 @@ const NewTransaction: FC<{
   }, [defaultChangeAddress, isChangeSettingDisabled])
 
   useEffect(() => {
-    let isMounted = true
-
     if (willSpendAll || recipients.length === 0) {
       setInputs(utxos)
       return
@@ -1119,8 +1102,6 @@ const NewTransaction: FC<{
     setInputs([])
 
     init().then(() => {
-      if (!isMounted) return
-
       const inputs: Output[] = utxos.map((txOutput) => {
         return {
           data: txOutput,
@@ -1151,10 +1132,6 @@ const NewTransaction: FC<{
       const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
       txOutputs && setInputs(txOutputs)
     })
-
-    return () => {
-      isMounted = false
-    }
   }, [utxos, recipients, willSpendAll, minLovelaceForChange])
 
   const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
@@ -1475,8 +1452,6 @@ const StakePoolInfo: FC<{
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    let isMounted = true
-
     const id: string = stakePool.hash
     const hash: string | undefined = stakePool.metadataHash
     const url = hash && new URL(['api/v1/metadata', id, hash].join('/'), SMASH)
@@ -1484,12 +1459,8 @@ const StakePoolInfo: FC<{
     if (url) {
       setLoading(true)
       fetchStakePoolMetaData(url.toString())
-        .then((data) => isMounted && setMetaData(data))
-        .finally(() => isMounted && setLoading(false))
-    }
-
-    return () => {
-      isMounted = false
+        .then((data) => setMetaData(data))
+        .finally(() => setLoading(false))
     }
   }, [stakePool, SMASH])
 

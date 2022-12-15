@@ -60,19 +60,18 @@ const Notification: FC<{
   const { id, type, message } = notification
   const [progress, setProgress] = useState(100)
   const [timer, setTimer] = useState(true)
-  const startTimerHandle = useCallback(() => setTimer(true), [])
+  const startTimer = useCallback(() => setTimer(true), [])
+  const stopTimer = useCallback(() => setTimer(false), [])
   const intervalRef = useRef<NodeJS.Timer>()
-  const pauseTimerHandle = useCallback(() => {
-    const interval = intervalRef.current
-    interval && clearInterval(interval)
-    setTimer(false)
-  }, [intervalRef])
 
   useEffect(() => {
-    let isMounted = true
+    if (!timer) {
+      clearInterval(intervalRef.current)
+      return
+    }
 
-    const id = timer && setInterval(() => {
-      isMounted && setProgress((prev) => {
+    intervalRef.current = setInterval(() => {
+      setProgress((prev) => {
         if (prev > 0) {
           return prev - 0.5
         }
@@ -80,22 +79,20 @@ const Notification: FC<{
       })
     }, 20)
 
-    id && (intervalRef.current = id)
-
     return () => {
-      isMounted = false
-      id && clearInterval(id)
+      clearInterval(intervalRef.current)
     }
   }, [timer])
 
   useEffect(() => {
     if (progress <= 0) {
+      stopTimer()
       dismissHandle(id)
     }
-  }, [progress, dismissHandle, id])
+  }, [progress, dismissHandle, id, stopTimer])
 
   return (
-    <div className={getClassName(type)} onMouseEnter={pauseTimerHandle} onMouseLeave={startTimerHandle}>
+    <div className={getClassName(type)} onMouseEnter={stopTimer} onMouseLeave={startTimer}>
       <div className='p-2 flex items-start space-x-2'>
         <div className='py-1'><NotificationIcon type={type} /></div>
         <div className='grow break-all'>{message}</div>

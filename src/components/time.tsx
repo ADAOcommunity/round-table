@@ -1,39 +1,51 @@
+import { useContext, useEffect, useMemo, useState } from 'react'
 import type { FC } from 'react'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { ConfigContext } from '../cardano/config'
 import { estimateSlotByDate, getEpochBySlot, getSlotInEpochBySlot, slotLength } from '../cardano/utils'
 import { ChevronDoubleLeftIcon, ChevronDoubleRightIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 
-const DateContext = createContext<[Date, (_: Date) => void]>([new Date(), (_: Date) => {}])
+const useLiveDate = (ms?: number) => {
+  const [date, setDate] = useState(new Date())
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setDate(new Date())
+    }, ms ?? 1000)
+
+    return () => {
+      clearInterval(id)
+    }
+  }, [setDate, ms])
+
+  return date
+}
+
+const useLiveSlot = (ms?: number) => {
+  const [config, _] = useContext(ConfigContext)
+  const now = useLiveDate(ms)
+  return useMemo(() => estimateSlotByDate(now, config.network), [now, config.network])
+}
 
 const ChainProgress: FC<{
   className?: string
 }> = ({ className }) => {
+  const date = useLiveDate()
   const baseClassName = 'relative h-6 rounded bg-gray-700 overflow-hidden'
   const [config, _] = useContext(ConfigContext)
-  const [_date, setDate] = useContext(DateContext)
   const [text, setText] = useState('')
   const [style, setStyle] = useState<{ width: string }>({ width: '0' })
   const { network } = config
 
   useEffect(() => {
-    const id = setInterval(() => {
-      const date = new Date()
-      const slot = estimateSlotByDate(date, network)
-      const slotInEpoch = getSlotInEpochBySlot(slot, network)
-      const epoch = getEpochBySlot(slot, network)
-      const SlotLength = slotLength(network)
-      const progress = slotInEpoch / SlotLength * 100
+    const slot = estimateSlotByDate(date, network)
+    const slotInEpoch = getSlotInEpochBySlot(slot, network)
+    const epoch = getEpochBySlot(slot, network)
+    const SlotLength = slotLength(network)
+    const progress = slotInEpoch / SlotLength * 100
 
-      setStyle({ width: `${progress}%` })
-      setText(`Epoch ${epoch}: ${slotInEpoch}/${SlotLength} (${progress.toFixed(0)}%)`)
-      setDate(date)
-    }, 1000)
-
-    return () => {
-      clearInterval(id)
-    }
-  }, [setDate, network])
+    setStyle({ width: `${progress}%` })
+    setText(`Epoch ${epoch}: ${slotInEpoch}/${SlotLength} (${progress.toFixed(0)}%)`)
+  }, [network, date])
 
   return (
     <div className={className}>
@@ -146,4 +158,4 @@ const Calendar: FC<{
   )
 }
 
-export { ChainProgress, Calendar, DateContext }
+export { ChainProgress, Calendar, useLiveDate, useLiveSlot }

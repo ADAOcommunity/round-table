@@ -518,15 +518,9 @@ const useCardanoMultiplatformLib = () => {
   const [cardano, setCardano] = useState<Cardano | undefined>(undefined)
 
   useEffect(() => {
-    let isMounted = true
-
     Loader.load().then((instance) => {
-      isMounted && setCardano(instance)
+      setCardano(instance)
     })
-
-    return () => {
-      isMounted = false
-    }
   }, [])
 
   return cardano
