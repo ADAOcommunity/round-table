@@ -69,10 +69,8 @@ const Notification: FC<{
   }, [intervalRef])
 
   useEffect(() => {
-    let isMounted = true
-
-    const id = timer && setInterval(() => {
-      isMounted && setProgress((prev) => {
+    const timerId = timer && setInterval(() => {
+      setProgress((prev) => {
         if (prev > 0) {
           return prev - 0.5
         }
@@ -80,11 +78,10 @@ const Notification: FC<{
       })
     }, 20)
 
-    id && (intervalRef.current = id)
+    timerId && (intervalRef.current = timerId)
 
     return () => {
-      isMounted = false
-      id && clearInterval(id)
+      timerId && clearInterval(timerId)
     }
   }, [timer])
 

@@ -443,13 +443,7 @@ const WalletInfo: FC<{
   const [wallet, setWallet] = useState<CIP30Wallet | undefined>(undefined)
 
   useEffect(() => {
-    let isMounted = true
-
-    isMounted && setWallet(getCIP30Wallet(name))
-
-    return () => {
-      isMounted = false
-    }
+    setWallet(getCIP30Wallet(name))
   }, [name])
 
   return (
@@ -480,14 +474,8 @@ const SignatureSync: FC<{
   const network = config.network
 
   useEffect(() => {
-    let isMounted = true
-
     const gun = new Gun({ peers })
-    isMounted && setGUN(gun)
-
-    return () => {
-      isMounted = false
-    }
+    setGUN(gun)
   }, [peers])
 
   useEffect(() => {
@@ -1109,8 +1097,6 @@ const NewTransaction: FC<{
   }, [defaultChangeAddress, isChangeSettingDisabled])
 
   useEffect(() => {
-    let isMounted = true
-
     if (willSpendAll || recipients.length === 0) {
       setInputs(utxos)
       return
@@ -1119,8 +1105,6 @@ const NewTransaction: FC<{
     setInputs([])
 
     init().then(() => {
-      if (!isMounted) return
-
       const inputs: Output[] = utxos.map((txOutput) => {
         return {
           data: txOutput,
@@ -1151,10 +1135,6 @@ const NewTransaction: FC<{
       const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
       txOutputs && setInputs(txOutputs)
     })
-
-    return () => {
-      isMounted = false
-    }
   }, [utxos, recipients, willSpendAll, minLovelaceForChange])
 
   const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
@@ -1475,8 +1455,6 @@ const StakePoolInfo: FC<{
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    let isMounted = true
-
     const id: string = stakePool.hash
     const hash: string | undefined = stakePool.metadataHash
     const url = hash && new URL(['api/v1/metadata', id, hash].join('/'), SMASH)
@@ -1484,12 +1462,8 @@ const StakePoolInfo: FC<{
     if (url) {
       setLoading(true)
       fetchStakePoolMetaData(url.toString())
-        .then((data) => isMounted && setMetaData(data))
-        .finally(() => isMounted && setLoading(false))
-    }
-
-    return () => {
-      isMounted = false
+        .then((data) => setMetaData(data))
+        .finally(() => setLoading(false))
     }
   }, [stakePool, SMASH])
 

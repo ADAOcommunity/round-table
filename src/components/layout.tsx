@@ -60,14 +60,11 @@ const CopyButton: FC<{
   }, [content])
 
   useEffect(() => {
-    let isMounted = true
-
     const timer = setTimeout(() => {
-      if (isMounted && isCopied) setIsCopied(false)
+      if (isCopied) setIsCopied(false)
     }, ms)
 
     return () => {
-      isMounted = false
       clearTimeout(timer)
     }
   }, [isCopied, ms])

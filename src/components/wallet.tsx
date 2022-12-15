@@ -46,13 +46,7 @@ const NumberInput: FC<{
   const [localValue, setLocalValue] = useState(value.toString())
 
   useEffect(() => {
-    let isMounted = true
-
-    isMounted && setLocalValue(value.toString())
-
-    return () => {
-      isMounted = false
-    }
+    setLocalValue(value.toString())
   }, [value])
 
   const changeHandle: ChangeEventHandler<HTMLInputElement> = (event) => {
