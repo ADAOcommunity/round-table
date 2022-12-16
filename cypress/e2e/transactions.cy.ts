@@ -55,7 +55,7 @@ describe('Sign a base64 transaction created by others by opening URL in Base64',
       .get('button')
       .click()
     cy.get('#modal-root')
-      .get('textarea[placeholder="URL or CBOR in Hex"]')
+      .get('textarea[placeholder="Transaction URL/Hex or multisig wallet URL"]')
       .type(base64URL)
       .should("have.value", base64URL)
     cy.get('#modal-root')
