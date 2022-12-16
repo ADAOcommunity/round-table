@@ -14,7 +14,7 @@ import { getBalanceByPaymentAddresses, sumValues, usePaymentAddressesQuery } fro
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
-import { getMultisigWalletPath, getPersonalWalletPath, getTransactionPath } from '../route'
+import { getMultisigWalletPath, getPersonalWalletPath } from '../route'
 import { SpinnerIcon } from './status'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
 
@@ -129,9 +129,9 @@ const PrimaryBar: FC = () => {
         <HomeIcon className='w-12' />
       </NavLink>
       <div id='open-tx'>
-        <OpenTransaction className='p-4 hover:bg-sky-700'>
+        <OpenURL className='p-4 hover:bg-sky-700'>
           <FolderOpenIcon className='w-12' />
-        </OpenTransaction>
+        </OpenURL>
       </div>
       <NavLink
         href='/config'
@@ -413,41 +413,33 @@ const TextareaModalBox: FC<{
   )
 }
 
-const parseText = (text: string): Uint8Array => {
-  try {
-    let url = new URL(text)
-    let [_, encoding, content] = url.pathname.split('/')
-
-    if (encoding === 'base64') return Buffer.from(decodeURIComponent(content), 'base64')
-    if (encoding === 'hex') return Buffer.from(content, 'hex')
-
-    throw new Error(`Unknow encoding: ${encoding}`)
-  } catch (e) {
-    return Buffer.from(text, 'hex')
-  }
-}
-
-const OpenTransaction: FC<{
+const OpenURL: FC<{
   className?: string
   children: ReactNode
 }> = ({ className, children }) => {
   const router = useRouter()
-  const cardano = useCardanoMultiplatformLib()
   const { notify } = useContext(NotificationContext)
   const [modal, setModal] = useState(false)
   const closeModal = useCallback(() => setModal(false), [])
   const openModal = useCallback(() => setModal(true), [])
   const confirm = useCallback((content: string) => {
-    if (!cardano) return
     try {
-      const bytes = parseText(content)
-      const tx = cardano.lib.Transaction.from_bytes(bytes)
-      router.push(getTransactionPath(tx))
-      closeModal()
-    } catch (error) {
-      notify('error', 'Invalid transaction')
+      const url = new URL(content)
+      const [_, objectType, objectContent] = url.pathname.split('/')
+      if (objectType === 'multisig' || objectType === 'base64' || objectType === 'hex') {
+        router.push(['', objectType, objectContent].join('/'))
+        closeModal()
+        return
+      }
+      throw new Error('Unknown URL')
+    } catch (error: any) {
+      if (error.name === 'TypeError') {
+        router.push(['', 'hex', content].join('/'))
+      } else {
+        notify('error', error)
+      }
     }
-  }, [cardano, closeModal, router, notify])
+  }, [closeModal, router])
 
   return (
     <>
@@ -455,7 +447,7 @@ const OpenTransaction: FC<{
       {modal && <Modal className='w-80' onBackgroundClick={closeModal}>
         <div className='bg-white rounded overflow-hidden'>
           <h2 className='bg-gray-100 p-2 text-center font-semibold'>Open Transaction</h2>
-          <TextareaModalBox placeholder='URL or CBOR in Hex' onConfirm={confirm}>
+          <TextareaModalBox placeholder='Transaction URL/Hex or multisig wallet URL' onConfirm={confirm}>
             <FolderOpenIcon className='w-4' />
             <span>Open</span>
           </TextareaModalBox>
