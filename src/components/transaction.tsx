@@ -29,17 +29,6 @@ import type { PersonalWallet } from '../db'
 import { AddressableContent } from './address'
 import { useLiveSlot } from './time'
 
-const TransactionReviewButton: FC<{
-  className?: string
-  transaction: Transaction
-}> = ({ className, transaction }) => {
-  return (
-    <Link href={getTransactionPath(transaction)} className={['text-white bg-sky-700', className].join(' ')}>
-      Review Transaction
-    </Link>
-  )
-}
-
 const CertificateListing: FC<{
   cardano: Cardano
   certificate: Certificate
@@ -1375,7 +1364,10 @@ const NewTransaction: FC<{
           {modal === 'delegation' && <Modal className='bg-white p-4 rounded w-full lg:w-1/2' onBackgroundClick={closeModal}>
             <StakePoolPicker className='space-y-2' delegate={delegate} />
           </Modal>}
-          {txResult.isOk && <TransactionReviewButton className='px-4 py-2 rounded' transaction={txResult.data} />}
+          {txResult.isOk && <Link className='flex p-2 rounded bg-sky-700 text-white space-x-1 items-center' href={getTransactionPath(txResult.data)}>
+            <span>Review</span>
+            <ChevronRightIcon className='w-4' />
+          </Link>}
         </nav>
       </footer>
     </Panel>
@@ -1503,4 +1495,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { CIP30SignTxButton, SubmitTxButton, SignatureSync, CopyVkeysButton, WalletInfo, TransactionReviewButton, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
+export { CIP30SignTxButton, SubmitTxButton, SignatureSync, CopyVkeysButton, WalletInfo, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
