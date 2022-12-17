@@ -160,8 +160,8 @@ const WalletLink: FC<{
   isOnPage: boolean
   children?: ReactNode
 }> = ({ name, href, lovelace, isOnPage, children }) => {
-  return (
-    <Link href={href} className={['flex space-x-1 justify-between items-center p-4 hover:bg-sky-700', isOnPage ? 'bg-sky-100 text-sky-700 font-semibold rounded-l' : ''].join(' ')}>
+  const info = (
+    <div className='flex space-x-1 justify-between items-center p-4 bg-inherit'>
       <div className='w-2/3'>
         <div className='truncate'>{name}</div>
         <div className='text-sm font-normal'>
@@ -169,6 +169,18 @@ const WalletLink: FC<{
         </div>
       </div>
       <div>{children}</div>
+    </div>
+  )
+
+  if (isOnPage) return (
+    <div className='bg-sky-100 text-sky-700 font-semibold rounded-l overflow-hidden'>
+      {info}
+    </div>
+  )
+
+  return (
+    <Link href={href} className='hover:bg-sky-700'>
+      {info}
     </Link>
   )
 }

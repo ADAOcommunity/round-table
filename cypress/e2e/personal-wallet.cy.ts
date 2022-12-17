@@ -11,7 +11,7 @@ const recoveryPhrase: string[] = [
   'type', 'tell', 'trend',
   'skin', 'weapon', 'blush'
 ]
-const waitTime = 10000
+const waitTime = 15000
 
 describe('Personal wallet', () => {
   before(() => {
@@ -220,7 +220,10 @@ describe('Personal wallet', () => {
 
     cy.contains('Remove').click()
     cy.contains('Remove Wallet').parent().get('input').type(walletName)
-    cy.contains('REMOVE').click()
+    cy.get('footer')
+      .get('button')
+      .contains('REMOVE')
+      .click()
   })
 
   it('should be able to be restored', () => {
@@ -231,7 +234,7 @@ describe('Personal wallet', () => {
     cy.get('input[type=file]')
       .selectFile(downloadedFilename)
 
-    cy.wait(waitTime)
+    cy.wait(1000)
 
     cy.contains('Import User Data')
       .should('be.enabled')
