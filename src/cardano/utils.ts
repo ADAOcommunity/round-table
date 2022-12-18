@@ -68,7 +68,7 @@ const getIvFromNumber = (num: number): ArrayBuffer => {
   if (num > MAX_IV_NUM) throw new Error(`IV number overflow: ${num}`)
   const array = new Uint32Array(4)
   array[3] = num
-  return array
+  return array.buffer
 }
 
 const encryptWithPassword = async (plaintext: ArrayBuffer, password: string, id: number): Promise<ArrayBuffer> => {
