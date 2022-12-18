@@ -28,7 +28,7 @@ test('getSlotInEpochBySlot', () => {
   expect(getSlotInEpochBySlot(56213638, 'testnet')).toBe(183238)
 })
 
-test('crypto', async () => {
+test('encryption', async () => {
   const plaintext = new Uint8Array(Buffer.from('lorem ipsum', 'utf-8'))
   const ciphertext = new Uint8Array(await encryptWithPassword(plaintext, 'abcd', 0))
   expect(ciphertext).not.toEqual(new Uint8Array(plaintext))
