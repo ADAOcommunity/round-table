@@ -28,15 +28,13 @@ test('getSlotInEpochBySlot', () => {
   expect(getSlotInEpochBySlot(56213638, 'testnet')).toBe(183238)
 })
 
-const getHex = (arrayBuffer: ArrayBuffer): string => Buffer.from(arrayBuffer).toString('hex')
-
 test('crypto', async () => {
-  const plaintext = Buffer.from('lorem ipsum', 'utf-8')
-  const ciphertext = await encryptWithPassword(plaintext, 'abcd', 0)
-  expect(getHex(ciphertext)).not.toEqual(getHex(plaintext))
-  expect(getHex(ciphertext)).not.toEqual(getHex(await encryptWithPassword(plaintext, '1234', 0)))
-  expect(getHex(ciphertext)).not.toEqual(getHex(await encryptWithPassword(plaintext, 'abcd', 1)))
-  expect(getHex(plaintext)).toEqual(getHex(await decryptWithPassword(ciphertext, 'abcd', 0)))
+  const plaintext = new Uint8Array(Buffer.from('lorem ipsum', 'utf-8'))
+  const ciphertext = new Uint8Array(await encryptWithPassword(plaintext, 'abcd', 0))
+  expect(ciphertext).not.toEqual(new Uint8Array(plaintext))
+  expect(ciphertext).not.toEqual(new Uint8Array(await encryptWithPassword(plaintext, '1234', 0)))
+  expect(ciphertext).not.toEqual(new Uint8Array(await encryptWithPassword(plaintext, 'abcd', 1)))
+  expect(plaintext).toEqual(new Uint8Array(await decryptWithPassword(ciphertext, 'abcd', 0)))
 })
 
 test('parseDerivationPath', () => {
