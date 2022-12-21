@@ -451,7 +451,7 @@ const OpenURL: FC<{
         notify('error', error)
       }
     }
-  }, [closeModal, router])
+  }, [closeModal, router, notify])
 
   return (
     <>
