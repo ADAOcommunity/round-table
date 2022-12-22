@@ -458,7 +458,7 @@ const OpenURL: FC<{
       <button onClick={openModal} className={className}>{children}</button>
       {modal && <Modal className='w-80' onBackgroundClick={closeModal}>
         <div className='bg-white rounded overflow-hidden'>
-          <h2 className='bg-gray-100 p-2 text-center font-semibold'>Open Transaction</h2>
+          <h2 className='bg-gray-100 p-2 text-center font-semibold'>Open Remote Content</h2>
           <TextareaModalBox placeholder='Transaction URL/Hex or multisig wallet URL' onConfirm={confirm}>
             <FolderOpenIcon className='w-4' />
             <span>Open</span>
