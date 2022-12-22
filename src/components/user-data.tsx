@@ -129,7 +129,11 @@ const ImportUserData: FC = () => {
     if (!userDataJSON) return;
     const userData = deserializeUserData(userDataJSON)
     if (userData.network !== config.network) {
-      console.error(`Wrong network: ${userData.network}`)
+      notify('error', `Wrong network: ${userData.network}`)
+      return
+    }
+    if (userData.version !== '2') {
+      notify('error', 'Incompatible version. Please recreate wallets and then migrate.')
       return
     }
     if (userData.version === '2') {
