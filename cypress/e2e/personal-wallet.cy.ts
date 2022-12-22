@@ -126,6 +126,9 @@ describe('Personal wallet', () => {
 
   it('should be able to remove account', () => {
     cy.contains('Summary').click()
+
+    cy.wait(waitTime)
+
     cy.contains('REMOVE').click()
     cy.get('#modal-root').contains('REMOVE').click()
 
