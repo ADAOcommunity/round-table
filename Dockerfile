@@ -6,6 +6,7 @@ ENV NODE_ENV production
 USER node
 WORKDIR /app
 COPY --chown=node . .
+RUN yarn install
 RUN yarn build
 
 EXPOSE 3000
