@@ -9,13 +9,11 @@ import type { Certificate, Transaction, TransactionHash, TransactionInput, Vkeyw
 import { ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon, WalletIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
-import type { Config } from '../cardano/config'
 import { CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, TextareaModalBox } from './layout'
 import { PasswordBox } from './password'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
 import Gun from 'gun'
-import type { IGunInstance } from 'gun'
 import { getTransactionPath } from '../route'
 import { Loading, SpinnerIcon } from './status'
 import { NativeScriptViewer, SignatureViewer, Timelock } from './native-script'
@@ -453,21 +451,16 @@ const SignatureSync: FC<{
   signatures: Map<string, Vkeywitness>
   addSignatures: (witnessSetHex: string) => void
   signers: Set<string>
-  config: Config
-}> = ({ cardano, txHash, signatures, signers, addSignatures, config }) => {
+}> = ({ cardano, txHash, signatures, signers, addSignatures }) => {
+  const [config, _] = useContext(ConfigContext)
   const [isOn, setIsOn] = useState(false)
-  const [gun, setGUN] = useState<IGunInstance<any> | undefined>(undefined)
   const switchToggle = useCallback(() => setIsOn(!isOn), [isOn])
   const peers = config.gunPeers
   const network = config.network
 
   useEffect(() => {
-    const gun = new Gun({ peers })
-    setGUN(gun)
-  }, [peers])
-
-  useEffect(() => {
-    if (isOn && gun) {
+    if (isOn) {
+      const gun = new Gun({ peers })
       const nodes = Array.from(signers).map((keyHashHex) => {
         const vkeywitness = signatures.get(keyHashHex)
         const node = gun
@@ -494,7 +487,7 @@ const SignatureSync: FC<{
         nodes.forEach((node) => node.off())
       }
     }
-  })
+  }, [isOn])
 
   return (
     <Toggle isOn={isOn} onChange={switchToggle} />
@@ -786,23 +779,32 @@ const TransactionViewer: FC<{
             </ul>
           </div>}
         </div>
-        <footer className='flex p-4 bg-gray-100 space-x-2'>
-          <SignTxButton
-            transaction={transaction}
-            requiredKeyHashHexes={Array.from(signerRegistry)}
-            onSuccess={addSignatures}
-            className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
-            <PencilIcon className='w-4' />
-            <span>Sign</span>
-          </SignTxButton>
-          <CopyVkeysButton
-            cardano={cardano}
-            vkeys={Array.from(signatureMap.values())}
-            className='flex items-center space-x-1 p-2 disabled:border rounded text-sky-700 border disabled:bg-gray-100 disabled:text-gray-400'>
-            <ShareIcon className='w-4' />
-            <span>Copy Signatures</span>
-          </CopyVkeysButton>
-          <div className='flex grow justify-end items-center space-x-4'>
+        <footer className='flex p-4 bg-gray-100 justify-between items-center space-x-2'>
+          <div className='flex items-center space-x-1'>
+            <SignatureSync
+              signers={signerRegistry}
+              signatures={signatureMap}
+              addSignatures={addSignatures}
+              cardano={cardano}
+              txHash={txHash} />
+            <div className='text-sm'>Auto sync signatures (experimental)</div>
+          </div>
+          <div className='flex space-x-2'>
+            <SignTxButton
+              transaction={transaction}
+              requiredKeyHashHexes={Array.from(signerRegistry)}
+              onSuccess={addSignatures}
+              className='flex items-center space-x-1 p-2 disabled:border rounded bg-sky-700 text-white disabled:bg-gray-100 disabled:text-gray-400'>
+              <PencilIcon className='w-4' />
+              <span>Sign</span>
+            </SignTxButton>
+            <CopyVkeysButton
+              cardano={cardano}
+              vkeys={Array.from(signatureMap.values())}
+              className='flex items-center space-x-1 p-2 disabled:border rounded text-sky-700 border disabled:bg-gray-100 disabled:text-gray-400'>
+              <ShareIcon className='w-4' />
+              <span>Copy Signatures</span>
+            </CopyVkeysButton>
             <SubmitTxButton
               className='flex p-2 items-center space-x-1 bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
               transaction={signedTransaction}>
