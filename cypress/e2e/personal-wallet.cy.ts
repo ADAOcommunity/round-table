@@ -179,7 +179,7 @@ describe('Personal wallet', () => {
 
     cy.get('footer').contains('Sign').click()
     cy.get('#modal-root').contains(walletName).click()
-    cy.get('#modal-root').get('input').type(password).should('have.value', password)
+    cy.get('#modal-root').get('input[type="password"]').type(password).should('have.value', password)
     cy.get('#modal-root').contains('Sign').click()
 
     cy.contains('c85f2df38f748af3b22c2e2afc551c38e849dde06abc9e28e9afd467')
@@ -198,7 +198,7 @@ describe('Personal wallet', () => {
 
     cy.get('footer').contains('Sign').click()
     cy.get('#modal-root').contains(walletName).click()
-    cy.get('#modal-root').get('input').type(password).should('have.value', password)
+    cy.get('#modal-root').get('input[type="password"]').type(password).should('have.value', password)
     cy.get('#modal-root').contains('Sign').click()
 
     cy.contains('5d48b9f84cdcd9b8ed6b0a39e23946ecd3d5ee1b0c5d403215579661')
