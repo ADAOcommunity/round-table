@@ -455,11 +455,11 @@ const SignatureSync: FC<{
   const [config, _] = useContext(ConfigContext)
   const [isOn, setIsOn] = useState(false)
   const switchToggle = useCallback(() => setIsOn(!isOn), [isOn])
-  const peers = config.gunPeers
-  const network = config.network
 
   useEffect(() => {
     if (isOn) {
+      const peers = config.gunPeers
+      const network = config.network
       const gun = new Gun({ peers })
       const nodes = Array.from(signers).map((keyHashHex) => {
         const vkeywitness = signatures.get(keyHashHex)
@@ -487,7 +487,7 @@ const SignatureSync: FC<{
         nodes.forEach((node) => node.off())
       }
     }
-  }, [isOn])
+  }, [isOn, addSignatures, cardano, config, signatures, signers, txHash])
 
   return (
     <Toggle isOn={isOn} onChange={switchToggle} />
