@@ -458,33 +458,38 @@ const SignatureSync: FC<{
 
   useEffect(() => {
     if (isOn) {
-      const peers = config.gunPeers
-      const network = config.network
-      const gun = new Gun({ peers })
-      const nodes = Array.from(signers).map((keyHashHex) => {
-        const vkeywitness = signatures.get(keyHashHex)
-        const node = gun
-          .get('cardano')
-          .get(network)
-          .get('transactions')
-          .get(toHex(txHash))
-          .get(keyHashHex)
+      try {
+        const peers = config.gunPeers
+        const network = config.network
+        const gun = new Gun({ peers })
+        const nodes = Array.from(signers).map((keyHashHex) => {
+          const vkeywitness = signatures.get(keyHashHex)
+          const node = gun
+            .get('cardano')
+            .get(network)
+            .get('transactions')
+            .get(toHex(txHash))
+            .get(keyHashHex)
 
-        if (vkeywitness) {
-          const hex = cardano.buildSignatureSetHex([vkeywitness])
-          node.put(hex)
-          node.on((data) => {
-            if (data !== hex) node.put(hex)
-          })
-        } else {
-          node.on(addSignatures)
+          if (vkeywitness) {
+            const hex = cardano.buildSignatureSetHex([vkeywitness])
+            node.put(hex)
+            node.on((data) => {
+              if (data !== hex) node.put(hex)
+            })
+          } else {
+            node.on(addSignatures)
+          }
+
+          return node
+        })
+
+        return () => {
+          nodes.forEach((node) => node.off())
         }
-
-        return node
-      })
-
-      return () => {
-        nodes.forEach((node) => node.off())
+      } catch (error) {
+        setIsOn(false)
+        console.error(error)
       }
     }
   }, [isOn, addSignatures, cardano, config, signatures, signers, txHash])
