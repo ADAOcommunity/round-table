@@ -421,7 +421,7 @@ const EditPolicy: FC<{
     <div className={className}>
       <nav className='flex space-x-2 text-sm'>
         {policies && policies.length > 0 && <div className='flex border rounded divide-x items-center ring-sky-500 focus-within:ring-1'>
-          <select className='bg-white text-sky-700 px-2 py-1' onChange={setPolicyType}>
+          <select className='bg-white text-sky-700 px-2 py-1' value={policy.type} onChange={setPolicyType}>
             <option value="All">All</option>
             <option value="Any">Any</option>
             <option value="NofK">At least</option>
