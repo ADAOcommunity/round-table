@@ -404,14 +404,14 @@ const EditPolicy: FC<{
   )
 
   if (policy.type === 'TimelockStart') return (
-    <div className='flex items-center space-x-1'>
+    <div className='flex items-start space-x-1'>
       <StartBadge />
       <EditTimelockStart slot={policy.slot} />
     </div>
   )
 
   if (policy.type === 'TimelockExpiry') return (
-    <div className='flex items-center space-x-1'>
+    <div className='flex items-start space-x-1'>
       <ExpiryBadge />
       <EditTimelockExpiry slot={policy.slot} />
     </div>
