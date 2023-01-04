@@ -5,11 +5,14 @@ import { toIter } from '../cardano/multiplatform-lib'
 import type { Cardano } from '../cardano/multiplatform-lib'
 import { NoSymbolIcon, ClipboardDocumentCheckIcon, ClipboardDocumentIcon, LockClosedIcon, LockOpenIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/solid'
 import { CopyButton } from './layout'
-import { estimateDateBySlot, estimateSlotByDate } from '../cardano/utils'
+import { estimateDateBySlot } from '../cardano/utils'
 import { ConfigContext } from '../cardano/config'
-import { useLiveDate } from './time'
 
-type VerifyingData = Map<string, Vkeywitness>
+type VerifyingData = {
+  signatures?: Map<string, Vkeywitness>,
+  txStartSlot?: number,
+  txExpirySlot?: number
+}
 
 const Badge: FC<{
   className?: string
@@ -50,19 +53,11 @@ const StartBadge: FC = () => {
   )
 }
 
-const Timelock: FC<{
+const TimelockViewer: FC<{
   slot: number
-  type: 'TimelockStart' | 'TimelockExpiry'
-}> = ({ slot, type }) => {
+  isValid: boolean
+}> = ({ slot, isValid }) => {
   const [config, _] = useContext(ConfigContext)
-  const now = useLiveDate()
-  const currentSlot = useMemo(() => estimateSlotByDate(now, config.network), [now, config.network])
-  const isValid: boolean = useMemo(() => {
-    switch (type) {
-      case 'TimelockStart': return currentSlot >= slot
-      case 'TimelockExpiry': return currentSlot < slot
-    }
-  }, [slot, currentSlot, type])
   return (
     <div className={['flex', 'space-x-1', 'items-center', isValid ? 'text-green-500' : 'text-red-500'].join(' ')}>
       <span>{slot}</span>
@@ -70,6 +65,32 @@ const Timelock: FC<{
       {!isValid && <NoSymbolIcon className='w-4' />}
       {isValid && <ShieldCheckIcon className='w-4' />}
     </div>
+  )
+}
+
+const TimelockStartViewer: FC<{
+  slot: number
+  txStartSlot?: number
+}> = ({ slot, txStartSlot }) => {
+  const isValid = useMemo(() => {
+    if (!txStartSlot) return false
+    return txStartSlot >= slot
+  }, [slot, txStartSlot])
+  return (
+    <TimelockViewer slot={slot} isValid={isValid} />
+  )
+}
+
+const TimelockExpiryViewer: FC<{
+  slot: number
+  txExpirySlot?: number
+}> = ({ slot, txExpirySlot }) => {
+  const isValid = useMemo(() => {
+    if (!txExpirySlot) return false
+    return txExpirySlot <= slot
+  }, [slot, txExpirySlot])
+  return (
+    <TimelockViewer slot={slot} isValid={isValid} />
   )
 }
 
@@ -107,7 +128,7 @@ const NativeScriptViewer: FC<{
   script = nativeScript.as_script_pubkey()
   if (script) {
     const keyHashHex = script.addr_keyhash().to_hex()
-    const signature = verifyingData?.get(keyHashHex)
+    const signature = verifyingData?.signatures?.get(keyHashHex)
     const signatureHex = cardano?.buildSignatureSetHex(signature)
     return (
       <SignatureViewer name={keyHashHex} signature={signatureHex} className='flex space-x-1 items-center' signedClassName='text-green-500' />
@@ -120,7 +141,7 @@ const NativeScriptViewer: FC<{
     return (
       <div className='flex items-center space-x-1'>
         <ExpiryBadge />
-        <Timelock type='TimelockExpiry' slot={slot} />
+        <TimelockExpiryViewer slot={slot} txExpirySlot={verifyingData?.txExpirySlot} />
       </div>
     )
   }
@@ -131,7 +152,7 @@ const NativeScriptViewer: FC<{
     return (
       <div className='flex items-center space-x-1'>
         <StartBadge />
-        <Timelock type='TimelockStart' slot={slot} />
+        <TimelockStartViewer slot={slot} txStartSlot={verifyingData?.txStartSlot} />
       </div>
     )
   }
@@ -203,4 +224,4 @@ const NativeScriptViewer: FC<{
 }
 
 export type { VerifyingData }
-export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer, Timelock, SignatureViewer }
+export { SignatureBadge, ExpiryBadge, StartBadge, NativeScriptViewer, TimelockStartViewer, TimelockExpiryViewer, SignatureViewer }

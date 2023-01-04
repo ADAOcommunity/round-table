@@ -16,9 +16,11 @@ import { EditMultisigWallet, RemoveWallet, Summary } from '../../components/wall
 import { NewTransaction } from '../../components/transaction'
 import { NotificationContext } from '../../components/notification'
 import { NativeScriptViewer } from '../../components/native-script'
+import type { VerifyingData } from '../../components/native-script'
 import { DownloadButton } from '../../components/user-data'
 import type { NativeScript, SingleInputBuilder, SingleCertificateBuilder, SingleWithdrawalBuilder } from '@dcspark/cardano-multiplatform-lib-browser'
 import { AddressableContent } from '../../components/address'
+import { useLiveSlot } from '../../components/time'
 
 const Spend: FC<{
   address: string
@@ -79,7 +81,8 @@ const NativeScriptPanel: FC<{
   nativeScript: NativeScript
   filename: string
   title: string
-}> = ({ cardano, nativeScript, filename, title }) => {
+  verifyingData: VerifyingData
+}> = ({ cardano, nativeScript, filename, title, verifyingData }) => {
   return (
     <Panel>
       <div className='p-4 space-y-2'>
@@ -89,6 +92,7 @@ const NativeScriptPanel: FC<{
           className='p-2 border rounded space-y-2 text-sm'
           headerClassName='font-semibold'
           ulClassName='space-y-1'
+          verifyingData={verifyingData}
           nativeScript={nativeScript} />
       </div>
       <footer className='flex justify-end p-4 bg-gray-100'>
@@ -109,20 +113,27 @@ const ShowNativeScript: FC<{
   cardano: Cardano
   policy: Policy
 }> = ({ cardano, policy }) => {
-  if (typeof policy === 'string') throw new Error('No NativeScript for policy in single address')
+  const currentSlot = useLiveSlot()
+  const verifyingData: VerifyingData = useMemo(() => ({
+    txExpirySlot: currentSlot,
+    txStartSlot: currentSlot
+  }), [currentSlot])
   const payment = useMemo(() => cardano.getPaymentNativeScriptFromPolicy(policy), [cardano, policy])
   const staking = useMemo(() => cardano.getStakingNativeScriptFromPolicy(policy), [cardano, policy])
+  if (typeof policy === 'string') throw new Error('No NativeScript for policy in single address')
 
   return (
     <>
       <NativeScriptPanel
         cardano={cardano}
         nativeScript={payment}
+        verifyingData={verifyingData}
         filename='payment.cbor'
         title='Payment Native Script' />
       <NativeScriptPanel
         cardano={cardano}
         nativeScript={staking}
+        verifyingData={verifyingData}
         filename='staking.cbor'
         title='Staking Native Script' />
     </>

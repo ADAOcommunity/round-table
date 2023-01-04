@@ -16,11 +16,12 @@ import Image from 'next/image'
 import Gun from 'gun'
 import { getTransactionPath } from '../route'
 import { Loading, SpinnerIcon } from './status'
-import { NativeScriptViewer, SignatureViewer, Timelock } from './native-script'
+import { NativeScriptViewer, SignatureViewer, TimelockExpiryViewer, TimelockStartViewer } from './native-script'
+import type { VerifyingData } from './native-script'
 import type { StakePool, TransactionOutput, ProtocolParams } from '@cardano-graphql/client-ts/api'
 import init, { select } from 'cardano-utxo-wasm'
 import type { Output } from 'cardano-utxo-wasm'
-import { SlotInput } from './wallet'
+import { EditTimelockExpiry, EditTimelockStart, SlotInput } from './wallet'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db'
 import type { PersonalWallet } from '../db'
@@ -576,6 +577,33 @@ const getRecipientsFromCMLTransactionOutputs = (outputs: TransactionOutputs): Re
   }
 })
 
+const TransactionLifetime: FC<{
+  startSlot?: number
+  expirySlot?: number
+}> = ({ startSlot, expirySlot }) => {
+  const currentSlot = useLiveSlot()
+
+  if (!startSlot && !expirySlot) return null
+
+  return (
+    <div className='space-y-1'>
+      <h2 className='font-semibold'>Lifetime</h2>
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
+        <div className='border rounded p-2 text-sm'>
+          {startSlot && <div className='flex items-center justify-between space-x-1'>
+            <span>Start slot:</span>
+            <TimelockStartViewer slot={startSlot} txStartSlot={currentSlot} />
+          </div>}
+          {expirySlot && <div className='flex items-center justify-between space-x-1'>
+            <span>Expiry slot:</span>
+            <TimelockExpiryViewer slot={expirySlot} txExpirySlot={currentSlot} />
+          </div>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const TransactionViewer: FC<{
   cardano: Cardano
   transaction: Transaction
@@ -670,6 +698,11 @@ const TransactionViewer: FC<{
     const slot = txBody.ttl()?.to_str()
     if (slot) return parseInt(slot)
   }, [txBody])
+  const verifyingData: VerifyingData = useMemo(() => ({
+    signatures: signatureMap,
+    txStartSlot: startSlot,
+    txExpirySlot: expirySlot
+  }), [signatureMap, startSlot, expirySlot])
 
   return (
     <div className='space-y-2'>
@@ -692,21 +725,7 @@ const TransactionViewer: FC<{
               <AddressableContent content={txHash.to_hex()} scanType='transaction' />
             </div>
           </div>
-          {(startSlot || expirySlot) && <div className='space-y-1'>
-            <h2 className='font-semibold'>Lifetime</h2>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
-              <div className='border rounded p-2 text-sm'>
-                {startSlot && <div className='flex items-center justify-between space-x-1'>
-                  <span>Start slot:</span>
-                  <Timelock slot={startSlot} type='TimelockStart' />
-                </div>}
-                {expirySlot && <div className='flex items-center justify-between space-x-1'>
-                  <span>Expiry slot:</span>
-                  <Timelock slot={expirySlot} type='TimelockExpiry' />
-                </div>}
-              </div>
-            </div>
-          </div>}
+          <TransactionLifetime startSlot={startSlot} expirySlot={expirySlot} />
           <div className='grid grid-cols-1 md:grid-cols-2 gap-2'>
             <div className='space-y-1'>
               <div className='font-semibold'>Inputs</div>
@@ -775,7 +794,7 @@ const TransactionViewer: FC<{
               {nativeScripts.map((script, index) => <li key={index}>
                 <NativeScriptViewer
                   cardano={cardano}
-                  verifyingData={signatureMap}
+                  verifyingData={verifyingData}
                   className='p-2 border rounded space-y-2'
                   headerClassName='font-semibold'
                   ulClassName='space-y-1'
@@ -1257,7 +1276,7 @@ const NewTransaction: FC<{
         <div className='p-4 space-y-2'>
           <div className='flex items-center space-x-2'>
             <span>Start slot:</span>
-            {startSlot ? <Timelock slot={startSlot} type='TimelockStart' /> : <span>N/A</span>}
+            {startSlot ? <EditTimelockStart slot={startSlot} /> : <span>N/A</span>}
             <nav className='divide-x items-center border rounded text-xs text-sky-700'>
               <button onClick={() => setModal('start')} className='px-2 py-1'>Change</button>
               <button onClick={() => setStartSlot(undefined)} className='px-2 py-1'>Remove</button>
@@ -1269,7 +1288,7 @@ const NewTransaction: FC<{
           </div>
           <div className='flex items-center space-x-2'>
             <span>Expire slot:</span>
-            {expirySlot ? <Timelock slot={expirySlot} type='TimelockExpiry' /> : <span>N/A</span>}
+            {expirySlot ? <EditTimelockExpiry slot={expirySlot} /> : <span>N/A</span>}
             <nav className='divide-x items-center border rounded text-xs text-sky-700'>
               <button onClick={() => setModal('expiry')} className='px-2 py-1'>Change</button>
               <button onClick={() => setExpirySlot(undefined)} className='px-2 py-1'>Remove</button>

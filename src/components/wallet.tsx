@@ -6,13 +6,13 @@ import type { Cardano } from '../cardano/multiplatform-lib'
 import { estimateDateBySlot, estimateSlotByDate, formatDerivationPath } from '../cardano/utils'
 import { Panel, Modal, TextareaModalBox } from '../components/layout'
 import { ChevronLeftIcon, ChevronRightIcon, ExclamationCircleIcon, PencilSquareIcon, PlusIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
-import { Calendar, useLiveDate } from '../components/time'
+import { Calendar, useLiveDate, useLiveSlot } from '../components/time'
 import { useRouter } from 'next/router'
 import { NotificationContext } from '../components/notification'
 import { db } from '../db'
 import type { MultisigWalletParams, Policy, PersonalWallet } from '../db'
 import { getMultisigWalletPath } from '../route'
-import { ExpiryBadge, SignatureBadge, StartBadge, Timelock } from './native-script'
+import { ExpiryBadge, SignatureBadge, StartBadge, TimelockExpiryViewer, TimelockStartViewer } from './native-script'
 import { getAssetName, getAvailableReward, getBalanceByPaymentAddresses, getCurrentDelegation, getPolicyId, useSummaryQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount, AssetAmount } from './currency'
@@ -336,6 +336,26 @@ const parsePolicyType = (type: string): 'All' | 'Any' | 'NofK' => {
   }
 }
 
+const EditTimelockStart: FC<{
+  slot: number
+}> = ({ slot }) => {
+  const currentSlot = useLiveSlot()
+
+  return (
+    <TimelockStartViewer slot={slot} txStartSlot={currentSlot} />
+  )
+}
+
+const EditTimelockExpiry: FC<{
+  slot: number
+}> = ({ slot }) => {
+  const currentSlot = useLiveSlot()
+
+  return (
+    <TimelockExpiryViewer slot={slot} txExpirySlot={currentSlot} />
+  )
+}
+
 const EditPolicy: FC<{
   cardano: Cardano
   className?: string
@@ -386,14 +406,18 @@ const EditPolicy: FC<{
   if (policy.type === 'TimelockStart') return (
     <div className='flex items-start space-x-1'>
       <StartBadge />
-      <div className='p-1 break-all'><Timelock type={policy.type} slot={policy.slot} /></div>
+      <div className='p-1 break-all'>
+        <EditTimelockStart slot={policy.slot} />
+      </div>
     </div>
   )
 
   if (policy.type === 'TimelockExpiry') return (
     <div className='flex items-start space-x-1'>
       <ExpiryBadge />
-      <div className='p-1 break-all'><Timelock type={policy.type} slot={policy.slot} /></div>
+      <div className='p-1 break-all'>
+        <EditTimelockExpiry slot={policy.slot} />
+      </div>
     </div>
   )
 
@@ -401,7 +425,7 @@ const EditPolicy: FC<{
     <div className={className}>
       <nav className='flex space-x-2 text-sm'>
         {policies && policies.length > 0 && <div className='flex border rounded divide-x items-center ring-sky-500 focus-within:ring-1'>
-          <select className='bg-white text-sky-700 px-2 py-1' onChange={setPolicyType}>
+          <select className='bg-white text-sky-700 px-2 py-1' value={policy.type} onChange={setPolicyType}>
             <option value="All">All</option>
             <option value="Any">Any</option>
             <option value="NofK">At least</option>
@@ -644,4 +668,4 @@ const Summary: FC<{
   )
 }
 
-export { EditMultisigWallet, SlotInput, RemoveWallet, Summary, DerivationPath }
+export { EditMultisigWallet, EditTimelockStart, EditTimelockExpiry, SlotInput, RemoveWallet, Summary, DerivationPath }
