@@ -134,12 +134,6 @@ const PrimaryBar: FC = () => {
           <FolderOpenIcon className='w-12' />
         </OpenURL>
       </div>
-      <NavLink
-        href='/config'
-        onPageClassName='bg-sky-700'
-        className='p-4 hover:bg-sky-700'>
-        <CogIcon className='w-12' />
-      </NavLink>
       <div>
         <ConfigModalButton className='p-4 hover:bg-sky-700'>
           <CogIcon className='w-12' />
