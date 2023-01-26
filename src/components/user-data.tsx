@@ -149,14 +149,14 @@ const ImportUserData: FC = () => {
   }, [userDataJSON, notify, config.network])
 
   return (
-    <div className='rounded border border-sky-700 overflow-hidden'>
+    <div className='flex rounded border border-sky-700 overflow-hidden items-center'>
       <input
         type='file'
         onChange={change} />
       <button
         className='p-2 bg-sky-700 text-white disabled:text-gray-400 disabled:bg-gray-100'
         onClick={click}>
-        Import User Data
+        Import
       </button>
     </div>
   )

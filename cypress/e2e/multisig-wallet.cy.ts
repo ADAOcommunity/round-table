@@ -122,8 +122,13 @@ describe('Create a new wallet', () => {
   })
 
   it('Should export user data', () => {
-    cy.visit('http://localhost:3000/config')
-    cy.contains('Export User Data')
+    cy.get('#config > button')
+      .click()
+    cy.get('#modal-root')
+      .contains('Data')
+      .click()
+    cy.get('#modal-root')
+      .contains('Export User Data')
       .click()
   })
 
@@ -148,20 +153,24 @@ describe('Create a new wallet', () => {
   })
 
   it('Should import user data', () => {
-    cy.visit('http://localhost:3000/config')
+    cy.get('#config > button')
+      .click()
+
+    cy.get('#modal-root')
+      .contains('Data')
+      .click()
+
     const downloadsFolder = Cypress.config('downloadsFolder')
     const downloadedFilename = downloadsFolder + '/roundtable-backup.preview.json'
 
     cy.get('input[type=file]')
       .selectFile(downloadedFilename)
 
-    cy.contains('Import User Data')
-      .should('be.enabled')
-
-    cy.wait(5000)
-
-    cy.contains('Import User Data')
+    cy.get('#modal-root button')
+      .contains('Import')
       .click()
+
+    cy.visit('http://localhost:3000')
 
     cy.contains(walletName + 'added')
       .click()

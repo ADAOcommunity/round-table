@@ -51,8 +51,7 @@ describe('Sign a base64 transaction created by others by opening URL in Base64',
 
   it('Should sign the transaction', () => {
     cy.visit('http://localhost:3000')
-    cy.get('#open-tx')
-      .get('button')
+    cy.get('#open-tx > button')
       .click()
     cy.get('#modal-root')
       .get('textarea[placeholder="Transaction URL/Hex or multisig wallet URL"]')

@@ -2,7 +2,7 @@ import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import { NotificationCenter, NotificationContext } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -17,6 +17,7 @@ import { ChainProgress } from './time'
 import { getMultisigWalletPath, getPersonalWalletPath } from '../route'
 import { SpinnerIcon } from './status'
 import { useCardanoMultiplatformLib } from '../cardano/multiplatform-lib'
+import { ExportUserDataButton, ImportUserData } from './user-data'
 
 const Toggle: FC<{
   isOn: boolean
@@ -133,12 +134,11 @@ const PrimaryBar: FC = () => {
           <FolderOpenIcon className='w-12' />
         </OpenURL>
       </div>
-      <NavLink
-        href='/config'
-        onPageClassName='bg-sky-700'
-        className='p-4 hover:bg-sky-700'>
-        <CogIcon className='w-12' />
-      </NavLink>
+      <div id='config'>
+        <ConfigModalButton className='p-4 hover:bg-sky-700'>
+          <CogIcon className='w-12' />
+        </ConfigModalButton>
+      </div>
       <a className='p-4 hover:bg-sky-700' target='_blank' rel='noreferrer' href='https://discord.gg/BGuhdBXQFU'>
         <div style={{ height: '48px' }}>
           <Image src='/Discord-Logo-White.svg' width={48} height={48} alt='Discord Server'></Image>
@@ -463,6 +463,78 @@ const OpenURL: FC<{
             <FolderOpenIcon className='w-4' />
             <span>Open</span>
           </TextareaModalBox>
+        </div>
+      </Modal>}
+    </>
+  )
+}
+
+const ConfigModalButton: FC<{
+  className?: string
+  children?: ReactNode
+}> = ({ className, children }) => {
+  const [config, setConfig] = useContext(ConfigContext)
+  const [modal, setModal] = useState(false)
+  const closeModal = useCallback(() => setModal(false), [])
+  const openModal = useCallback(() => setModal(true), [])
+  const switchAutoSync = useCallback(() => setConfig({ ...config , autoSync: !config.autoSync }), [config, setConfig])
+  const [subTab, setSubTab] = useState<'basic' | 'data' | 'sync'>('basic')
+  return (
+    <>
+      <button onClick={openModal} className={className}>{children}</button>
+      {modal && <Modal className='w-80' onBackgroundClick={closeModal}>
+        <div className='bg-white rounded overflow-hidden text-sm p-4 space-y-2'>
+          <div className='flex justify-between items-center'>
+            <div className='flex bg-sky-700 text-white divide-x border border-sky-700 rounded overflow-hidden'>
+              <button className='p-1 disabled:bg-white disabled:text-sky-700' onClick={() => setSubTab('basic')} disabled={subTab === 'basic'}>Basic</button>
+              <button className='p-1 disabled:bg-white disabled:text-sky-700' onClick={() => setSubTab('data')} disabled={subTab === 'data'}>Data</button>
+              <button className='p-1 disabled:bg-white disabled:text-sky-700' onClick={() => setSubTab('sync')} disabled={subTab === 'sync'}>Sync</button>
+            </div>
+            <button onClick={closeModal}><XMarkIcon className='w-6' /></button>
+          </div>
+          {subTab === 'basic' && <div className='space-y-2'>
+            <p>
+              <strong>Network</strong>
+              <div>{config.network}</div>
+            </p>
+            <p>
+              <strong>Query API ({config.queryAPI.type})</strong>
+              {config.queryAPI.type == 'graphql' && <div>
+                <span>{config.queryAPI.URI}</span>
+              </div>}
+            </p>
+            {config.submitAPI && <p>
+              <strong>Submit API</strong>
+              <ul>
+                {config.submitAPI.map((api, index) => <li key={index}>{api}</li>)}
+              </ul>
+            </p>}
+          </div>}
+          {subTab === 'data' && <div className='space-y-4'>
+            <div>
+              <strong>User Data Export/Import</strong>
+              <p>User data has to be on the same network. For example, data exported from testnet cannot be imported to mainnet.</p>
+            </div>
+            <div>
+              <ExportUserDataButton />
+            </div>
+            <div>
+              <strong>Import User Data</strong>
+              <ImportUserData />
+            </div>
+          </div>}
+          {subTab === 'sync' && <div className='space-y-2'>
+            <div>
+              <strong>GUN Peers</strong>
+              {config.gunPeers && <ul>
+                {config.gunPeers.map((peer, index) => <li key={index}>{peer}</li>)}
+              </ul>}
+            </div>
+            <div className='flex justify-between items-center'>
+              <div className='font-semibold'>Auto Sync Signature</div>
+              <Toggle isOn={config.autoSync} onChange={switchAutoSync} />
+            </div>
+          </div>}
         </div>
       </Modal>}
     </>

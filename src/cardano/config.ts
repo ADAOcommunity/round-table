@@ -24,6 +24,7 @@ type Config = {
   submitAPI: string[]
   SMASH: string
   gunPeers: string[]
+  autoSync: boolean
 }
 
 const isMainnet = (config: Config) => config.network === 'mainnet'
@@ -46,7 +47,8 @@ const defaultConfig: Config = {
   queryAPI: { type: 'graphql', URI: defaultGraphQLMainnet },
   submitAPI: defaultSubmitURIMainnet,
   SMASH: defaultSMASHMainnet,
-  gunPeers: []
+  gunPeers: [],
+  autoSync: true,
 }
 
 const createConfig = (): Config => {
@@ -65,7 +67,8 @@ const createConfig = (): Config => {
     queryAPI: { type: 'graphql', URI: grapQLURI },
     submitAPI: submitURI,
     SMASH,
-    gunPeers
+    gunPeers,
+    autoSync: true
   }
 }
 
