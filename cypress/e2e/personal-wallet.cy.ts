@@ -211,12 +211,21 @@ describe('Personal wallet', () => {
   })
 
   it('should be able to be backed up', () => {
-    cy.visit('http://localhost:3000/config')
-    cy.contains('Export User Data')
+    cy.get('#config > button')
+      .click()
+
+    cy.get('#modal-root')
+      .contains('Data')
+      .click()
+
+    cy.get('#modal-root')
+      .contains('Export User Data')
       .click()
   })
 
   it('should be able to get removed', () => {
+    cy.visit('http://localhost:3000')
+
     cy.contains(walletName).click()
 
     cy.wait(waitTime)
@@ -230,7 +239,13 @@ describe('Personal wallet', () => {
   })
 
   it('should be able to be restored', () => {
-    cy.visit('http://localhost:3000/config')
+    cy.get('#config > button')
+      .click()
+
+    cy.get('#modal-root')
+      .contains('Data')
+      .click()
+
     const downloadsFolder = Cypress.config('downloadsFolder')
     const downloadedFilename = downloadsFolder + '/roundtable-backup.preview.json'
 
@@ -239,9 +254,11 @@ describe('Personal wallet', () => {
 
     cy.wait(1000)
 
-    cy.contains('Import User Data')
-      .should('be.enabled')
+    cy.get('#modal-root button')
+      .contains('Import')
       .click()
+
+    cy.visit('http://localhost:3000')
 
     cy.contains(walletName).click()
 

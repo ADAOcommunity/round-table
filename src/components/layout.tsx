@@ -134,7 +134,7 @@ const PrimaryBar: FC = () => {
           <FolderOpenIcon className='w-12' />
         </OpenURL>
       </div>
-      <div>
+      <div id='config'>
         <ConfigModalButton className='p-4 hover:bg-sky-700'>
           <CogIcon className='w-12' />
         </ConfigModalButton>
