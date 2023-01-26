@@ -9,7 +9,7 @@ import type { Certificate, Transaction, TransactionHash, TransactionInput, Vkeyw
 import { ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon, WalletIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import { ConfigContext, isMainnet } from '../cardano/config'
-import { CopyButton, Hero, Panel, ShareCurrentURLButton, Toggle, Modal, TextareaModalBox } from './layout'
+import { CopyButton, Hero, Panel, ShareCurrentURLButton, Modal, TextareaModalBox } from './layout'
 import { PasswordBox } from './password'
 import { NotificationContext } from './notification'
 import Image from 'next/image'
