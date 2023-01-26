@@ -446,58 +446,48 @@ const WalletInfo: FC<{
   )
 }
 
-const SignatureSync: FC<{
-  cardano: Cardano
-  txHash: TransactionHash
-  signatures: Map<string, Vkeywitness>
-  addSignatures: (witnessSetHex: string) => void
+const useAutoSync = (
+  cardano: Cardano,
+  txHash: TransactionHash,
+  signatures: Map<string, Vkeywitness>,
+  addSignatures: (witnessSetHex: string) => void,
   signers: Set<string>
-}> = ({ cardano, txHash, signatures, signers, addSignatures }) => {
+) => {
   const [config, _] = useContext(ConfigContext)
-  const [isOn, setIsOn] = useState(false)
-  const switchToggle = useCallback(() => setIsOn(!isOn), [isOn])
+
+  const gun = useMemo(() => {
+    if (config.autoSync) return new Gun({ peers: config.gunPeers })
+  }, [config.autoSync, config.gunPeers])
 
   useEffect(() => {
-    if (isOn) {
-      try {
-        const peers = config.gunPeers
-        const network = config.network
-        const gun = new Gun({ peers })
-        const nodes = Array.from(signers).map((keyHashHex) => {
-          const vkeywitness = signatures.get(keyHashHex)
-          const node = gun
-            .get('cardano')
-            .get(network)
-            .get('transactions')
-            .get(toHex(txHash))
-            .get(keyHashHex)
+    if (!gun) return
 
-          if (vkeywitness) {
-            const hex = cardano.buildSignatureSetHex([vkeywitness])
-            node.put(hex)
-            node.on((data) => {
-              if (data !== hex) node.put(hex)
-            })
-          } else {
-            node.on(addSignatures)
-          }
+    const nodes = Array.from(signers, (keyHashHex) => {
+      const vkeywitness = signatures.get(keyHashHex)
+      const node = gun
+        .get('cardano')
+        .get(config.network)
+        .get('transactions')
+        .get(toHex(txHash))
+        .get(keyHashHex)
 
-          return node
+      if (vkeywitness) {
+        const hex = cardano.buildSignatureSetHex([vkeywitness])
+        node.put(hex)
+        node.on((data) => {
+          if (data !== hex) node.put(hex)
         })
-
-        return () => {
-          nodes.forEach((node) => node.off())
-        }
-      } catch (error) {
-        setIsOn(false)
-        console.error(error)
+      } else {
+        node.on(addSignatures)
       }
-    }
-  }, [isOn, addSignatures, cardano, config, signatures, signers, txHash])
 
-  return (
-    <Toggle isOn={isOn} onChange={switchToggle} />
-  )
+      return node
+    })
+
+    return () => {
+      nodes.forEach((node) => node.off())
+    }
+  }, [gun, addSignatures, cardano, config.network, signatures, signers, txHash])
 }
 
 const CopyVkeysButton: FC<{
@@ -703,6 +693,7 @@ const TransactionViewer: FC<{
     txStartSlot: startSlot,
     txExpirySlot: expirySlot
   }), [signatureMap, startSlot, expirySlot])
+  useAutoSync(cardano, txHash, signatureMap, addSignatures, signerRegistry)
 
   return (
     <div className='space-y-2'>
@@ -804,15 +795,6 @@ const TransactionViewer: FC<{
           </div>}
         </div>
         <footer className='flex p-4 bg-gray-100 justify-between items-center space-x-2'>
-          <div className='flex items-center space-x-1'>
-            <SignatureSync
-              signers={signerRegistry}
-              signatures={signatureMap}
-              addSignatures={addSignatures}
-              cardano={cardano}
-              txHash={txHash} />
-            <div className='text-sm'>Auto sync signatures (experimental)</div>
-          </div>
           <div className='flex space-x-2'>
             <SignTxButton
               transaction={transaction}
@@ -829,6 +811,8 @@ const TransactionViewer: FC<{
               <ShareIcon className='w-4' />
               <span>Copy Signatures</span>
             </CopyVkeysButton>
+          </div>
+          <div className='flex space-x-2'>
             <SubmitTxButton
               className='flex p-2 items-center space-x-1 bg-sky-700 text-white rounded disabled:border disabled:bg-gray-100 disabled:text-gray-400'
               transaction={signedTransaction}>
@@ -1521,4 +1505,4 @@ const StakePoolInfo: FC<{
   )
 }
 
-export { CIP30SignTxButton, SubmitTxButton, SignatureSync, CopyVkeysButton, WalletInfo, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
+export { CIP30SignTxButton, SubmitTxButton, CopyVkeysButton, WalletInfo, TransactionViewer, NewTransaction, StakePoolInfo, TransactionLoader }
