@@ -4,7 +4,7 @@ RUN apk add --no-cache libc6-compat
 
 USER node
 WORKDIR /app
-COPY --chown=node package.json yarn.lock ./
+COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
 FROM node:18-alpine as builder
@@ -17,10 +17,10 @@ FROM node:18-alpine as runner
 ENV NODE_ENV production
 WORKDIR /app
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+COPY --chown=node --from=builder /app/public ./public
+COPY --chown=node --from=builder /app/.next ./.next
+COPY --chown=node --from=builder /app/node_modules ./node_modules
+COPY --chown=node --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
 
