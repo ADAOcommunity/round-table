@@ -35,9 +35,7 @@ ingress:
   }
   path: "/"
   hosts: []
-  tls:
-    - secretName:
-      hosts: []
+  tls: []
 
 labels:
   service: round-table
