@@ -14,7 +14,7 @@ env: {
 
 certificate:
   secretName:
-  hosts: {}
+  hosts: []
 
 image:
   repository:
@@ -34,10 +34,10 @@ ingress:
     traefik.ingress.kubernetes.io/router.middlewares: "traefik-redirect-http-to-https@kubernetescrd,traefik-default-headers@kubernetescrd"
   }
   path: "/"
-  hosts: {}
+  hosts: []
   tls:
     - secretName:
-      hosts: {}
+      hosts: []
 
 labels:
   service: round-table
