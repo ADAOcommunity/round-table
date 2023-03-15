@@ -1,0 +1,57 @@
+include: 'https://gitlab.lidonation.com/infra-ops/autodevop/raw/main/gitlab-ci-20230315.yml'
+
+image: registry.lidonation.com/infra-ops/gitlab-runner:main
+
+variables:
+  KUBERNETES_VERSION: 1.24.9
+  HELM_VERSION: 3.10.2
+
+build_image:
+  stage: build_image
+  image: docker:stable-git
+  retry: 2
+  script:
+    - setup_docker
+    - build
+  only:
+    - branches
+
+
+# Keys that start with a dot (.) will not be processed by GitLab CI.
+# Staging and canary jobs are disabled by default, to enable them
+# remove the dot (.) before the job name.
+# https://docs.gitlab.com/ee/ci/yaml/README.html#hidden-keys
+
+# Staging deploys are disabled by default since
+# continuous deployment to production is enabled by default
+# If you prefer to automatically deploy to staging and
+# only manually promote to production, enable this job by setting
+# STAGING_ENABLED.
+
+.production: &production_template
+  stage: production
+  image: alpine:latest
+  retry: 1
+  script:
+    - check_kube_domain
+    - install_dependencies
+    - kubectl config use-context $KUBE_CONTEXT voltaire/www.1694.io:voltaire
+    - download_chart
+    - create_secret
+    - deploy
+    - persist_environment_url
+  environment:
+    name: production
+    url: https://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
+  artifacts:
+    paths: [environment_url.txt]
+
+production:
+  <<: *production_template
+  only:
+    refs:
+      - main
+  except:
+    variables:
+      - $STAGING_ENABLED
+      - $INCREMENTAL_ROLLOUT_ENABLED
