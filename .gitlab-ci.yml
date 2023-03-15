@@ -40,6 +40,42 @@ build_image:
     - create_secret
     - deploy
     - persist_environment_url
+    - |
+      helm install --dry-run --debug "$name" ./chart \          
+        --set db.secret.MYSQL_DATABASE="$MYSQL_DATABASE" \
+        --set db.secret.MYSQL_PASSWORD="$MYSQL_PASSWORD" \
+        --set db.secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+        --set db.secret.MYSQL_USER="$MYSQL_USER" \
+        --set deploymentEnvironment="$CI_ENVIRONMENT_NAME" \
+        --set service.enabled="$service_enabled" \
+        --set releaseOverride="$CI_ENVIRONMENT_SLUG" \
+        --set image.repository="$IMAGE_REPOSITORY" \
+        --set image.repository="$IMAGE_PULL_SECRET" \
+        --set image.repository="$CI_APPLICATION_REPOSITORY" \
+        --set image.tag="$CI_APPLICATION_TAG" \
+        --set image.pullPolicy=IfNotPresent \
+        --set image.secrets[0].name="$secret_name" \
+        --set image.pullSecret="$secret_name" \
+        --set application.track="$track" \
+        --set service.url="$CI_ENVIRONMENT_URL" \
+        --set replicaCount="$replicas" \
+        --set site.setup="$setup_site" \
+        --set site.adminPassword="$site_admin_password" \
+        --set env.APP_ENV="$APP_ENV" \
+        --set env.APP_URL="$APP_URL" \
+        --set env.NEXT_PUBLIC_NETWORK="$NEXT_PUBLIC_NETWORK" \
+        --set env.NEXT_PUBLIC_GRAPHQL="$NEXT_PUBLIC_GRAPHQL" \
+        --set env.NEXT_PUBLIC_SUBMIT="$NEXT_PUBLIC_SUBMIT" \
+        --set env.NEXT_PUBLIC_GUN="$NEXT_PUBLIC_GUN" \
+        --set certificate.secretName="$SSL_CERT_SECRET_NAME" \
+        --set certificate.hosts[0]="$SSL_CERT_HOST" \
+        --set ingress.hosts[0]="$INGRESS_HOST" \
+        --set ingress.tls[0].secretName="$SSL_CERT_SECRET_NAME" \
+        --set ingress.tls[0].hosts[0]="$INGRESS_HOST" \
+        --set ingress.tls[0].hosts[1]="$INGRESS_HOST_2" \
+        --set namespace=${KUBE_NAMESPACE} \
+        --namespace="$KUBE_NAMESPACE" \
+        --version="$CI_PIPELINE_ID-$CI_JOB_ID"
   environment:
     name: production
     url: https://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
