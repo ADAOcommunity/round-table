@@ -41,6 +41,8 @@ build_image:
     - create_secret
     - deploy
     - persist_environment_url
+    - |
+      echo "NEXT_PUBLIC_NETWORK: $NEXT_PUBLIC_NETWORK"
   environment:
     name: production
     url: https://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
