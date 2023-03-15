@@ -26,4 +26,9 @@ EXPOSE 3000
 
 ENV PORT 3000
 
+ENV NEXT_PUBLIC_NETWORK 'mainnet'
+ENV NEXT_PUBLIC_GRAPHQL 'https://graphql.lidonation.com'
+ENV NEXT_PUBLIC_SUBMIT 'https://tx.lidonation.com;https://adao.panl.org;https://submit-api.apexpool.info/api/submit/tx'
+ENV NEXT_PUBLIC_GUN ''
+
 CMD ["yarn", "start"]
