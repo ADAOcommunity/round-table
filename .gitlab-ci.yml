@@ -35,14 +35,11 @@ build_image:
   script:
     - check_kube_domain
     - install_dependencies
-    - kubectl config get-contexts
     - kubectl config use-context $KUBE_CONTEXT
     - download_chart
     - create_secret
     - deploy
     - persist_environment_url
-    - |
-      echo NEXT_PUBLIC_NETWORK: ${NEXT_PUBLIC_NETWORK}
   environment:
     name: production
     url: https://$CI_PROJECT_PATH_SLUG.$AUTO_DEVOPS_DOMAIN
