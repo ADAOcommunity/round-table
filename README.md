@@ -41,6 +41,35 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 * To run Unit Tests, use `yarn test` command.
 * To run UI/UX Tests, use `yarn cypress` command. Make sure your dev server `http://localhost:3000/` is on. Or use `yarn cypress:headless` to run it in headless mode.
 
+## Running with docker-compose
+1. Make sure you have docker and docker-compose installed on your system
+2. Create secrets 
+    ```bash
+    mkdir -p ./.secrets &&\
+    echo cexplorer > ./.secrets/postgres_db &&\
+    echo postgres > ./.secrets/postgres_user &&\
+    echo 6v8hl32432HHlIurYupj5 > ./.secrets/postgres_password
+   ```
+3. Create system environment variables  
+    `cp env.system.example .env.system`  
+    Change or set values in `.env.system`
+4. Create data directories
+    `mkdir -p ./data/cardano/cnode`
+5. Download snapshots for quick startup (optional)
+   1. *Node Snapshot* Follow instructions here: https://csnapshots.io/about and make sure files are expanded into `./data/cardano/node`
+   2. Get a snapshot for your version and set the RESTORE_SNAPSHOT environment variable in `.env.system`.   
+    ie:
+      ``` 
+      RESTORE_SNAPSHOT=https://update-cardano-mainnet.iohk.io/cardano-db-sync/13/db-sync-snapshot-schema-13-block-8371499-x86_64.tgz
+      ```
+6. Start services
+   ```bash
+    docker compose --env-file .env.system up
+   ```
+7. View appliactions
+   8. roundtable ui: http://localhost:3000/. Here you can import previous rt backup and sign txs.
+   9. GrapQL Playground: http://localhost:3001/. Here devs can run test GraphQL queries. 
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
