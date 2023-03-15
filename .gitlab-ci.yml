@@ -41,7 +41,7 @@ build_image:
     - deploy
     - persist_environment_url
     - |
-      helm template "$name" ./chart \          
+      helm template "$name" ./chart \
         --set db.secret.MYSQL_DATABASE="$MYSQL_DATABASE" \
         --set db.secret.MYSQL_PASSWORD="$MYSQL_PASSWORD" \
         --set db.secret.MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" \
