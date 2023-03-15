@@ -35,6 +35,7 @@ build_image:
   script:
     - check_kube_domain
     - install_dependencies
+    - kubectl config get-contexts
     - kubectl config use-context $KUBE_CONTEXT
     - download_chart
     - create_secret
