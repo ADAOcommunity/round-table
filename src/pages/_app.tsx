@@ -31,6 +31,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       window.localStorage.removeItem('GraphQLURI')
     }
   }, [])
+  const graphQLContext: [string, (uri: string) => void] = useMemo(() => [graphQLURI, updateGraphQLURI], [graphQLURI, updateGraphQLURI])
   useEffect(() => {
     const uri = window.localStorage.getItem('GraphQLURI')
     if (uri) {
@@ -40,7 +41,7 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <ConfigContext.Provider value={configContext}>
-      <GraphQLURIContext.Provider value={[graphQLURI, updateGraphQLURI]}>
+      <GraphQLURIContext.Provider value={graphQLContext}>
         <NotificationContext.Provider value={notification}>
           <ApolloProvider client={apolloClient}>
             <Head>
