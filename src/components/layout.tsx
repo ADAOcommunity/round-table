@@ -2,7 +2,7 @@ import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PencilSquareIcon, PlusIcon, UserGroupIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import { NotificationCenter, NotificationContext } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -537,6 +537,38 @@ const ConfigModalButton: FC<{
           </div>}
         </div>
       </Modal>}
+    </>
+  )
+}
+
+const InlineEditInput: FC<{
+  value: string
+  setValue: (value: string) => void
+}> = ({ value, setValue }) => {
+  const [inputValue, setInputValue] = useState(value)
+  const [isEditable, setIsEditable] = useState(false)
+  const editHandler = useCallback(() => setIsEditable(true), [])
+  const blurHandler = useCallback(() => setValue(inputValue), [])
+  const changeHandler: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => setInputValue(event.target.value), [])
+
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
+
+  if (isEditable) return (
+    <textarea
+      className='p-2 block border w-full rounded ring-sky-500 focus:ring-1'
+      rows={1}
+      onBlur={blurHandler}
+      onChange={changeHandler}>
+      {inputValue}
+    </textarea>
+  )
+
+  return (
+    <>
+      <span>{value}</span>
+      <span><button className='text-sky-700' onClick={editHandler}><PencilSquareIcon className='w-4' /></button></span>
     </>
   )
 }
