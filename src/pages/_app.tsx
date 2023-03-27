@@ -5,7 +5,7 @@ import Head from 'next/head'
 import { NotificationContext, useNotification } from '../components/notification'
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
 import { GraphQLURIContext } from '../cardano/query-api'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
@@ -22,10 +22,25 @@ function MyApp({ Component, pageProps }: AppProps) {
       }
     })
   }), [graphQLURI])
+  const updateGraphQLURI = useCallback((uri: string) => {
+    const trimmed = uri.trim()
+    setGraphQLURI(trimmed)
+    if (trimmed.length > 0) {
+      window.localStorage.setItem('GraphQLURI', trimmed)
+    } else {
+      window.localStorage.removeItem('GraphQLURI')
+    }
+  }, [])
+  useEffect(() => {
+    const uri = window.localStorage.getItem('GraphQLURI')
+    if (uri) {
+      setGraphQLURI(uri)
+    }
+  }, [])
 
   return (
     <ConfigContext.Provider value={configContext}>
-      <GraphQLURIContext.Provider value={[graphQLURI, setGraphQLURI]}>
+      <GraphQLURIContext.Provider value={[graphQLURI, updateGraphQLURI]}>
         <NotificationContext.Provider value={notification}>
           <ApolloProvider client={apolloClient}>
             <Head>
