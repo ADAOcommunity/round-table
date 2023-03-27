@@ -3,6 +3,7 @@ import type { QueryHookOptions, QueryResult } from '@apollo/client'
 import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation, StakePool, Transaction } from '@cardano-graphql/client-ts/api'
 import { Config } from './config'
 import type { Recipient } from './multiplatform-lib'
+import { createContext } from 'react'
 
 const getPolicyId = (assetId: string) => assetId.slice(0, 56)
 const getAssetName = (assetId: string) => assetId.slice(56)
@@ -344,5 +345,7 @@ const collectTransactionOutputs = (transactions: Transaction[]): RecipientRegist
   return collection.set(hash, subCollection)
 }, new Map())
 
+const GraphQLURIContext = createContext<[string, (uri: string) => void]>(['', () => {}])
+
 export type { Value, RecipientRegistry }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useTransactionSummaryQuery, collectTransactionOutputs }
+export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useTransactionSummaryQuery, collectTransactionOutputs, GraphQLURIContext }
