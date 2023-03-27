@@ -1,7 +1,6 @@
-import { ApolloClient, gql, InMemoryCache, useQuery } from '@apollo/client'
+import { gql, useQuery } from '@apollo/client'
 import type { QueryHookOptions, QueryResult } from '@apollo/client'
 import type { Cardano, PaymentAddress, TransactionOutput, Reward_Aggregate, Withdrawal_Aggregate, StakeRegistration_Aggregate, StakeDeregistration_Aggregate, Delegation, StakePool, Transaction } from '@cardano-graphql/client-ts/api'
-import { Config } from './config'
 import type { Recipient } from './multiplatform-lib'
 import { createContext } from 'react'
 
@@ -51,17 +50,6 @@ const getRecipientFromTransactionOutput = (output: TransactionOutput): Recipient
 }
 
 const getBalanceByUTxOs = (utxos: TransactionOutput[]): Value => sumValues(utxos.map(getValueFromTransactionOutput))
-
-const createApolloClient = (config: Config) => new ApolloClient({
-  uri: config.queryAPI.URI,
-  cache: new InMemoryCache({
-    typePolicies: {
-      PaymentAddress: {
-        keyFields: ['address']
-      }
-    }
-  })
-})
 
 type Query<D, V> = (options: QueryHookOptions<D, V>) => QueryResult<D, V>;
 
@@ -348,4 +336,4 @@ const collectTransactionOutputs = (transactions: Transaction[]): RecipientRegist
 const GraphQLURIContext = createContext<[string, (uri: string) => void]>(['', () => {}])
 
 export type { Value, RecipientRegistry }
-export { createApolloClient, decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useTransactionSummaryQuery, collectTransactionOutputs, GraphQLURIContext }
+export { decodeASCII, getBalanceByUTxOs, getPolicyId, getAssetName, getBalanceByPaymentAddresses, useUTxOSummaryQuery, usePaymentAddressesQuery, useSummaryQuery, getCurrentDelegation, getAvailableReward, useStakePoolsQuery, isRegisteredOnChain, sumValues, useTransactionSummaryQuery, collectTransactionOutputs, GraphQLURIContext }
