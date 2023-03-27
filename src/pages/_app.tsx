@@ -1,6 +1,6 @@
 import '../styles/globals.css'
 import type { AppProps } from 'next/app'
-import { ConfigContext, config, isMainnet } from '../cardano/config'
+import { ConfigContext, config, isMainnet, defaultGraphQLURI } from '../cardano/config'
 import Head from 'next/head'
 import { NotificationContext, useNotification } from '../components/notification'
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
@@ -11,7 +11,7 @@ function MyApp({ Component, pageProps }: AppProps) {
   const notification = useNotification()
   const title = useMemo(() => isMainnet(config) ? 'RoundTable' : `RoundTable ${config.network}`, [])
   const configContext = useState(config)
-  const [graphQLURI, setGraphQLURI] = useState(config.queryAPI.URI)
+  const [graphQLURI, setGraphQLURI] = useState(defaultGraphQLURI)
   const apolloClient = useMemo(() => new ApolloClient({
     uri: graphQLURI,
     cache: new InMemoryCache({
