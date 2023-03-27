@@ -24,10 +24,11 @@ function MyApp({ Component, pageProps }: AppProps) {
   }), [graphQLURI])
   const updateGraphQLURI = useCallback((uri: string) => {
     const trimmed = uri.trim()
-    setGraphQLURI(trimmed)
     if (trimmed.length > 0) {
       window.localStorage.setItem('GraphQLURI', trimmed)
+      setGraphQLURI(trimmed)
     } else {
+      setGraphQLURI(defaultGraphQLURI)
       window.localStorage.removeItem('GraphQLURI')
     }
   }, [])
