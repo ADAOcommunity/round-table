@@ -548,16 +548,15 @@ const InlineEditInput: FC<{
 }> = ({ value, setValue, rows }) => {
   const [inputValue, setInputValue] = useState(value)
   const [isEditable, setIsEditable] = useState(false)
-  const editHandler = useCallback(() => setIsEditable(true), [])
+  const editHandler = useCallback(() => {
+    setInputValue(value)
+    setIsEditable(true)
+  }, [])
   const blurHandler = useCallback(() => {
     setValue(inputValue)
     setIsEditable(false)
   }, [inputValue, setValue])
   const changeHandler: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => setInputValue(event.target.value), [])
-
-  useEffect(() => {
-    setInputValue(value)
-  }, [value])
 
   if (isEditable) return (
     <textarea
