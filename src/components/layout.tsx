@@ -2,7 +2,7 @@ import { useMemo, useContext, useEffect, useState, useCallback } from 'react'
 import type { ChangeEventHandler, MouseEventHandler, KeyboardEvent, KeyboardEventHandler, FC, ReactNode } from 'react'
 import ReactDOM from 'react-dom'
 import Link from 'next/link'
-import { CogIcon, FolderOpenIcon, HomeIcon, PlusIcon, UserGroupIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
+import { CogIcon, FolderOpenIcon, HomeIcon, PencilSquareIcon, PlusIcon, UserGroupIcon, WalletIcon, XMarkIcon } from '@heroicons/react/24/solid'
 import { ConfigContext, isMainnet } from '../cardano/config'
 import { NotificationCenter, NotificationContext } from './notification'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -10,7 +10,7 @@ import { db } from '../db'
 import type { MultisigWallet, PersonalWallet, Policy } from '../db'
 import { useRouter } from 'next/router'
 import Image from 'next/image'
-import { getBalanceByPaymentAddresses, sumValues, usePaymentAddressesQuery } from '../cardano/query-api'
+import { getBalanceByPaymentAddresses, GraphQLURIContext, sumValues, usePaymentAddressesQuery } from '../cardano/query-api'
 import type { Value } from '../cardano/query-api'
 import { ADAAmount } from './currency'
 import { ChainProgress } from './time'
@@ -479,6 +479,8 @@ const ConfigModalButton: FC<{
   const openModal = useCallback(() => setModal(true), [])
   const switchAutoSync = useCallback(() => setConfig({ ...config , autoSync: !config.autoSync }), [config, setConfig])
   const [subTab, setSubTab] = useState<'basic' | 'data' | 'sync'>('basic')
+  const [graphQLURI, setGraphQLURI] = useContext(GraphQLURIContext)
+
   return (
     <>
       <button onClick={openModal} className={className}>{children}</button>
@@ -493,22 +495,20 @@ const ConfigModalButton: FC<{
             <button onClick={closeModal}><XMarkIcon className='w-6' /></button>
           </div>
           {subTab === 'basic' && <div className='space-y-2'>
-            <p>
+            <div>
               <strong>Network</strong>
               <div>{config.network}</div>
-            </p>
-            <p>
-              <strong>Query API ({config.queryAPI.type})</strong>
-              {config.queryAPI.type == 'graphql' && <div>
-                <span>{config.queryAPI.URI}</span>
-              </div>}
-            </p>
-            {config.submitAPI && <p>
+            </div>
+            <div>
+              <strong>GraphQL</strong>
+              <div><InlineEditInput value={graphQLURI} setValue={setGraphQLURI} rows={3} /></div>
+            </div>
+            {config.submitAPI && <div>
               <strong>Submit API</strong>
               <ul>
                 {config.submitAPI.map((api, index) => <li key={index}>{api}</li>)}
               </ul>
-            </p>}
+            </div>}
           </div>}
           {subTab === 'data' && <div className='space-y-4'>
             <div>
@@ -537,6 +537,40 @@ const ConfigModalButton: FC<{
           </div>}
         </div>
       </Modal>}
+    </>
+  )
+}
+
+const InlineEditInput: FC<{
+  value: string
+  setValue: (value: string) => void
+  rows: number
+}> = ({ value, setValue, rows }) => {
+  const [inputValue, setInputValue] = useState(value)
+  const [isEditable, setIsEditable] = useState(false)
+  const editHandler = useCallback(() => {
+    setInputValue(value)
+    setIsEditable(true)
+  }, [])
+  const blurHandler = useCallback(() => {
+    setValue(inputValue)
+    setIsEditable(false)
+  }, [inputValue, setValue])
+  const changeHandler: ChangeEventHandler<HTMLTextAreaElement> = useCallback((event) => setInputValue(event.target.value), [])
+
+  if (isEditable) return (
+    <textarea
+      autoFocus={true}
+      className='p-2 block border w-full rounded ring-sky-500 focus:ring-1 text-inherit'
+      rows={rows}
+      onBlur={blurHandler}
+      onChange={changeHandler} value={inputValue} />
+  )
+
+  return (
+    <>
+      <span>{value}</span>
+      <span><button className='text-sky-700 p-1' onClick={editHandler}><PencilSquareIcon className='w-4' /></button></span>
     </>
   )
 }
