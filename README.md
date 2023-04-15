@@ -66,6 +66,7 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
    ```bash
     docker compose --env-file .env.system up
    ```
+   
 7. View applications
    8. roundtable ui: http://localhost:3000/. Here you can import previous rt backup and sign txs.
    9. GrapQL Playground: http://localhost:3001/. Here devs can run test GraphQL queries. 

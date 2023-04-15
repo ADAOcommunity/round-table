@@ -1,0 +1,70 @@
+affinity: {}
+
+env: {
+  APP_NAME: "round-table",
+  APP_ENV: "production",
+  APP_DEBUG: "false",
+  APP_SETUP: "false",
+  APP_URL: "http://localhost",
+  NEXT_PUBLIC_NETWORK: '',
+  NEXT_PUBLIC_GRAPHQL: '',
+  NEXT_PUBLIC_SUBMIT: '',
+  NEXT_PUBLIC_GUN: ''
+}
+
+certificate:
+  secretName:
+  hosts: []
+
+image:
+  repository:
+  tag: stable
+  pullPolicy: IfNotPresent
+  pullSecret:
+
+ingress:
+  enabled: true
+  controller:
+    headers:
+      HTTPS: "on"
+  annotations: {
+    kubernetes.io/ingress.class: traefik,
+    cert-manager.io/cluster-issuer: letsencrypt-issuer,
+    traefik.ingress.kubernetes.io/router.entrypoints: "websecure,web",
+    traefik.ingress.kubernetes.io/router.middlewares: "traefik-redirect-http-to-https@kubernetescrd,traefik-default-headers@kubernetescrd"
+  }
+  path: "/"
+  hosts: []
+  tls: []
+
+labels:
+  service: round-table
+
+namespace: default
+
+nodeSelector: {}
+
+persistence:
+  size: 10Gi
+  storageClass: default
+  accessMode: ReadWriteMany
+  subPath:
+  mountPath:
+
+replicaCount: 2
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 1024Mi
+    cpu: 300m
+
+serviceAccount:
+  create: true
+
+service:
+  type: ClusterIP
+  port: 80
+
