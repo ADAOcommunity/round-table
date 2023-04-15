@@ -5,9 +5,9 @@ services:
     image: roundtable
     build:
       args:
-        NEXT_PUBLIC_NETWORK: ${NETWORK:-mainnet}
+        NEXT_PUBLIC_NETWORK: ${NETWORK:-preview}
         NEXT_PUBLIC_GRAPHQL: ${NEXT_PUBLIC_GRAPHQL:-graphql:3100}
-        NEXT_PUBLIC_SUBMIT: ${NEXT_PUBLIC_SUBMIT:-}
+        NEXT_PUBLIC_SUBMIT: ${NEXT_PUBLIC_SUBMIT:-https://testnet.tx.lidonation.com/}
         NEXT_PUBLIC_GUN: ${NEXT_PUBLIC_GUN:-}
     ports:
       - ${ROUNDTABLE_PORT:-3000}:3000
@@ -18,10 +18,10 @@ services:
         max-size: "200k"
         max-file: "10"
     environment:
-      NEXT_PUBLIC_GRAPHQL: https://graphql.lidonation.com
+      NEXT_PUBLIC_GRAPHQL: ${NEXT_PUBLIC_GRAPHQL:-graphql:3100}
       NEXT_PUBLIC_GUN:
-      NEXT_PUBLIC_NETWORK: mainnet
-      NEXT_PUBLIC_SUBMIT: https://tx.lidonation.com/
+      NEXT_PUBLIC_NETWORK: ${NETWORK:-preview}
+      NEXT_PUBLIC_SUBMIT: ${NEXT_PUBLIC_SUBMIT:-https://testnet.tx.lidonation.com/}
   postgres:
     image: postgres:${POSTGRES_VERSION:-11.8-alpine}
     environment:
@@ -46,7 +46,7 @@ services:
         max-file: "10"
 
   cardano-node-ogmios:
-    image: cardanosolutions/cardano-node-ogmios:${OGMIOS_VERSION:-v5.5.8}_${CARDANO_NODE_VERSION:-1.35.4}-${NETWORK:-mainnet}
+    image: cardanosolutions/cardano-node-ogmios:${OGMIOS_VERSION:-v5.6.0}_${CARDANO_NODE_VERSION:-1.35.5}-${NETWORK:-preview}
     platform: ${PLATFORM:-linux/x86_64}
     logging:
       driver: "json-file"
@@ -59,10 +59,11 @@ services:
     volumes:
       - ./data/cardano/cnode/db:/db:delegated
       - node-ipc:/ipc
-      - ./config/network/${NETWORK:-mainnet}:/config/cardano-node
+      - ./config/network/${NETWORK:-preview}:/config/cardano-node
 
   cardano-db-sync:
-    image: inputoutput/cardano-db-sync:${CARDANO_DB_SYNC_VERSION:-13.0.5}
+    image: inputoutput/cardano-db-sync:${CARDANO_DB_SYNC_VERSION:-13.1.0.2}
+    platform: ${PLATFORM:-linux/x86_64}
     command: [
       "--config", "/config/cardano-node/db-sync-config.json",
       "--socket-path", "/node-ipc/node.socket"
@@ -80,7 +81,44 @@ services:
       - postgres_user
       - postgres_db
     volumes:
-      - ./config/network/${NETWORK:-mainnet}:/config/cardano-node
+      - ./config/network/${NETWORK:-preview}:/config/cardano-node
+      - db-sync-data:/var/lib/cexplorer
+      - node-ipc:/node-ipc
+    restart: on-failure
+    stop_signal: SIGINT
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+
+  cardano-graphql-background:
+    image: inputoutput/cardano-graphql-background:${CARDANO_GRAPHQL_BACKROUND_VERSION:-8.0.0}-${NETWORK:-preview}
+    platform: ${PLATFORM:-linux/x86_64}
+#    command: [
+#      "--config", "/config/cardano-node/db-sync-config.json",
+#      "--socket-path", "/node-ipc/node.socket"
+#    ]
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - RESTORE_SNAPSHOT=${RESTORE_SNAPSHOT:-}
+      - HASURA_URI=http://hasura:8080
+      - METADATA_SERVER_URI=${METADATA_SERVER_URI:-https://tokens.cardano.org}
+      - OGMIOS_HOST=cardano-node-ogmios
+      - CACHE_ENABLED=true
+      - CARDANO_NODE_CONFIG_PATH=/config/config.json
+      - RESTORE_RECREATE_DB=N
+    depends_on:
+      - hasura
+      - cardano-node-ogmios
+      - postgres
+    secrets:
+      - postgres_password
+      - postgres_user
+      - postgres_db
+    volumes:
+      - ./config/network/${NETWORK:-preview}:/config/cardano-node
       - db-sync-data:/var/lib/cexplorer
       - node-ipc:/node-ipc
     restart: on-failure
@@ -92,7 +130,8 @@ services:
         max-file: "10"
 
   hasura:
-    image: inputoutput/cardano-graphql-hasura:${CARDANO_GRAPHQL_VERSION:-7.0.2}
+    image: inputoutput/cardano-graphql-hasura:${CARDANO_GRAPHQL_VERSION:-8.0.0}
+    platform: ${PLATFORM:-linux/x86_64}
     ports:
       - ${HASURA_PORT:-8090}:8080
     depends_on:
@@ -111,11 +150,12 @@ services:
         max-size: "200k"
         max-file: "10"
 
-  graphql:
-    image: inputoutput/cardano-graphql:${CARDANO_GRAPHQL_VERSION:-7.0.2}-${NETWORK:-mainnet}
+  cardano-graphql-server:
+    image: inputoutput/cardano-graphql-server:${CARDANO_GRAPHQL_VERSION:-8.0.0}-${NETWORK:-preview}
+    platform: ${PLATFORM:-linux/x86_64}
     depends_on:
-      - "hasura"
-      - "postgres"
+      - hasura
+      - cardano-node-ogmios
     environment:
       - ALLOW_INTROSPECTION=true
       - CACHE_ENABLED=true
@@ -124,10 +164,6 @@ services:
     restart: on-failure
     ports:
       - ${GRAPHQL_PORT:-3001}:3001
-    secrets:
-      - postgres_db
-      - postgres_password
-      - postgres_user
     logging:
       driver: "json-file"
       options:
