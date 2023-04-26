@@ -551,7 +551,7 @@ const InlineEditInput: FC<{
   const editHandler = useCallback(() => {
     setInputValue(value)
     setIsEditable(true)
-  }, [])
+  }, [value])
   const blurHandler = useCallback(() => {
     setValue(inputValue)
     setIsEditable(false)
