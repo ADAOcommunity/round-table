@@ -668,6 +668,7 @@ const TransactionViewer: FC<{
   const txInputs = useMemo(() => Array.from(toIter(txBody.inputs())), [txBody])
   const { data } = useTransactionSummaryQuery({ variables: { hashes: txInputs.map((input) => input.transaction_id().to_hex()) } })
   const txInputsRegistry = useMemo(() => data && collectTransactionOutputs(data.transactions), [data])
+  const txRequiredSigners = useMemo(() => txBody.required_signers(), [txBody])
   useEffect(() => {
     const keyHashes = new Set<string>()
     txInputs.forEach((input) => {
@@ -677,14 +678,13 @@ const TransactionViewer: FC<{
       const keyHash = address && cardano.parseAddress(address).payment_cred()?.to_keyhash()?.to_hex()
       keyHash && keyHashes.add(keyHash)
     })
-    const requiredSigners = transaction.body().required_signers()
-    if (requiredSigners) {
-      Array.from(toIter(requiredSigners))
+    if (txRequiredSigners) {
+      Array.from(toIter(txRequiredSigners))
         .map(toHex)
         .forEach(keyHashes.add.bind(keyHashes));
     }
     setRequiredPaymentKeys(keyHashes)
-  }, [cardano, txInputs, txInputsRegistry, setRequiredPaymentKeys])
+  }, [cardano, txInputs, txInputsRegistry, txRequiredSigners, setRequiredPaymentKeys])
   const txOutputs: Recipient[] = useMemo(() => getRecipientsFromCMLTransactionOutputs(txBody.outputs()), [txBody])
   const startSlot = useMemo(() => {
     const slot = txBody.validity_start_interval()?.to_str()
