@@ -677,6 +677,12 @@ const TransactionViewer: FC<{
       const keyHash = address && cardano.parseAddress(address).payment_cred()?.to_keyhash()?.to_hex()
       keyHash && keyHashes.add(keyHash)
     })
+    const requiredSigners = transaction.body().required_signers()
+    if (requiredSigners) {
+      Array.from(toIter(requiredSigners))
+        .map(toHex)
+        .forEach(keyHashes.add.bind(keyHashes));
+    }
     setRequiredPaymentKeys(keyHashes)
   }, [cardano, txInputs, txInputsRegistry, setRequiredPaymentKeys])
   const txOutputs: Recipient[] = useMemo(() => getRecipientsFromCMLTransactionOutputs(txBody.outputs()), [txBody])
