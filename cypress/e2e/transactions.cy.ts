@@ -76,3 +76,48 @@ describe('Sign a hex transaction created by others', () => {
     signTransaction()
   })
 })
+
+describe('Open another transaction', () => {
+  before(() => {
+    window.indexedDB.deleteDatabase('round-table')
+  })
+
+  it('Should clean the signatures', () => {
+    const tx1 = 'http://localhost:3000/base64/hKYAgYJYIELhsJAUmJoGYzypmcaluyBySvR3PnJVZ9E4zsyiT8gAAQGCglg5MLl6F5hVYu5cNsTS2%2FYp%2BzZqI4k672wth%2F%2BpxQhdDXOUohw96Qz%2Fiu9zxRWXLoaSldgNEvNp%2F2m1GgAOzBaCWDkwuXoXmFVi7lw2xNLb9in7NmojiTrvbC2H%2F6nFCF0Nc5SiHD3pDP%2BK73PFFZcuhpKV2A0S82n%2FabUaO1%2FehQIaAAKhTQMaAPuWvgdYIEfPOIMG4ldgTIIc4tzp9O7OXU9YwqLogife6QGLDD5GCBoA%2BkU%2BoQGBggGBggBYHBipzmxwynWuMiT8ipbqqqzWoptPBAqlcCz7Xir1oRkCoqFjbXNngWRUWCMx'
+    cy.visit(tx1)
+
+    const signatures = 'a1008182582098ae5dcf87153a1c3c27fc9eca303e6407d9b563d558c8b869a1727d8340ca0358403b88ce14a5d334fbd3ebe1b26538749d84e69068da0f69bdee1005871a35a652e4f0a53fc30d623ea337e027c40eb008cb0ff1f870d2ed5e248f11655298ef04'
+
+    cy.wait(1000)
+
+    cy.get('footer').contains('Sign').click()
+
+    cy.get('#modal-root')
+      .get('textarea[placeholder="Input signature here and import"]')
+      .type(signatures)
+      .should("have.value", signatures)
+
+    cy.get('#modal-root').contains('Import').click()
+
+    cy.contains('18a9ce6c70ca75ae3224fc8a96eaaaacd6a29b4f040aa5702cfb5e2a')
+      .parent()
+      .should('have.class', 'text-green-500')
+
+    const tx2 = 'http://localhost:3000/base64/hKYAgYJYIELhsJAUmJoGYzypmcaluyBySvR3PnJVZ9E4zsyiT8gAAQGCglg5MLl6F5hVYu5cNsTS2%2FYp%2BzZqI4k672wth%2F%2BpxQhdDXOUohw96Qz%2Fiu9zxRWXLoaSldgNEvNp%2F2m1GgAOzBaCWDkwuXoXmFVi7lw2xNLb9in7NmojiTrvbC2H%2F6nFCF0Nc5SiHD3pDP%2BK73PFFZcuhpKV2A0S82n%2FabUaO1%2FehQIaAAKhTQMaAPuW7QdYIPjsM6lUr7I40hEP%2BBRYc9wO8qW2cY%2BjiVm4uQqcLkT3CBoA%2BkVtoQGBggGBggBYHBipzmxwynWuMiT8ipbqqqzWoptPBAqlcCz7Xir1oRkCoqFjbXNngWRUWCMy'
+
+    cy.get('#open-tx > button')
+      .click()
+    cy.get('#modal-root')
+      .get('textarea[placeholder="Transaction URL/Hex or multisig wallet URL"]')
+      .type(tx2)
+      .should("have.value", tx2)
+    cy.get('#modal-root')
+      .get('button')
+      .contains('Open')
+      .click()
+
+    cy.contains('18a9ce6c70ca75ae3224fc8a96eaaaacd6a29b4f040aa5702cfb5e2a')
+      .parent()
+      .should('not.have.class', 'text-green-500')
+  })
+})
