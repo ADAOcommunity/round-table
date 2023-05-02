@@ -647,7 +647,8 @@ const TransactionViewer: FC<{
     requiredStakingKeys?.forEach((keyHash) => signers.add(keyHash))
     return signers
   }, [nativeScripts, requiredPaymentKeys, requiredStakingKeys])
-  const [signatureMap, setSignatureMap] = useState<SignatureMap>(updateSignatureMap(transaction.witness_set(), new Map(), txHash))
+  const [signatureMap, setSignatureMap] = useState<SignatureMap>(new Map())
+  useEffect(() => setSignatureMap(updateSignatureMap(transaction.witness_set(), new Map(), txHash)), [transaction, txHash])
   const signedTransaction = useMemo(() => {
     const vkeys = new Array<Vkeywitness>()
     signatureMap.forEach((vkey, keyHashHex) => signerRegistry.has(keyHashHex) && vkeys.push(vkey))
