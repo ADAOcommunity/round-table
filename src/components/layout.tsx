@@ -513,10 +513,14 @@ const ConfigModalButton: FC<{
           {subTab === 'data' && <div className='space-y-4'>
             <div>
               <strong>User Data Export/Import</strong>
-              <p>User data has to be on the same network. For example, data exported from testnet cannot be imported to mainnet.</p>
+              <div>User data has to be on the same network. For example, data exported from testnet cannot be imported to mainnet.</div>
+              <div className='text-red-500 font-semibold'>Data from V1 is not supported!</div>
             </div>
-            <div>
-              <ExportUserDataButton />
+            <div className='space-y-2'>
+              <div>
+                <ExportUserDataButton />
+              </div>
+              <div className='text-red-500 font-semibold'>Keep this file private!</div>
             </div>
             <div>
               <strong>Import User Data</strong>
