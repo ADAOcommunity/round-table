@@ -66,5 +66,14 @@ const ConfigContext = createContext<[Config, (x: Config) => void]>([defaultConfi
 
 const defaultGraphQLURI = process.env.NEXT_PUBLIC_GRAPHQL ?? (parseNetwork(process.env.NEXT_PUBLIC_NETWORK ?? 'mainnet') === 'mainnet' ? defaultGraphQLMainnet : defaultGraphQLTestnet)
 
+const donationAddress = (network: Network): string => {
+  switch(network) {
+    case 'mainnet':
+      return 'addr1qy8yxxrle7hq62zgpazaj7kj36nphqyyxey62wm694dgfds5kkvr22hlffqdj63vk8nf8rje5np37v4fwlpvj4c4qryqtcla0w';
+    default:
+      return 'addr_test1qpe7qk82nqyd77tdqmn6q7y5ll4kwwxdajgwf3llcu4e44nmcxl09wnytjsykngrga52kqhevzv2dn67rt0876qmwn3sf7qxv3';
+  }
+}
+
 export type { Config, Network }
-export { ConfigContext, config, defaultGraphQLURI, isMainnet }
+export { ConfigContext, config, defaultGraphQLURI, donationAddress, isMainnet }
