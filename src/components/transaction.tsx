@@ -898,58 +898,36 @@ const RecipientAddressInput: FC<{
   )
 }
 
-const TransactionRecipient: FC<{
-  cardano: Cardano
-  recipient: Recipient
+const RecipientValueInput: FC<{
+  className?: string
+  value: Value
+  setValue: (value: Value) => void
+  minLovelace?: bigint
   budget: Value
-  getMinLovelace: (recipient: Recipient) => bigint
-  onChange: (recipient: Recipient) => void
-}> = ({ cardano, recipient, budget, getMinLovelace, onChange }) => {
-
+}> = ({ className, value, setValue, minLovelace, budget }) => {
   const [config, _] = useContext(ConfigContext)
-  const setRecipient = useCallback((recipient: Recipient) => {
-    onChange(recipient)
-  }, [onChange])
-  const setAddress = useCallback((address: string) => {
-    setRecipient({ ...recipient, address })
-  }, [setRecipient, recipient])
   const setLovelace = useCallback((lovelace: bigint) => {
-    const { value } = recipient
-    setRecipient({ ...recipient, value: { ...value, lovelace } })
-  }, [setRecipient, recipient])
+    setValue({ ...value, lovelace })
+  }, [value, setValue])
   const setAsset = useCallback((id: string, quantity: bigint) => {
-    const { value } = recipient
-    setRecipient({
-      ...recipient,
-      value: {
-        ...value,
-        assets: new Map(value.assets).set(id, quantity)
-      }
-    })
-  }, [setRecipient, recipient])
+    setValue({ ...value, assets: new Map(value.assets).set(id, quantity) })
+  }, [value, setValue])
   const deleteAsset = useCallback((id: string) => {
-    const { value } = recipient
     const newAssets = new Map(value.assets)
     newAssets.delete(id)
-    setRecipient({
-      ...recipient,
-      value: { ...value, assets: newAssets }
-    })
-  }, [setRecipient, recipient])
-
-  const minLovelace = useMemo(() => cardano.isValidAddress(recipient.address) ? getMinLovelace(recipient) : undefined, [recipient, cardano, getMinLovelace])
+    setValue({ ...value, assets: newAssets })
+  }, [value, setValue])
   const selectAsset = useCallback((id: string) => setAsset(id, BigInt(0)), [setAsset])
 
   return (
-    <div className='p-4 space-y-2'>
-      <RecipientAddressInput address={recipient.address} setAddress={setAddress} cardano={cardano} />
+    <div className={className}>
       <div>
         <LabeledCurrencyInput
           symbol={getADASymbol(config)}
           decimal={6}
-          value={recipient.value.lovelace}
+          value={value.lovelace}
           min={minLovelace}
-          max={recipient.value.lovelace + budget.lovelace}
+          max={value.lovelace + budget.lovelace}
           onChange={setLovelace}
           placeholder='0.000000' />
         {minLovelace ? <p className='text-sm space-x-1'>
@@ -963,7 +941,7 @@ const TransactionRecipient: FC<{
         </p> : null}
       </div>
       <ul className='space-y-2'>
-        {Array.from(recipient.value.assets).map(([id, quantity]) => {
+        {Array.from(value.assets).map(([id, quantity]) => {
           const symbol = decodeASCII(getAssetName(id))
           const assetBudget = (budget.assets.get(id) || BigInt(0))
           const onChange = (value: bigint) => setAsset(id, value)
@@ -983,7 +961,30 @@ const TransactionRecipient: FC<{
           )
         })}
       </ul>
-      <AddAssetButton budget={budget} value={recipient.value} onSelect={selectAsset} />
+      <AddAssetButton budget={budget} value={value} onSelect={selectAsset} />
+    </div>
+  )
+}
+
+const TransactionRecipient: FC<{
+  cardano: Cardano
+  recipient: Recipient
+  budget: Value
+  getMinLovelace: (recipient: Recipient) => bigint
+  setRecipient: (recipient: Recipient) => void
+}> = ({ cardano, recipient, budget, getMinLovelace, setRecipient }) => {
+  const minLovelace = useMemo(() => cardano.isValidAddress(recipient.address) ? getMinLovelace(recipient) : undefined, [recipient, cardano, getMinLovelace])
+  const setAddress = useCallback((address: string) => {
+    setRecipient({ ...recipient, address })
+  }, [setRecipient, recipient])
+  const setValue = useCallback((value: Value) => {
+    setRecipient({ ...recipient, value })
+  }, [setRecipient, recipient])
+
+  return (
+    <div className='p-4 space-y-2'>
+      <RecipientAddressInput address={recipient.address} setAddress={setAddress} cardano={cardano} />
+      <RecipientValueInput className='space-y-2' value={recipient.value} setValue={setValue} budget={budget} minLovelace={minLovelace} />
     </div>
   )
 }
@@ -1202,7 +1203,7 @@ const NewTransaction: FC<{
               recipient={recipient}
               budget={budget}
               getMinLovelace={getMinLovelace}
-              onChange={(rec) => changeRecipient(index, rec)} />
+              setRecipient={(rec) => changeRecipient(index, rec)} />
           </li>
         )}
       </ul>
