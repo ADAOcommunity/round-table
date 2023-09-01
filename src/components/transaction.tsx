@@ -6,9 +6,9 @@ import type { Value, RecipientRegistry } from '../cardano/query-api'
 import { getResult, isAddressNetworkCorrect, newRecipient, toAddressString, toHex, toIter, useCardanoMultiplatformLib, verifySignature } from '../cardano/multiplatform-lib'
 import type { Cardano, Recipient } from '../cardano/multiplatform-lib'
 import type { Certificate, Transaction, TransactionHash, TransactionInput, Vkeywitness, SingleInputBuilder, InputBuilderResult, SingleCertificateBuilder, CertificateBuilderResult, TransactionWitnessSet, TransactionOutputs, SingleWithdrawalBuilder, WithdrawalBuilderResult } from '@dcspark/cardano-multiplatform-lib-browser'
-import { ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon, WalletIcon } from '@heroicons/react/24/solid'
+import { ShareIcon, ArrowUpTrayIcon, PlusIcon, XMarkIcon, XCircleIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon, PencilIcon, WalletIcon, HeartIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
-import { ConfigContext, isMainnet } from '../cardano/config'
+import { ConfigContext, donationAddress, isMainnet } from '../cardano/config'
 import { CopyButton, Hero, Panel, ShareCurrentURLButton, Modal, TextareaModalBox } from './layout'
 import { PasswordBox } from './password'
 import { NotificationContext } from './notification'
@@ -898,58 +898,36 @@ const RecipientAddressInput: FC<{
   )
 }
 
-const TransactionRecipient: FC<{
-  cardano: Cardano
-  recipient: Recipient
+const RecipientValueInput: FC<{
+  className?: string
+  value: Value
+  setValue: (value: Value) => void
+  minLovelace?: bigint
   budget: Value
-  getMinLovelace: (recipient: Recipient) => bigint
-  onChange: (recipient: Recipient) => void
-}> = ({ cardano, recipient, budget, getMinLovelace, onChange }) => {
-
+}> = ({ className, value, setValue, minLovelace, budget }) => {
   const [config, _] = useContext(ConfigContext)
-  const setRecipient = useCallback((recipient: Recipient) => {
-    onChange(recipient)
-  }, [onChange])
-  const setAddress = useCallback((address: string) => {
-    setRecipient({ ...recipient, address })
-  }, [setRecipient, recipient])
   const setLovelace = useCallback((lovelace: bigint) => {
-    const { value } = recipient
-    setRecipient({ ...recipient, value: { ...value, lovelace } })
-  }, [setRecipient, recipient])
+    setValue({ ...value, lovelace })
+  }, [value, setValue])
   const setAsset = useCallback((id: string, quantity: bigint) => {
-    const { value } = recipient
-    setRecipient({
-      ...recipient,
-      value: {
-        ...value,
-        assets: new Map(value.assets).set(id, quantity)
-      }
-    })
-  }, [setRecipient, recipient])
+    setValue({ ...value, assets: new Map(value.assets).set(id, quantity) })
+  }, [value, setValue])
   const deleteAsset = useCallback((id: string) => {
-    const { value } = recipient
     const newAssets = new Map(value.assets)
     newAssets.delete(id)
-    setRecipient({
-      ...recipient,
-      value: { ...value, assets: newAssets }
-    })
-  }, [setRecipient, recipient])
-
-  const minLovelace = useMemo(() => cardano.isValidAddress(recipient.address) ? getMinLovelace(recipient) : undefined, [recipient, cardano, getMinLovelace])
+    setValue({ ...value, assets: newAssets })
+  }, [value, setValue])
   const selectAsset = useCallback((id: string) => setAsset(id, BigInt(0)), [setAsset])
 
   return (
-    <div className='p-4 space-y-2'>
-      <RecipientAddressInput address={recipient.address} setAddress={setAddress} cardano={cardano} />
+    <div className={className}>
       <div>
         <LabeledCurrencyInput
           symbol={getADASymbol(config)}
           decimal={6}
-          value={recipient.value.lovelace}
+          value={value.lovelace}
           min={minLovelace}
-          max={recipient.value.lovelace + budget.lovelace}
+          max={value.lovelace + budget.lovelace}
           onChange={setLovelace}
           placeholder='0.000000' />
         {minLovelace ? <p className='text-sm space-x-1'>
@@ -963,7 +941,7 @@ const TransactionRecipient: FC<{
         </p> : null}
       </div>
       <ul className='space-y-2'>
-        {Array.from(recipient.value.assets).map(([id, quantity]) => {
+        {Array.from(value.assets).map(([id, quantity]) => {
           const symbol = decodeASCII(getAssetName(id))
           const assetBudget = (budget.assets.get(id) || BigInt(0))
           const onChange = (value: bigint) => setAsset(id, value)
@@ -983,7 +961,30 @@ const TransactionRecipient: FC<{
           )
         })}
       </ul>
-      <AddAssetButton budget={budget} value={recipient.value} onSelect={selectAsset} />
+      <AddAssetButton budget={budget} value={value} onSelect={selectAsset} />
+    </div>
+  )
+}
+
+const TransactionRecipient: FC<{
+  cardano: Cardano
+  recipient: Recipient
+  budget: Value
+  getMinLovelace: (recipient: Recipient) => bigint
+  setRecipient: (recipient: Recipient) => void
+}> = ({ cardano, recipient, budget, getMinLovelace, setRecipient }) => {
+  const minLovelace = useMemo(() => cardano.isValidAddress(recipient.address) ? getMinLovelace(recipient) : undefined, [recipient, cardano, getMinLovelace])
+  const setAddress = useCallback((address: string) => {
+    setRecipient({ ...recipient, address })
+  }, [setRecipient, recipient])
+  const setValue = useCallback((value: Value) => {
+    setRecipient({ ...recipient, value })
+  }, [setRecipient, recipient])
+
+  return (
+    <div className='p-4 space-y-2'>
+      <RecipientAddressInput address={recipient.address} setAddress={setAddress} cardano={cardano} />
+      <RecipientValueInput className='space-y-2' value={recipient.value} setValue={setValue} budget={budget} minLovelace={minLovelace} />
     </div>
   )
 }
@@ -1039,7 +1040,15 @@ const NewTransaction: FC<{
     if (!isRegistered && delegation) return BigInt(protocolParameters.keyDeposit)
     return BigInt(0)
   }, [isRegistered, delegation, protocolParameters])
-  const budget: Value = useMemo(() => recipients
+  const [config, _] = useContext(ConfigContext)
+  const donatingAddress = useMemo(() => donationAddress(config.network), [config.network])
+  const [donatingValue, setDonatingValue] = useState<Value | undefined>()
+  const donatingRecipient: Recipient | undefined = useMemo(() => donatingValue && {
+    address: donatingAddress,
+    value: donatingValue
+  }, [donatingValue, donatingAddress])
+  const allRecipients = useMemo(() => recipients.concat(donatingRecipient ?? []), [donatingRecipient, recipients])
+  const budget: Value = useMemo(() => allRecipients
     .map(({ value }) => value)
     .concat({ lovelace: deposit, assets: new Map() })
     .reduce((result, value) => {
@@ -1050,7 +1059,13 @@ const NewTransaction: FC<{
         _quantity && assets.set(id, _quantity - quantity)
       })
       return { lovelace, assets }
-    }, getBalanceByUTxOs(utxos)), [deposit, recipients, utxos])
+    }, getBalanceByUTxOs(utxos)), [deposit, allRecipients, utxos])
+  const donate = useCallback(() => {
+    setDonatingValue({
+      lovelace: BigInt(0),
+      assets: new Map()
+    })
+  }, [])
   const stakeRegistration = useMemo(() => {
     if (!isRegistered && delegation) return cardano.createRegistrationCertificate(rewardAddress)
   }, [cardano, delegation, rewardAddress, isRegistered])
@@ -1100,7 +1115,7 @@ const NewTransaction: FC<{
   }, [defaultChangeAddress, isChangeSettingDisabled])
 
   useEffect(() => {
-    if (willSpendAll || recipients.length === 0) {
+    if (willSpendAll || allRecipients.length === 0) {
       setInputs(utxos)
       return
     }
@@ -1122,7 +1137,7 @@ const NewTransaction: FC<{
           })
         }
       })
-      const outputs: Output[] = recipients.map((recipient) => {
+      const outputs: Output[] = allRecipients.map((recipient) => {
         return {
           lovelace: recipient.value.lovelace,
           assets: Array.from(recipient.value.assets).map(([id, quantity]) => {
@@ -1138,7 +1153,7 @@ const NewTransaction: FC<{
       const txOutputs: TransactionOutput[] | undefined = result?.selected.map((output) => output.data)
       txOutputs && setInputs(txOutputs)
     })
-  }, [utxos, recipients, willSpendAll, minLovelaceForChange])
+  }, [utxos, allRecipients, willSpendAll, minLovelaceForChange])
 
   const getMinLovelace = useCallback((recipient: Recipient): bigint => cardano.getMinLovelace(recipient, protocolParameters), [cardano, protocolParameters])
 
@@ -1153,9 +1168,9 @@ const NewTransaction: FC<{
       txBuilder.add_input(buildInputResult(builder))
     })
 
-    recipients.forEach((recipient) => {
-      const result = cardano.buildTxOutput(recipient, protocolParameters)
-      txBuilder.add_output(result)
+    allRecipients.forEach((recipient) => {
+      const txOutput = cardano.buildTxOutput(recipient, protocolParameters)
+      txBuilder.add_output(txOutput)
     })
 
     if (stakeRegistration) txBuilder.add_cert(buildCertResult(SingleCertificateBuilder.new(stakeRegistration)))
@@ -1174,7 +1189,7 @@ const NewTransaction: FC<{
     if (expirySlot) txBuilder.set_ttl(BigNum.from_str(expirySlot.toString()))
 
     return txBuilder.build(ChangeSelectionAlgo.Default, cardano.parseAddress(changeAddress)).build_unchecked()
-  }), [recipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, startSlot, expirySlot, availableReward, rewardAddress, withdrawAll, stakeDeregistration])
+  }), [allRecipients, cardano, changeAddress, auxiliaryData, protocolParameters, inputs, stakeRegistration, stakeDelegation, buildInputResult, buildCertResult, buildWithdrawalResult, startSlot, expirySlot, availableReward, rewardAddress, withdrawAll, stakeDeregistration])
 
   const changeRecipient = useCallback((index: number, recipient: Recipient) => {
     setRecipients(recipients.map((_recipient, _index) => index === _index ? recipient : _recipient))
@@ -1202,10 +1217,35 @@ const NewTransaction: FC<{
               recipient={recipient}
               budget={budget}
               getMinLovelace={getMinLovelace}
-              onChange={(rec) => changeRecipient(index, rec)} />
+              setRecipient={(rec) => changeRecipient(index, rec)} />
           </li>
         )}
       </ul>
+      {donatingValue && <div>
+        <header className='flex justify-between px-4 py-2 bg-gray-100'>
+          <h2 className='font-semibold flex items-center space-x-1'>
+            <span>Donation</span>
+            <HeartIcon className='w-4 text-pink-500' />
+          </h2>
+          <nav className='flex items-center'>
+            <button onClick={() => setDonatingValue(undefined)}>
+              <XMarkIcon className='w-4' />
+            </button>
+          </nav>
+        </header>
+        <div className='p-4 space-y-2'>
+          <div className='space-y-1'>
+            <div>We kindly suggest considering tipping the developer as it would greatly contribute to the development and quality of the project. Your support is highly appreciated. Thank you for your consideration.</div>
+          </div>
+          <div className='font-semibold'>{donatingAddress}</div>
+          <RecipientValueInput
+            className='space-y-2'
+            value={donatingValue}
+            setValue={setDonatingValue}
+            budget={budget}
+            minLovelace={donatingRecipient && getMinLovelace(donatingRecipient)} />
+        </div>
+      </div>}
       {withdrawAll && <div>
         <header className='flex justify-between px-4 py-2 bg-gray-100'>
           <h2 className='font-semibold'>Withdraw Reward</h2>
@@ -1293,9 +1333,9 @@ const NewTransaction: FC<{
       </div>
       <div>
         <header className='px-4 py-2 bg-gray-100'>
-          <h2 className='font-semibold'>{recipients.length > 0 ? 'Change' : 'Send All'}</h2>
-          <p className='text-sm'>{recipients.length > 0 ? 'The change caused by this transaction or all remaining assets in the treasury will be sent to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!' : 'All assets in this treasury will be sent to this address.'}</p>
-          {recipients.length > 0 && <p>
+          <h2 className='font-semibold'>{allRecipients.length > 0 ? 'Change' : 'Send All'}</h2>
+          <p className='text-sm'>{allRecipients.length > 0 ? 'The change caused by this transaction or all remaining assets in the treasury will be sent to this address (default to the treasury address). DO NOT MODIFY IT UNLESS YOU KNOW WHAT YOU ARE DOING!' : 'All assets in this treasury will be sent to this address.'}</p>
+          {allRecipients.length > 0 && <p>
             <label className='text-sm items-center space-x-1'>
               <input
                 type='checkbox'
@@ -1308,10 +1348,10 @@ const NewTransaction: FC<{
         <div className='p-4 space-y-2'>
           <RecipientAddressInput
             cardano={cardano}
-            disabled={isChangeSettingDisabled && recipients.length > 0}
+            disabled={isChangeSettingDisabled && allRecipients.length > 0}
             address={changeAddress}
             setAddress={setChangeAddress} />
-          {!willSpendAll && recipients.length > 0 && <div className='space-y-1'>
+          {!willSpendAll && allRecipients.length > 0 && <div className='space-y-1'>
             <label className='flex block border rounded overflow-hidden ring-sky-500 focus-within:ring-1'>
               <span className='p-2 bg-gray-100 border-r'>Least Change ADA</span>
               <ADAInput
@@ -1322,7 +1362,7 @@ const NewTransaction: FC<{
             </label>
             <div className='text-sm'>Default to 5. The more tokens you have the larger it needs to create transaction properly.</div>
           </div>}
-          {!isChangeSettingDisabled && recipients.length > 0 && <div>
+          {!isChangeSettingDisabled && allRecipients.length > 0 && <div>
             <label className='items-center space-x-1'>
               <input
                 type='checkbox'
@@ -1355,6 +1395,13 @@ const NewTransaction: FC<{
           </p>}
         </div>
         <nav className='flex justify-end space-x-2'>
+          <button
+            disabled={!!donatingValue}
+            onClick={donate}
+            className='p-2 rounded text-pink-800 bg-pink-100 border flex items-center space-x-1 disabled:bg-gray-100 disabled:text-gray-400'>
+            <HeartIcon className='w-4' />
+            <span>Donate</span>
+          </button>
           <button
             className='p-2 rounded text-sky-700 border'
             onClick={() => setRecipients(recipients.concat(newRecipient()))}>
