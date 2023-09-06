@@ -151,25 +151,33 @@ type CIP30Wallet = {
   apiVersion: string
 }
 
+const getWalletIconURL = (wallet: CIP30Wallet): string => {
+  switch (wallet.name) {
+    case 'Typhon Wallet': return '/typhon.svg'
+    default: return wallet.icon
+  }
+}
+
 const CIP30WalletIcon: FC<{
   height?: number
   width?: number
   className?: string
   wallet: CIP30Wallet
 }> = ({ height, width, wallet, className }) => {
-  const { name, icon } = wallet
+  const iconURL = useMemo(() => getWalletIconURL(wallet), [wallet])
+
   return (
     <Image
       height={height || 25}
       width={width || 25}
       className={className}
-      alt={name}
-      src={icon}
+      alt={wallet.name}
+      src={iconURL}
     />
   )
 }
 
-type CIP30WalletName = 'eternl' | 'nami' | 'gero' | 'flint'
+type CIP30WalletName = 'eternl' | 'nami' | 'gero' | 'flint' | 'typhon'
 
 const getCIP30Wallet = (name: CIP30WalletName): CIP30Wallet | undefined => {
   const cardano = (window as any).cardano
@@ -178,6 +186,7 @@ const getCIP30Wallet = (name: CIP30WalletName): CIP30Wallet | undefined => {
     case 'nami': return cardano?.nami
     case 'gero': return cardano?.gerowallet
     case 'flint': return cardano?.flint
+    case 'typhon': return cardano?.typhoncip30
   }
 }
 
@@ -186,7 +195,7 @@ type TxSignError = {
   info: string
 }
 
-const CIP30Names: CIP30WalletName[] = ['nami', 'gero', 'eternl', 'flint']
+const CIP30Names: CIP30WalletName[] = ['nami', 'gero', 'eternl', 'flint', 'typhon']
 const SignTxButtonClassName = 'flex w-full items-center justify-between py-2 px-4 text-sky-700 disabled:bg-gray-100 disabled:text-gray-500 hover:bg-sky-100'
 const SignTxButton: FC<{
   className?: string
