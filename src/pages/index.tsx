@@ -43,13 +43,22 @@ const WalletTable: FC = () => {
                 <Image src='https://gerowallet.io/assets/img/logo2.ico' width={16} height={16} alt='Gero' /><span>Gero</span>
               </div>
             </td>
-            <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
-            <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
+            <td><div className='flex justify-center'><XMarkIcon className='w-6 text-red-500' /></div></td>
+            <td><div className='flex justify-center'><XMarkIcon className='w-6 text-red-500' /></div></td>
           </tr>
           <tr>
             <td>
               <div className='flex items-center justify-center space-x-1 p-1'>
                 <Image src={flintLogo} width={16} height={16} alt='Flint' /><span>Flint</span>
+              </div>
+            </td>
+            <td><div className='flex justify-center'><XMarkIcon className='w-6 text-red-500' /></div></td>
+            <td><div className='flex justify-center'><XMarkIcon className='w-6 text-red-500' /></div></td>
+          </tr>
+          <tr>
+            <td>
+              <div className='flex items-center justify-center space-x-1 p-1'>
+                <Image src='/typhon.svg' width={16} height={16} alt='Typhon' /><span>Typhon</span>
               </div>
             </td>
             <td><div className='flex justify-center'><CheckIcon className='w-6 text-green-500' /></div></td>
